@@ -1,0 +1,12 @@
+node_modules
+dist
+coverage
+.git
+.github
+test
+docs
+*.md
+!README.md
+.env*
+.vscode
+.idea

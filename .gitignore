@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.local
+*.log
+.DS_Store
+.vscode/
+.idea/
+.turbo/
+.tokencache.json
+.microsoft365-mcp/
