@@ -10,3 +10,6 @@ coverage/
 .turbo/
 .tokencache.json
 .microsoft365-mcp/
+
+# Local-only — multi-perspective project review notes.
+REVIEW.md
