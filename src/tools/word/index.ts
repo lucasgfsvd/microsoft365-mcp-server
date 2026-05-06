@@ -1,11 +1,23 @@
 import { z } from "zod";
-import PizZip from "pizzip";
-import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "docx";
 import type { ToolDefinition, ToolContext } from "../../types.js";
+import { DrivePath, Filename } from "../../util/schema.js";
+import {
+  appendBullets,
+  appendHeading,
+  appendParagraph,
+  applyTemplateChanges,
+  createFromBlocks,
+  deleteParagraph,
+  type DocxBlock,
+  extractText,
+  insertParagraphAt,
+  listParagraphs,
+  replaceText,
+} from "../../ooxml/docx.js";
 
 /**
- * Word support: download the .docx, manipulate document.xml (OOXML) with PizZip,
- * then upload back. For creating brand-new documents we use the `docx` library.
+ * Word tools download the .docx, manipulate document.xml (OOXML) via the
+ * helpers in ../../ooxml/docx.ts, then upload the result.
  */
 const DocRef = z.object({
   driveId: z.string().optional(),
@@ -66,32 +78,11 @@ async function downloadTemplateBytes(
   return Buffer.concat(chunks);
 }
 
-function extractTextFromDocx(buf: Buffer): string {
-  const zip = new PizZip(buf);
-  const xml = zip.file("word/document.xml")?.asText() ?? "";
-  const paragraphs = xml.split(/<\/w:p>/g).map((p) => {
-    const texts = [...p.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)].map((m) => m[1]);
-    return texts.join("");
-  });
-  return paragraphs.filter(Boolean).join("\n");
+function ensureDocxExt(name: string): string {
+  return name.endsWith(".docx") ? name : `${name}.docx`;
 }
 
-async function mutateDocumentXml(
-  ctx: ToolContext,
-  ref: z.infer<typeof DocRef>,
-  mutate: (doc: string) => string,
-): Promise<void> {
-  const buf = await downloadDocx(ctx, ref);
-  const zip = new PizZip(buf);
-  const file = zip.file("word/document.xml");
-  if (!file) throw new Error("word/document.xml not found in .docx");
-  const updated = mutate(file.asText());
-  zip.file("word/document.xml", updated);
-  const out = zip.generate({ type: "nodebuffer", compression: "DEFLATE" });
-  await uploadDocx(ctx, ref, out);
-}
-
-const BlockSpec = z.object({
+const BlockSpec: z.ZodType<DocxBlock> = z.object({
   kind: z.enum(["title", "heading1", "heading2", "heading3", "paragraph", "bullet"]),
   text: z.string(),
 });
@@ -105,7 +96,7 @@ export const wordTools: ToolDefinition[] = [
     inputSchema: DocRef,
     handler: async (input, ctx) => {
       const buf = await downloadDocx(ctx, input);
-      return { text: extractTextFromDocx(buf) };
+      return { text: extractText(buf) };
     },
   },
   {
@@ -116,7 +107,7 @@ export const wordTools: ToolDefinition[] = [
     inputSchema: DocRef,
     handler: async (input, ctx) => {
       const buf = await downloadDocx(ctx, input);
-      return { paragraphs: extractTextFromDocx(buf).split("\n") };
+      return { paragraphs: listParagraphs(buf) };
     },
   },
   {
@@ -130,23 +121,10 @@ export const wordTools: ToolDefinition[] = [
       replacements: z.array(z.object({ find: z.string().min(1), replace: z.string() })).min(1),
     }),
     handler: async (input, ctx) => {
-      const buf = await downloadDocx(ctx, input);
-      const zip = new PizZip(buf);
-      const file = zip.file("word/document.xml");
-      if (!file) throw new Error("word/document.xml not found in .docx");
-      let xml = file.asText();
-      let total = 0;
-      for (const { find, replace } of input.replacements) {
-        xml = xml.replace(/<w:t[^>]*>([^<]*)<\/w:t>/g, (full, inner: string) => {
-          if (!inner.includes(find)) return full;
-          total += (inner.match(new RegExp(escapeRegex(find), "g")) ?? []).length;
-          return full.replace(inner, inner.split(find).join(escapeXml(replace)));
-        });
-      }
-      zip.file("word/document.xml", xml);
-      const out = zip.generate({ type: "nodebuffer", compression: "DEFLATE" });
-      await uploadDocx(ctx, input, out);
-      return { replacementsApplied: total };
+      const before = await downloadDocx(ctx, input);
+      const { buf, count } = replaceText(before, input.replacements);
+      await uploadDocx(ctx, input, buf);
+      return { replacementsApplied: count };
     },
   },
   {
@@ -157,10 +135,9 @@ export const wordTools: ToolDefinition[] = [
     requiredScopes: ["Files.ReadWrite.All", "Sites.ReadWrite.All"],
     inputSchema: DocRef.extend({ text: z.string() }),
     handler: async (input, ctx) => {
-      await mutateDocumentXml(ctx, input, (xml) => {
-        const newPara = `<w:p><w:r><w:t xml:space="preserve">${escapeXml(input.text)}</w:t></w:r></w:p>`;
-        return xml.replace("</w:body>", `${newPara}</w:body>`);
-      });
+      const before = await downloadDocx(ctx, input);
+      const after = appendParagraph(before, input.text);
+      await uploadDocx(ctx, input, after);
       return { ok: true };
     },
   },
@@ -176,20 +153,21 @@ export const wordTools: ToolDefinition[] = [
     inputSchema: z.object({
       driveId: z.string().optional(),
       siteId: z.string().optional(),
-      parentPath: z.string().describe("Parent folder path, e.g. '/Reports'"),
-      filename: z.string().describe("Filename including .docx extension"),
+      parentPath: DrivePath.describe("Parent folder path, e.g. '/Reports'"),
+      filename: Filename.describe("Filename including .docx extension"),
       blocks: z.array(BlockSpec).min(1),
     }),
     handler: async (input, ctx) => {
-      const blocks = input.blocks as z.infer<typeof BlockSpec>[];
-      const children = blocks.map((b) => blockToParagraph(b));
-      const doc = new Document({ sections: [{ properties: {}, children }] });
-      const out = await Packer.toBuffer(doc);
-      const filename = input.filename.endsWith(".docx") ? input.filename : `${input.filename}.docx`;
+      const buf = await createFromBlocks(input.blocks);
       const result = await uploadNewDocxToPath(
         ctx,
-        { driveId: input.driveId, siteId: input.siteId, parentPath: input.parentPath, filename },
-        Buffer.isBuffer(out) ? out : Buffer.from(out),
+        {
+          driveId: input.driveId,
+          siteId: input.siteId,
+          parentPath: input.parentPath,
+          filename: ensureDocxExt(input.filename),
+        },
+        buf,
       );
       return { ok: true, blocks: input.blocks.length, driveItem: result };
     },
@@ -208,11 +186,11 @@ export const wordTools: ToolDefinition[] = [
         templateDriveId: z.string().optional(),
         templateSiteId: z.string().optional(),
         templateItemId: z.string().optional(),
-        templatePath: z.string().optional().describe("Template path, e.g. '/Templates/proposal.docx'"),
+        templatePath: DrivePath.optional().describe("Template path, e.g. '/Templates/proposal.docx'"),
         driveId: z.string().optional(),
         siteId: z.string().optional(),
-        parentPath: z.string().describe("Destination folder path"),
-        filename: z.string().describe("New filename, including .docx"),
+        parentPath: DrivePath.describe("Destination folder path"),
+        filename: Filename.describe("New filename, including .docx"),
         replacements: z
           .array(z.object({ find: z.string().min(1), replace: z.string() }))
           .optional(),
@@ -222,35 +200,20 @@ export const wordTools: ToolDefinition[] = [
         message: "Provide templateItemId or templatePath",
       }),
     handler: async (input, ctx) => {
-      const buf = await downloadTemplateBytes(ctx, input);
-      const zip = new PizZip(buf);
-      const docFile = zip.file("word/document.xml");
-      if (!docFile) throw new Error("word/document.xml not found in template");
-      let xml = docFile.asText();
-
-      if (input.replacements && input.replacements.length) {
-        for (const { find, replace } of input.replacements) {
-          xml = xml.replace(/<w:t[^>]*>([^<]*)<\/w:t>/g, (full, inner: string) => {
-            if (!inner.includes(find)) return full;
-            return full.replace(inner, inner.split(find).join(escapeXml(replace)));
-          });
-        }
-      }
-
-      if (input.appendBlocks && input.appendBlocks.length) {
-        const extra = (input.appendBlocks as z.infer<typeof BlockSpec>[])
-          .map((b) => renderBlockXml(b))
-          .join("");
-        xml = xml.replace("</w:body>", `${extra}</w:body>`);
-      }
-
-      zip.file("word/document.xml", xml);
-      const out = zip.generate({ type: "nodebuffer", compression: "DEFLATE" });
-      const filename = input.filename.endsWith(".docx") ? input.filename : `${input.filename}.docx`;
+      const before = await downloadTemplateBytes(ctx, input);
+      const after = applyTemplateChanges(before, {
+        replacements: input.replacements,
+        appendBlocks: input.appendBlocks,
+      });
       const result = await uploadNewDocxToPath(
         ctx,
-        { driveId: input.driveId, siteId: input.siteId, parentPath: input.parentPath, filename },
-        out,
+        {
+          driveId: input.driveId,
+          siteId: input.siteId,
+          parentPath: input.parentPath,
+          filename: ensureDocxExt(input.filename),
+        },
+        after,
       );
       return { ok: true, driveItem: result };
     },
@@ -269,13 +232,9 @@ export const wordTools: ToolDefinition[] = [
       level: z.union([z.literal(1), z.literal(2), z.literal(3)]).default(1),
     }),
     handler: async (input, ctx) => {
-      const style = `Heading${input.level}`;
-      await mutateDocumentXml(ctx, input, (xml) => {
-        const newPara =
-          `<w:p><w:pPr><w:pStyle w:val="${style}"/></w:pPr>` +
-          `<w:r><w:t xml:space="preserve">${escapeXml(input.text)}</w:t></w:r></w:p>`;
-        return xml.replace("</w:body>", `${newPara}</w:body>`);
-      });
+      const before = await downloadDocx(ctx, input);
+      const after = appendHeading(before, input.text, input.level);
+      await uploadDocx(ctx, input, after);
       return { ok: true, level: input.level };
     },
   },
@@ -291,18 +250,9 @@ export const wordTools: ToolDefinition[] = [
     requiredScopes: ["Files.ReadWrite.All", "Sites.ReadWrite.All"],
     inputSchema: DocRef.extend({ items: z.array(z.string()).min(1) }),
     handler: async (input, ctx) => {
-      await mutateDocumentXml(ctx, input, (xml) => {
-        const items = input.items as string[];
-        const paras = items
-          .map(
-            (item) =>
-              `<w:p><w:pPr><w:pStyle w:val="ListParagraph"/>` +
-              `<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr></w:pPr>` +
-              `<w:r><w:t xml:space="preserve">${escapeXml(item)}</w:t></w:r></w:p>`,
-          )
-          .join("");
-        return xml.replace("</w:body>", `${paras}</w:body>`);
-      });
+      const before = await downloadDocx(ctx, input);
+      const after = appendBullets(before, input.items);
+      await uploadDocx(ctx, input, after);
       return { ok: true, items: input.items.length };
     },
   },
@@ -319,19 +269,9 @@ export const wordTools: ToolDefinition[] = [
       after: z.number().int().min(0).describe("Insert after this paragraph index. 0 inserts at top."),
     }),
     handler: async (input, ctx) => {
-      await mutateDocumentXml(ctx, input, (xml) => {
-        const newPara = `<w:p><w:r><w:t xml:space="preserve">${escapeXml(input.text)}</w:t></w:r></w:p>`;
-        // Split document.xml on </w:p> so we can inject at a specific paragraph boundary.
-        const parts = xml.split(/(<\/w:p>)/g);
-        // Paragraph N ends with the 2N-th element (closing </w:p>). After paragraph N is between 2N and 2N+1.
-        const insertAt = input.after * 2 + 2; // slot index after Nth </w:p>
-        if (insertAt > parts.length) {
-          // Fall through to append at body end.
-          return xml.replace("</w:body>", `${newPara}</w:body>`);
-        }
-        parts.splice(insertAt, 0, newPara);
-        return parts.join("");
-      });
+      const before = await downloadDocx(ctx, input);
+      const after = insertParagraphAt(before, input.text, input.after);
+      await uploadDocx(ctx, input, after);
       return { ok: true };
     },
   },
@@ -343,67 +283,10 @@ export const wordTools: ToolDefinition[] = [
     requiredScopes: ["Files.ReadWrite.All", "Sites.ReadWrite.All"],
     inputSchema: DocRef.extend({ paragraphIndex: z.number().int().min(1) }),
     handler: async (input, ctx) => {
-      await mutateDocumentXml(ctx, input, (xml) => {
-        // Match <w:p ...>...</w:p> greedily across the doc, replace the Nth with empty.
-        const paraRe = /<w:p(?:\s[^>]*)?>[\s\S]*?<\/w:p>/g;
-        let i = 0;
-        return xml.replace(paraRe, (match) => {
-          i += 1;
-          return i === input.paragraphIndex ? "" : match;
-        });
-      });
+      const before = await downloadDocx(ctx, input);
+      const after = deleteParagraph(before, input.paragraphIndex);
+      await uploadDocx(ctx, input, after);
       return { ok: true, deletedIndex: input.paragraphIndex };
     },
   },
 ];
-
-function renderBlockXml(b: z.infer<typeof BlockSpec>): string {
-  const text = escapeXml(b.text);
-  const run = `<w:r><w:t xml:space="preserve">${text}</w:t></w:r>`;
-  switch (b.kind) {
-    case "title":
-      return `<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr>${run}</w:p>`;
-    case "heading1":
-      return `<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr>${run}</w:p>`;
-    case "heading2":
-      return `<w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr>${run}</w:p>`;
-    case "heading3":
-      return `<w:p><w:pPr><w:pStyle w:val="Heading3"/></w:pPr>${run}</w:p>`;
-    case "bullet":
-      return (
-        `<w:p><w:pPr><w:pStyle w:val="ListParagraph"/>` +
-        `<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr></w:pPr>${run}</w:p>`
-      );
-    case "paragraph":
-    default:
-      return `<w:p>${run}</w:p>`;
-  }
-}
-
-function blockToParagraph(b: z.infer<typeof BlockSpec>): Paragraph {
-  switch (b.kind) {
-    case "title":
-      return new Paragraph({ text: b.text, heading: HeadingLevel.TITLE });
-    case "heading1":
-      return new Paragraph({ text: b.text, heading: HeadingLevel.HEADING_1 });
-    case "heading2":
-      return new Paragraph({ text: b.text, heading: HeadingLevel.HEADING_2 });
-    case "heading3":
-      return new Paragraph({ text: b.text, heading: HeadingLevel.HEADING_3 });
-    case "bullet":
-      return new Paragraph({
-        children: [new TextRun(b.text)],
-        bullet: { level: 0 },
-      });
-    case "paragraph":
-    default:
-      return new Paragraph({ children: [new TextRun(b.text)] });
-  }
-}
-
-function escapeRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-function escapeXml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
