@@ -13,6 +13,8 @@ const cfg: ServerConfig = {
   perSurfaceWrites: {},
   disabledTools: new Set(),
   logLevel: "info",
+  listTools: false,
+  logout: false,
 };
 
 const mk = (name: string, mutating = false): ToolDefinition => ({

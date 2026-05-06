@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ToolDefinition } from "../../types.js";
 import { fetchPage } from "../../graph/pagination.js";
-import { PaginationInput } from "../../util/schema.js";
+import { DrivePath, Filename, PaginationInput } from "../../util/schema.js";
 
 function drivePrefix(input: { driveId?: string; siteId?: string }): string {
   if (input.driveId) return `/drives/${input.driveId}`;
@@ -22,7 +22,7 @@ export const filesTools: ToolDefinition[] = [
     requiredScopes: ["Files.Read.All", "Sites.Read.All"],
     inputSchema: PaginationInput.merge(ScopeInput).extend({
       itemId: z.string().optional().describe("Folder item id. Omit for root."),
-      path: z.string().optional().describe("Path relative to root, e.g. '/Reports/2026'"),
+      path: DrivePath.optional().describe("Path relative to root, e.g. '/Reports/2026'"),
     }),
     handler: async (input, ctx) => {
       const base = drivePrefix(input);
@@ -41,7 +41,7 @@ export const filesTools: ToolDefinition[] = [
     requiredScopes: ["Files.Read.All", "Sites.Read.All"],
     inputSchema: ScopeInput.extend({
       itemId: z.string().optional(),
-      path: z.string().optional(),
+      path: DrivePath.optional(),
     }),
     handler: async (input, ctx) => {
       const base = drivePrefix(input);
@@ -98,8 +98,8 @@ export const filesTools: ToolDefinition[] = [
     mutating: true,
     requiredScopes: ["Files.ReadWrite.All", "Sites.ReadWrite.All"],
     inputSchema: ScopeInput.extend({
-      parentPath: z.string().describe("Parent folder path, e.g. '/Reports'"),
-      filename: z.string(),
+      parentPath: DrivePath.describe("Parent folder path, e.g. '/Reports'"),
+      filename: Filename,
       contentBase64: z.string().describe("File bytes, base64-encoded."),
     }),
     handler: async (input, ctx) => {
@@ -119,8 +119,8 @@ export const filesTools: ToolDefinition[] = [
     mutating: true,
     requiredScopes: ["Files.ReadWrite.All", "Sites.ReadWrite.All"],
     inputSchema: ScopeInput.extend({
-      parentPath: z.string(),
-      name: z.string(),
+      parentPath: DrivePath,
+      name: Filename,
     }),
     handler: async (input, ctx) => {
       const base = drivePrefix(input);
@@ -155,9 +155,9 @@ export const filesTools: ToolDefinition[] = [
     requiredScopes: ["Files.ReadWrite.All", "Sites.ReadWrite.All"],
     inputSchema: ScopeInput.extend({
       itemId: z.string().optional(),
-      path: z.string().optional().describe("Source path, e.g. '/Templates/proposal.docx'"),
-      destinationParentPath: z.string().describe("Target folder path, e.g. '/Reports/2026'"),
-      destinationName: z.string().describe("New filename"),
+      path: DrivePath.optional().describe("Source path, e.g. '/Templates/proposal.docx'"),
+      destinationParentPath: DrivePath.describe("Target folder path, e.g. '/Reports/2026'"),
+      destinationName: Filename.describe("New filename"),
     }).refine((d) => Boolean(d.itemId) || Boolean(d.path), {
       message: "Provide either itemId or path",
     }),

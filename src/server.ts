@@ -19,6 +19,7 @@ import { allTools } from "./tools/index.js";
 import { assertAllowed } from "./util/writeGuard.js";
 import { normalizeGraphError } from "./graph/errors.js";
 import { logger } from "./util/logger.js";
+import { DEFAULT_PUBLIC_CLIENT_ID } from "./config.js";
 
 const SIGN_IN_WAIT_MS = 1500;
 const GRAPH_DEFAULT_SCOPE = "https://graph.microsoft.com/.default";
@@ -32,6 +33,23 @@ function signInErrorText(p: DeviceCodePrompt): string {
 }
 
 export async function startServer(config: ServerConfig): Promise<void> {
+  if (config.clientId === DEFAULT_PUBLIC_CLIENT_ID) {
+    logger.warn(
+      "Using the default public Microsoft client id. Convenient for trying things out, " +
+        "but for production register your own Entra app and set MCP_CLIENT_ID — your own " +
+        "audit trail and scope set won't be muddled with everyone else's.",
+    );
+  }
+  logger.info(
+    {
+      authMode: config.authMode,
+      tenantId: config.tenantId,
+      enableWrites: config.enableWrites,
+      scopes: config.scopes,
+    },
+    "auth configuration",
+  );
+
   const credential = buildCredential(config);
   const graph = buildGraphClient(credential, config.scopes);
 

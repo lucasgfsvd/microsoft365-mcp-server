@@ -16,6 +16,10 @@ export interface ServerConfig {
   perSurfaceWrites: Record<string, boolean>;
   disabledTools: Set<string>;
   logLevel: string;
+  /** When true, print the tool catalogue to stdout and exit before starting the server. */
+  listTools: boolean;
+  /** When true, delete the cached OAuth tokens and exit before starting the server. */
+  logout: boolean;
 }
 
 export interface ToolContext {

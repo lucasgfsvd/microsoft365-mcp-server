@@ -5,8 +5,12 @@ const REDACT_KEYS = [
   "accessToken",
   "refresh_token",
   "refreshToken",
+  "id_token",
+  "idToken",
   "client_secret",
   "clientSecret",
+  "client_assertion",
+  "clientAssertion",
   "authorization",
   "Authorization",
 ];

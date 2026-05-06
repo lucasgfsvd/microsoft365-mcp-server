@@ -1,6 +1,7 @@
 import { z } from "zod";
 import ExcelJS from "exceljs";
 import type { ToolDefinition, ToolContext } from "../../types.js";
+import { DrivePath, Filename } from "../../util/schema.js";
 
 /**
  * All Excel tools target a workbook stored in OneDrive or SharePoint.
@@ -226,8 +227,8 @@ export const excelTools: ToolDefinition[] = [
     inputSchema: z.object({
       driveId: z.string().optional(),
       siteId: z.string().optional(),
-      parentPath: z.string().describe("Parent folder path, e.g. '/Spreadsheets'"),
-      filename: z.string().describe("Filename including .xlsx extension"),
+      parentPath: DrivePath.describe("Parent folder path, e.g. '/Spreadsheets'"),
+      filename: Filename.describe("Filename including .xlsx extension"),
       worksheetName: z.string().default("Sheet1"),
       values: z
         .array(z.array(z.union([z.string(), z.number(), z.boolean(), z.null()])))
@@ -271,11 +272,11 @@ export const excelTools: ToolDefinition[] = [
         templateDriveId: z.string().optional(),
         templateSiteId: z.string().optional(),
         templateItemId: z.string().optional(),
-        templatePath: z.string().optional().describe("Template path, e.g. '/Templates/budget.xlsx'"),
+        templatePath: DrivePath.optional().describe("Template path, e.g. '/Templates/budget.xlsx'"),
         driveId: z.string().optional(),
         siteId: z.string().optional(),
-        parentPath: z.string().describe("Destination folder path"),
-        filename: z.string().describe("New filename, including .xlsx"),
+        parentPath: DrivePath.describe("Destination folder path"),
+        filename: Filename.describe("New filename, including .xlsx"),
       })
       .refine((d) => Boolean(d.templateItemId) || Boolean(d.templatePath), {
         message: "Provide templateItemId or templatePath",

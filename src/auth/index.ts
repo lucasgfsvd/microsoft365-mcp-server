@@ -28,9 +28,6 @@ let _lastDeviceCodePrompt: DeviceCodePrompt | undefined;
 export function getLastDeviceCodePrompt(): DeviceCodePrompt | undefined {
   return _lastDeviceCodePrompt;
 }
-export function clearLastDeviceCodePrompt(): void {
-  _lastDeviceCodePrompt = undefined;
-}
 
 export const deviceCodeEmitter = new EventEmitter();
 

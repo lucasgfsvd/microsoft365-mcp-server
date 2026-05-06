@@ -13,6 +13,8 @@ const baseConfig: ServerConfig = {
   perSurfaceWrites: {},
   disabledTools: new Set(),
   logLevel: "info",
+  listTools: false,
+  logout: false,
 };
 
 const readTool: ToolDefinition = {
