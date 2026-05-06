@@ -54,7 +54,7 @@
     "@azure/msal-node": "^3.2.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@modelcontextprotocol/sdk": "^1.0.4",
-    "commander": "^12.1.0",
+    "commander": "^14.0.3",
     "docx": "^9.0.0",
     "exceljs": "^4.4.0",
     "pino": "^9.5.0",
