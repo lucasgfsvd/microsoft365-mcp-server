@@ -45,6 +45,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "docs:notice": "node scripts/generate-notice.mjs",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
@@ -56,7 +57,6 @@
     "commander": "^12.1.0",
     "docx": "^9.0.0",
     "exceljs": "^4.4.0",
-    "isomorphic-fetch": "^3.0.0",
     "pino": "^9.5.0",
     "pizzip": "^3.1.7",
     "pptx-automizer": "^0.7.0",

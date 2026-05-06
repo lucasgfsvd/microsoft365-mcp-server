@@ -689,7 +689,7 @@ These are real gaps in *this* server, tracked in [Roadmap](#roadmap):
 - **Large file uploads (>4 MB) not yet supported.** `files_upload` uses the single-shot endpoint. Bigger files return a 413 from Graph. Upload sessions are on the roadmap.
 - **Downloads are base64-encoded in the tool result.** Fine for small files; memory-heavy for large ones. Streaming/resource-URI downloads are planned.
 - **No webhook / change-notification tools.** You can't subscribe to mailbox or drive changes — only poll.
-- **No built-in retry on Graph 429/503.** Throttling errors surface directly to the caller. Retry-with-backoff is on the roadmap; for now, re-invoke the tool.
+- **Retry is bounded.** The Graph SDK's default `RetryHandler` automatically retries 429/503/504 responses up to 3 times with 3-second base delay (honoring the `Retry-After` header). If a request still fails after that, the error propagates to the caller. Re-invoke the tool, or work in smaller batches if you're hitting tenant throttle ceilings.
 - **OOXML edits (Word / PowerPoint) download → mutate → re-upload.** No partial updates. Large decks mean large round-trips; concurrent edits by a human in the web app can be overwritten.
 - **Excel requires a workbook session for writes.** You must call `excel_create_session` first — this is a Graph requirement, not something we can abstract away.
 
@@ -699,9 +699,22 @@ These are real gaps in *this* server, tracked in [Roadmap](#roadmap):
 
 - **Read-only default.** Every mutating tool is hidden from `tools/list` until writes are enabled. Defense in depth: the handler re-checks at call time.
 - **Token storage.** Cached locally with `chmod 600` (POSIX). On platforms with `keytar`, the cache is encrypted by the OS keychain. No tokens are logged — logger redacts common token fields.
-- **Least-privilege scopes.** Override `MCP_SCOPES` to request only what you need. Tools whose scopes aren't granted simply won't succeed — the server stays up.
-- **Bring-your-own app registration.** The default public `MCP_CLIENT_ID` is convenient for trying things out; **don't use it in production**. Register your own app and set `MCP_CLIENT_ID` / `MCP_TENANT_ID`.
+- **Least-privilege scopes.** The default scope set is read-only; write scopes are added automatically when `MCP_ENABLE_WRITES` (or any `MCP_ENABLE_<SURFACE>_WRITE` flag) is set. Override `MCP_SCOPES` to request a custom subset; tools whose scopes aren't granted simply won't succeed — the server stays up.
+- **Bring-your-own app registration.** The default public `MCP_CLIENT_ID` is convenient for trying things out; **don't use it in production**. Register your own app and set `MCP_CLIENT_ID` / `MCP_TENANT_ID`. The server logs a warning at startup when the default is in use.
 - **Responsible disclosure:** see [SECURITY.md](./SECURITY.md).
+
+### Data flow — what leaves your machine
+
+This server runs locally on your computer. The data flow is:
+
+1. **Your MCP client → this server (stdio)** — local IPC, never leaves your machine.
+2. **This server → Microsoft Graph (HTTPS)** — over the internet, authenticated as you (or your tenant app), to retrieve mail, files, calendar, etc.
+3. **This server → your MCP client (stdio)** — Graph responses returned to the client.
+4. **Your MCP client → wherever the client sends LLM context** — out of this server's hands.
+
+Step 4 is the privacy-significant one: when you ask an AI assistant to "summarize my unread emails," the email bodies returned by Graph flow through your MCP client to whichever model provider it talks to (Anthropic, OpenAI, a self-hosted model, etc.). What that provider does with the data is governed by *their* terms, not ours. If you're handling regulated data, check your MCP client's data policy and consider scoping reads narrowly with `MCP_SCOPES` and `MCP_DISABLED_TOOLS`.
+
+This server itself sends nothing to anyone but Microsoft Graph and your MCP client. No telemetry, no analytics, no remote logging.
 
 ---
 
@@ -742,7 +755,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) — contributions welcome, especially n
 - [ ] MCP Resources for notebooks, sites, and mailboxes
 - [ ] Prompt templates for common workflows (triage, meeting-prep)
 - [ ] Loop/Whiteboard/Viva surfaces when Graph exposes them
-- [ ] Per-tool rate-limit & retry with backoff surfaced in responses
+- [ ] Per-tool customisation of the SDK's retry policy (currently uses defaults: 3 retries, 3s base delay, honors `Retry-After`)
 
 ---
 
@@ -753,3 +766,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) — contributions welcome, especially n
 ## Acknowledgments
 
 Built on [Microsoft Graph](https://learn.microsoft.com/graph/), [`@azure/identity`](https://github.com/Azure/azure-sdk-for-js), and the [Model Context Protocol SDK](https://github.com/modelcontextprotocol). Inspired by the growing MCP ecosystem and the many community servers that paved the way.
+
+---
+
+> Microsoft, Microsoft 365, Outlook, OneDrive, SharePoint, Teams, OneNote, Excel, Word, and PowerPoint are trademarks of Microsoft Corporation. This is an independent open-source project; it is not affiliated with, endorsed by, or sponsored by Microsoft.

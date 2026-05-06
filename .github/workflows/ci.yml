@@ -22,6 +22,10 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      # Surface high-severity advisories without breaking the build for now.
+      # Promote to a hard gate once the dependency queue is clean.
+      - run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
 
   docker:
     runs-on: ubuntu-latest
