@@ -59,7 +59,7 @@
     "exceljs": "^4.4.0",
     "pino": "^9.5.0",
     "pizzip": "^3.1.7",
-    "pptx-automizer": "^0.7.0",
+    "pptx-automizer": "^0.8.1",
     "pptxgenjs": "^4.0.1",
     "zod": "^3.23.8",
     "zod-to-json-schema": "^3.23.5"
