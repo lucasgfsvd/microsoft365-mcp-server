@@ -67,11 +67,11 @@
   },
   "devDependencies": {
     "@microsoft/microsoft-graph-types": "^2.40.0",
-    "@types/node": "^22.9.0",
+    "@types/node": "^25.9.7",
     "@typescript-eslint/eslint-plugin": "^8.15.0",
     "@typescript-eslint/parser": "^8.15.0",
     "eslint": "^9.15.0",
-    "nock": "^14.0.0-beta.19",
+    "nock": "^14.0.17",
     "prettier": "^3.3.3",
     "tsup": "^8.3.5",
     "typescript": "^5.6.3",
