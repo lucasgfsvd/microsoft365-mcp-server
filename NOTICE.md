@@ -29,13 +29,13 @@ Each entry below is the property of its respective copyright holder, used here u
 | `@babel/runtime` | 7.29.2 | MIT | https://babel.dev/docs/en/next/babel-runtime |
 | `@fast-csv/format` | 4.3.5 | MIT | http://c2fo.github.com/fast-csv/packages/format |
 | `@fast-csv/parse` | 4.3.6 | MIT | http://c2fo.github.com/fast-csv/packages/parse |
-| `@hono/node-server` | 1.19.14 | MIT | https://github.com/honojs/node-server |
+| `@hono/node-server` | 1.19.17 | MIT | https://github.com/honojs/node-server |
 | `@microsoft/microsoft-graph-client` | 3.0.7 | MIT | https://github.com/microsoftgraph/msgraph-sdk-javascript |
-| `@modelcontextprotocol/sdk` | 1.29.0 | MIT | https://modelcontextprotocol.io |
+| `@modelcontextprotocol/sdk` | 1.30.0 | MIT | https://modelcontextprotocol.io |
 | `@pinojs/redact` | 0.4.0 | MIT | https://github.com/pinojs/redact#readme |
 | `@types/node` | 14.18.63 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node |
-| `@types/node` | 22.19.17 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node |
-| `@types/node` | 25.6.0 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node |
+| `@types/node` | 25.9.7 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node |
+| `@types/node` | 22.20.3 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node |
 | `@typespec/ts-http-runtime` | 0.3.5 | MIT | https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/core/ts-http-runtime/ |
 | `accepts` | 2.0.0 | MIT | jshttp/accepts |
 | `agent-base` | 7.1.4 | MIT | https://github.com/TooTallNate/proxy-agents |
@@ -52,9 +52,8 @@ Each entry below is the property of its respective copyright holder, used here u
 | `binary` | 0.3.0 | MIT | http://github.com/substack/node-binary |
 | `bl` | 4.1.0 | MIT | https://github.com/rvagg/bl |
 | `bluebird` | 3.4.7 | MIT | https://github.com/petkaantonov/bluebird |
-| `body-parser` | 2.2.2 | MIT | expressjs/body-parser |
-| `brace-expansion` | 1.1.14 | MIT | https://github.com/juliangruber/brace-expansion |
-| `brace-expansion` | 2.1.0 | MIT | https://github.com/juliangruber/brace-expansion |
+| `body-parser` | 2.3.0 | MIT | expressjs/body-parser |
+| `brace-expansion` | 2.1.7 | MIT | https://github.com/juliangruber/brace-expansion |
 | `buffer` | 5.7.1 | MIT | https://github.com/feross/buffer |
 | `buffer-crc32` | 0.2.13 | MIT | https://github.com/brianloveswords/buffer-crc32 |
 | `buffer-equal-constant-time` | 1.0.1 | BSD-3-Clause | git@github.com:goinstant/buffer-equal-constant-time |
@@ -66,10 +65,10 @@ Each entry below is the property of its respective copyright holder, used here u
 | `call-bound` | 1.0.4 | MIT | https://github.com/ljharb/call-bound#readme |
 | `chainsaw` | 0.1.0 | MIT/X11 | http://github.com/substack/node-chainsaw |
 | `chownr` | 1.1.4 | ISC | git://github.com/isaacs/chownr |
-| `commander` | 12.1.0 | MIT | https://github.com/tj/commander.js |
+| `commander` | 14.0.3 | MIT | https://github.com/tj/commander.js |
 | `compress-commons` | 4.1.2 | MIT | https://github.com/archiverjs/node-compress-commons |
-| `concat-map` | 0.0.1 | MIT | git://github.com/substack/node-concat-map |
 | `content-disposition` | 1.1.0 | MIT | jshttp/content-disposition |
+| `content-type` | 2.1.0 | MIT | jshttp/content-type |
 | `content-type` | 1.0.5 | MIT | jshttp/content-type |
 | `cookie` | 0.7.2 | MIT | jshttp/cookie |
 | `cookie-signature` | 1.2.2 | MIT | https://github.com/visionmedia/node-cookie-signature |
@@ -96,7 +95,7 @@ Each entry below is the property of its respective copyright holder, used here u
 | `end-of-stream` | 1.4.5 | MIT | https://github.com/mafintosh/end-of-stream |
 | `es-define-property` | 1.0.1 | MIT | https://github.com/ljharb/es-define-property#readme |
 | `es-errors` | 1.3.0 | MIT | https://github.com/ljharb/es-errors#readme |
-| `es-object-atoms` | 1.1.1 | MIT | https://github.com/ljharb/es-object-atoms#readme |
+| `es-object-atoms` | 1.1.2 | MIT | https://github.com/ljharb/es-object-atoms#readme |
 | `escape-html` | 1.0.3 | MIT | component/escape-html |
 | `etag` | 1.8.1 | MIT | jshttp/etag |
 | `eventsource` | 3.0.7 | MIT | https://github.com/EventSource/eventsource#readme |
@@ -104,10 +103,10 @@ Each entry below is the property of its respective copyright holder, used here u
 | `exceljs` | 4.4.0 | MIT | https://github.com/exceljs/exceljs |
 | `expand-template` | 2.0.3 | (MIT OR WTFPL) | https://github.com/ralphtheninja/expand-template |
 | `express` | 5.2.1 | MIT | https://expressjs.com/ |
-| `express-rate-limit` | 8.3.2 | MIT | https://github.com/express-rate-limit/express-rate-limit |
+| `express-rate-limit` | 8.7.0 | MIT | https://github.com/express-rate-limit/express-rate-limit |
 | `fast-csv` | 4.3.6 | MIT | http://c2fo.github.com/fast-csv |
 | `fast-deep-equal` | 3.1.3 | MIT | https://github.com/epoberezkin/fast-deep-equal#readme |
-| `fast-uri` | 3.1.0 | BSD-3-Clause | https://github.com/fastify/fast-uri |
+| `fast-uri` | 3.1.8 | BSD-3-Clause | https://github.com/fastify/fast-uri |
 | `finalhandler` | 2.1.1 | MIT | pillarjs/finalhandler |
 | `forwarded` | 0.2.0 | MIT | jshttp/forwarded |
 | `fresh` | 2.0.0 | MIT | jshttp/fresh |
@@ -123,20 +122,20 @@ Each entry below is the property of its respective copyright holder, used here u
 | `graceful-fs` | 4.2.11 | ISC | https://github.com/isaacs/node-graceful-fs |
 | `has-symbols` | 1.1.0 | MIT | https://github.com/ljharb/has-symbols#readme |
 | `hash.js` | 1.1.7 | MIT | https://github.com/indutny/hash.js |
-| `hasown` | 2.0.2 | MIT | https://github.com/inspect-js/hasOwn#readme |
-| `hono` | 4.12.14 | MIT | https://hono.dev |
+| `hasown` | 2.0.4 | MIT | https://github.com/inspect-js/hasOwn#readme |
+| `hono` | 4.13.8 | MIT | https://hono.dev |
 | `http-errors` | 2.0.1 | MIT | jshttp/http-errors |
 | `http-proxy-agent` | 7.0.2 | MIT | https://github.com/TooTallNate/proxy-agents |
 | `https` | 1.0.0 | ISC |  |
 | `https-proxy-agent` | 7.0.6 | MIT | https://github.com/TooTallNate/proxy-agents |
 | `iconv-lite` | 0.7.2 | MIT | https://github.com/pillarjs/iconv-lite |
 | `ieee754` | 1.2.1 | BSD-3-Clause | git://github.com/feross/ieee754 |
-| `image-size` | 1.2.1 | MIT | git://github.com/image-size/image-size |
+| `image-size` | 2.0.4 | MIT | https://codeberg.org/image-size/image-size |
 | `immediate` | 3.0.6 | MIT | git://github.com/calvinmetcalf/immediate |
 | `inflight` | 1.0.6 | ISC | https://github.com/isaacs/inflight |
 | `inherits` | 2.0.4 | ISC | git://github.com/isaacs/inherits |
 | `ini` | 1.3.8 | ISC | git://github.com/isaacs/ini |
-| `ip-address` | 10.1.0 | MIT | git://github.com/beaugunderson/ip-address |
+| `ip-address` | 10.7.2 | MIT | https://github.com/beaugunderson/ip-address |
 | `ipaddr.js` | 1.9.1 | MIT | git://github.com/whitequark/ipaddr.js |
 | `is-docker` | 3.0.0 | MIT | sindresorhus/is-docker |
 | `is-inside-container` | 1.0.0 | MIT | sindresorhus/is-inside-container |
@@ -186,7 +185,7 @@ Each entry below is the property of its respective copyright holder, used here u
 | `mkdirp` | 0.5.6 | MIT | https://github.com/substack/node-mkdirp |
 | `mkdirp-classic` | 0.5.3 | MIT | https://github.com/mafintosh/mkdirp-classic |
 | `ms` | 2.1.3 | MIT | vercel/ms |
-| `nanoid` | 5.1.9 | MIT | ai/nanoid |
+| `nanoid` | 5.1.16 | MIT | ai/nanoid |
 | `napi-build-utils` | 2.0.0 | MIT | https://github.com/inspiredware/napi-build-utils#readme |
 | `negotiator` | 1.0.0 | MIT | jshttp/negotiator |
 | `node-abi` | 3.89.0 | MIT | https://github.com/electron/node-abi#readme |
@@ -204,8 +203,8 @@ Each entry below is the property of its respective copyright holder, used here u
 | `path-is-absolute` | 1.0.1 | MIT | sindresorhus/path-is-absolute |
 | `path-key` | 3.1.1 | MIT | sindresorhus/path-key |
 | `path-to-regexp` | 8.4.2 | MIT | https://github.com/pillarjs/path-to-regexp |
-| `pino` | 9.14.0 | MIT | https://getpino.io |
-| `pino-abstract-transport` | 2.0.0 | MIT | https://github.com/pinojs/pino-abstract-transport#readme |
+| `pino` | 10.3.1 | MIT | https://getpino.io |
+| `pino-abstract-transport` | 3.0.0 | MIT | https://github.com/pinojs/pino-abstract-transport#readme |
 | `pino-std-serializers` | 7.1.0 | MIT | https://github.com/pinojs/pino-std-serializers#readme |
 | `pizzip` | 3.2.0 | (MIT OR GPL-3.0) | https://github.com/open-xml-templating/pizzip |
 | `pkce-challenge` | 5.0.1 | MIT | https://github.com/crouchcd/pkce-challenge#readme |
@@ -215,8 +214,7 @@ Each entry below is the property of its respective copyright holder, used here u
 | `process-warning` | 5.0.0 | MIT | https://github.com/fastify/fastify-warning#readme |
 | `proxy-addr` | 2.0.7 | MIT | jshttp/proxy-addr |
 | `pump` | 3.0.4 | MIT | git://github.com/mafintosh/pump |
-| `qs` | 6.15.1 | BSD-3-Clause | https://github.com/ljharb/qs |
-| `queue` | 6.0.2 | MIT | https://github.com/jessetane/queue |
+| `qs` | 6.16.0 | BSD-3-Clause | https://github.com/ljharb/qs |
 | `quick-format-unescaped` | 4.0.4 | MIT | https://github.com/davidmarkclements/quick-format#readme |
 | `range-parser` | 1.2.1 | MIT | jshttp/range-parser |
 | `raw-body` | 3.0.2 | MIT | stream-utils/raw-body |
@@ -225,6 +223,7 @@ Each entry below is the property of its respective copyright holder, used here u
 | `readable-stream` | 2.3.8 | MIT | git://github.com/nodejs/readable-stream |
 | `readdir-glob` | 1.1.3 | Apache-2.0 | https://github.com/Yqnn/node-readdir-glob |
 | `real-require` | 0.2.0 | MIT | https://github.com/pinojs/real-require |
+| `real-require` | 1.0.0 | MIT | https://github.com/pinojs/real-require |
 | `require-from-string` | 2.0.2 | MIT | floatdrop/require-from-string |
 | `rimraf` | 2.7.1 | ISC | git://github.com/isaacs/rimraf |
 | `router` | 2.2.0 | MIT | pillarjs/router |
@@ -242,7 +241,7 @@ Each entry below is the property of its respective copyright holder, used here u
 | `setprototypeof` | 1.2.0 | ISC | https://github.com/wesleytodd/setprototypeof |
 | `shebang-command` | 2.0.0 | MIT | kevva/shebang-command |
 | `shebang-regex` | 3.0.0 | MIT | sindresorhus/shebang-regex |
-| `side-channel` | 1.1.0 | MIT | https://github.com/ljharb/side-channel#readme |
+| `side-channel` | 1.1.1 | MIT | https://github.com/ljharb/side-channel#readme |
 | `side-channel-list` | 1.0.1 | MIT | https://github.com/ljharb/side-channel-list#readme |
 | `side-channel-map` | 1.0.1 | MIT | https://github.com/ljharb/side-channel-map#readme |
 | `side-channel-weakmap` | 1.0.2 | MIT | https://github.com/ljharb/side-channel-weakmap#readme |
@@ -255,19 +254,19 @@ Each entry below is the property of its respective copyright holder, used here u
 | `strip-json-comments` | 2.0.1 | MIT | sindresorhus/strip-json-comments |
 | `tar-fs` | 2.1.4 | MIT | https://github.com/mafintosh/tar-fs |
 | `tar-stream` | 2.2.0 | MIT | https://github.com/mafintosh/tar-stream |
-| `thread-stream` | 3.1.0 | MIT | https://github.com/mcollina/thread-stream#readme |
-| `tmp` | 0.2.5 | MIT | http://github.com/raszi/node-tmp |
+| `thread-stream` | 4.2.0 | MIT | https://github.com/mcollina/thread-stream#readme |
+| `tmp` | 0.2.7 | MIT | http://github.com/raszi/node-tmp |
 | `toidentifier` | 1.0.1 | MIT | component/toidentifier |
 | `traverse` | 0.3.9 | MIT/X11 | http://github.com/substack/js-traverse |
 | `tslib` | 2.8.1 | 0BSD | https://www.typescriptlang.org/ |
 | `tunnel-agent` | 0.6.0 | Apache-2.0 | https://github.com/mikeal/tunnel-agent |
-| `type-is` | 2.0.1 | MIT | jshttp/type-is |
-| `undici-types` | 7.19.2 | MIT | https://undici.nodejs.org |
+| `type-is` | 2.1.0 | MIT | jshttp/type-is |
 | `undici-types` | 6.21.0 | MIT | https://undici.nodejs.org |
+| `undici-types` | 7.24.6 | MIT | https://undici.nodejs.org |
 | `unpipe` | 1.0.0 | MIT | stream-utils/unpipe |
 | `unzipper` | 0.10.14 | MIT | https://github.com/ZJONSSON/node-unzipper |
 | `util-deprecate` | 1.0.2 | MIT | https://github.com/TooTallNate/util-deprecate |
-| `uuid` | 8.3.2 | MIT | https://github.com/uuidjs/uuid |
+| `uuid` | 11.1.1 | MIT | https://github.com/uuidjs/uuid |
 | `vary` | 1.1.2 | MIT | jshttp/vary |
 | `which` | 2.0.2 | ISC | git://github.com/isaacs/node-which |
 | `wrappy` | 1.0.2 | ISC | https://github.com/npm/wrappy |
@@ -276,11 +275,11 @@ Each entry below is the property of its respective copyright holder, used here u
 | `xml-js` | 1.6.11 | MIT | https://github.com/nashwaan/xml-js#readme |
 | `xmlchars` | 2.2.0 | MIT | https://github.com/lddubeau/xmlchars |
 | `zip-stream` | 4.1.1 | MIT | https://github.com/archiverjs/node-zip-stream |
-| `zod` | 3.25.76 | MIT | https://zod.dev |
+| `zod` | 4.6.5 | MIT | https://zod.dev |
 | `zod-to-json-schema` | 3.25.2 | ISC | https://github.com/StefanTerdell/zod-to-json-schema |
 
 ---
 
-Total: 266 packages.
+Total: 265 packages.
 
 Microsoft, Microsoft 365, Outlook, OneDrive, SharePoint, Teams, OneNote, Excel, Word, and PowerPoint are trademarks of Microsoft Corporation. This is an independent open-source project; it is not affiliated with, endorsed by, or sponsored by Microsoft.
