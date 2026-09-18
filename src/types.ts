@@ -1,6 +1,7 @@
 import type { Client as GraphClient } from "@microsoft/microsoft-graph-client";
 import type { TokenCredential } from "@azure/identity";
 import type { z } from "zod";
+import type { AuthSession } from "./auth/session.js";
 
 export type AuthMode = "device-code" | "client-credentials" | "interactive";
 
@@ -26,6 +27,7 @@ export interface ToolContext {
   graph: GraphClient;
   credential: TokenCredential;
   config: ServerConfig;
+  auth: AuthSession;
 }
 
 export type ZodObj = z.ZodTypeAny;
@@ -52,7 +54,8 @@ export type Surface =
   | "onenote"
   | "excel"
   | "word"
-  | "powerpoint";
+  | "powerpoint"
+  | "auth";
 
 export const SURFACES: Surface[] = [
   "mail",
@@ -65,4 +68,5 @@ export const SURFACES: Surface[] = [
   "excel",
   "word",
   "powerpoint",
+  "auth",
 ];

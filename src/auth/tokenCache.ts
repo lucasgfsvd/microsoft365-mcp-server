@@ -1,4 +1,5 @@
 import { promises as fs } from "node:fs";
+import type { AuthenticationRecord } from "@azure/identity";
 import path from "node:path";
 import os from "node:os";
 
@@ -24,4 +25,31 @@ export async function writeCache(cachePath: string, contents: string): Promise<v
   } catch {
     /* ignore */
   }
+}
+
+export function authRecordPath(cachePath: string): string {
+  return path.join(path.dirname(cachePath), "authrecord.json");
+}
+
+/**
+ * The AuthenticationRecord says which cached account to spend. Without it a fresh
+ * process cannot pick an account out of the persistent cache silently, and falls
+ * back to prompting — which is exactly the re-prompt-every-launch behaviour we
+ * are trying to avoid.
+ */
+export async function readAuthRecord(cachePath: string): Promise<AuthenticationRecord | undefined> {
+  const raw = await readCache(authRecordPath(cachePath));
+  if (!raw) return undefined;
+  try {
+    return JSON.parse(raw) as AuthenticationRecord;
+  } catch {
+    return undefined;
+  }
+}
+
+export async function writeAuthRecord(
+  cachePath: string,
+  record: AuthenticationRecord,
+): Promise<void> {
+  await writeCache(authRecordPath(cachePath), JSON.stringify(record));
 }

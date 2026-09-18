@@ -7,12 +7,9 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { ServerConfig } from "./types.js";
-import {
-  buildCredential,
-  deviceCodeEmitter,
-  getLastDeviceCodePrompt,
-  type DeviceCodePrompt,
-} from "./auth/index.js";
+import { buildCredential, deviceCodeEmitter, type DeviceCodePrompt } from "./auth/index.js";
+import { AuthSession, isAuthenticationRequired } from "./auth/session.js";
+import { readAuthRecord } from "./auth/tokenCache.js";
 import { buildGraphClient } from "./graph/client.js";
 import { ToolRegistry } from "./tools/registry.js";
 import { allTools } from "./tools/index.js";
@@ -21,16 +18,9 @@ import { normalizeGraphError } from "./graph/errors.js";
 import { logger } from "./util/logger.js";
 import { DEFAULT_PUBLIC_CLIENT_ID } from "./config.js";
 
-const SIGN_IN_WAIT_MS = 1500;
-const GRAPH_DEFAULT_SCOPE = "https://graph.microsoft.com/.default";
-
-function signInErrorText(p: DeviceCodePrompt): string {
-  return (
-    `Sign-in required.\n\n` +
-    `Open ${p.verificationUri} and enter code ${p.userCode}.\n` +
-    `After signing in, re-run this tool — the token will be cached.`
-  );
-}
+const SIGN_IN_HINT =
+  "Not signed in to Microsoft 365. Call auth_sign_in to get a device code, enter it " +
+  "in a browser, then retry this tool.";
 
 export async function startServer(config: ServerConfig): Promise<void> {
   if (config.clientId === DEFAULT_PUBLIC_CLIENT_ID) {
@@ -50,8 +40,12 @@ export async function startServer(config: ServerConfig): Promise<void> {
     "auth configuration",
   );
 
-  const credential = buildCredential(config);
+  // Reusing the stored record lets a fresh process spend the cached token without
+  // prompting. Absent or unreadable, we simply start out signed-out.
+  const authenticationRecord = await readAuthRecord(config.tokenCachePath).catch(() => undefined);
+  const credential = buildCredential(config, authenticationRecord);
   const graph = buildGraphClient(credential, config.scopes);
+  const auth = new AuthSession(credential, config);
 
   const registry = new ToolRegistry();
   registry.registerAll(allTools());
@@ -74,25 +68,6 @@ export async function startServer(config: ServerConfig): Promise<void> {
       });
   });
 
-  // Warm the credential up in the background for device-code mode so the prompt
-  // fires at startup, not on the first tool call. If the token is already cached,
-  // this resolves immediately. If not, userPromptCallback populates the prompt.
-  let warmupComplete = config.authMode !== "device-code";
-  const warmupPromise: Promise<void> =
-    config.authMode === "device-code"
-      ? credential
-          .getToken(config.scopes.length > 0 ? config.scopes : GRAPH_DEFAULT_SCOPE)
-          .then(
-            () => {
-              warmupComplete = true;
-            },
-            (err) => {
-              warmupComplete = true;
-              logger.warn({ err }, "auth warmup failed");
-            },
-          )
-      : Promise.resolve();
-
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     const visible = registry.list(config);
     const tools: McpTool[] = visible.map((t) => ({
@@ -109,31 +84,24 @@ export async function startServer(config: ServerConfig): Promise<void> {
       return { isError: true, content: [{ type: "text", text: `Unknown tool: ${req.params.name}` }] };
     }
 
-    // If device-code warmup is still pending, wait briefly for either a token
-    // or a user-visible prompt, then surface the prompt as a tool error rather
-    // than blocking the call for minutes with no visible progress.
-    if (!warmupComplete) {
-      await Promise.race([
-        warmupPromise,
-        new Promise<void>((resolve) => setTimeout(resolve, SIGN_IN_WAIT_MS)),
-      ]);
-      if (!warmupComplete) {
-        const prompt = getLastDeviceCodePrompt();
-        if (prompt) {
-          return { isError: true, content: [{ type: "text", text: signInErrorText(prompt) }] };
-        }
-      }
-    }
-
     try {
       assertAllowed(tool, config);
       const args = tool.inputSchema.parse(req.params.arguments ?? {});
-      const result = await tool.handler(args, { graph, credential, config });
+
+      // The auth surface drives sign-in itself, so it must run un-gated.
+      if (tool.surface !== "auth" && !(await auth.probe())) {
+        return { isError: true, content: [{ type: "text", text: SIGN_IN_HINT }] };
+      }
+
+      const result = await tool.handler(args, { graph, credential, config, auth });
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
         ...(tool.mutating ? { _meta: { requires_confirmation: true } } : {}),
       };
     } catch (err) {
+      if (isAuthenticationRequired(err)) {
+        return { isError: true, content: [{ type: "text", text: SIGN_IN_HINT }] };
+      }
       const norm = normalizeGraphError(err);
       logger.error({ err: norm, tool: tool.name }, "tool call failed");
       return {
@@ -146,4 +114,17 @@ export async function startServer(config: ServerConfig): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   logger.info({ toolCount: registry.list(config).length }, "microsoft365-mcp-server ready (stdio)");
+
+  // Silent and non-blocking: this can only ever spend an already-cached token,
+  // because the credential is built with disableAutomaticAuthentication. It will
+  // never issue a device code, so starting the client stays quiet.
+  void auth
+    .probe()
+    .then((ok) =>
+      logger.info(
+        { signedIn: ok },
+        ok ? "using cached Microsoft 365 credentials" : "signed out; call auth_sign_in when needed",
+      ),
+    )
+    .catch((err) => logger.warn({ err }, "auth probe failed"));
 }

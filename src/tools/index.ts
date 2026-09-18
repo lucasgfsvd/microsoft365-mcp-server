@@ -9,6 +9,7 @@ import { onenoteTools } from "./onenote/index.js";
 import { excelTools } from "./excel/index.js";
 import { wordTools } from "./word/index.js";
 import { powerpointTools } from "./powerpoint/index.js";
+import { authTools } from "./auth/index.js";
 
 export function allTools(): ToolDefinition[] {
   return [
@@ -22,5 +23,6 @@ export function allTools(): ToolDefinition[] {
     ...excelTools,
     ...wordTools,
     ...powerpointTools,
+    ...authTools,
   ];
 }

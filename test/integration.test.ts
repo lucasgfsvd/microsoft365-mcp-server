@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { Client as GraphClient } from "@microsoft/microsoft-graph-client";
 import type { TokenCredential } from "@azure/identity";
 import type { ServerConfig, ToolContext, ToolDefinition } from "../src/types.js";
+import type { AuthSession } from "../src/auth/session.js";
 import { mailTools } from "../src/tools/mail/index.js";
 import { calendarTools } from "../src/tools/calendar/index.js";
 import { contactsTools } from "../src/tools/contacts/index.js";
@@ -142,7 +143,14 @@ function makeContext(overrides: Partial<ServerConfig> = {}): ToolContext & { moc
     logout: false,
     ...overrides,
   };
-  return { graph: mock.graph, credential: fakeCredential, config, mock };
+  // Tool handlers never reach for the session directly; the dispatcher gates on it.
+  // A permissive stub keeps these tests about Graph calls, not sign-in.
+  const auth = {
+    probe: async () => true,
+    status: async () => ({ state: "signed-in", authMode: config.authMode, signedIn: true }),
+    signIn: async () => ({ status: "already-signed-in", message: "stub" }),
+  } as unknown as AuthSession;
+  return { graph: mock.graph, credential: fakeCredential, config, auth, mock };
 }
 
 function findTool(tools: ToolDefinition[], name: string): ToolDefinition {

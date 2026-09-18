@@ -5,7 +5,7 @@ import { SURFACES } from "../src/types.js";
 describe("tool catalog", () => {
   const tools = allTools();
 
-  it("registers tools across all 10 surfaces", () => {
+  it("registers tools across every declared surface", () => {
     const present = new Set(tools.map((t) => t.surface));
     for (const s of SURFACES) expect(present.has(s)).toBe(true);
   });

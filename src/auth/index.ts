@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import type { AuthenticationRecord } from "@azure/identity";
 import {
   ClientSecretCredential,
   DeviceCodeCredential,
@@ -29,6 +30,11 @@ export function getLastDeviceCodePrompt(): DeviceCodePrompt | undefined {
   return _lastDeviceCodePrompt;
 }
 
+/** Drop a stale code so a new sign-in attempt cannot report the previous one. */
+export function clearLastDeviceCodePrompt(): void {
+  _lastDeviceCodePrompt = undefined;
+}
+
 export const deviceCodeEmitter = new EventEmitter();
 
 /**
@@ -38,7 +44,10 @@ export const deviceCodeEmitter = new EventEmitter();
  * - client-credentials: unattended; requires tenant + client id + secret and admin-consented app perms.
  * - interactive: opens a local browser for auth code + PKCE.
  */
-export function buildCredential(config: ServerConfig): TokenCredential {
+export function buildCredential(
+  config: ServerConfig,
+  authenticationRecord?: AuthenticationRecord,
+): TokenCredential {
   const { authMode, tenantId, clientId, clientSecret, redirectUri } = config;
   const tokenCachePersistenceOptions = {
     enabled: true,
@@ -54,6 +63,10 @@ export function buildCredential(config: ServerConfig): TokenCredential {
         tenantId,
         clientId,
         tokenCachePersistenceOptions,
+        authenticationRecord,
+        // Never prompt from getToken(). Interactive sign-in happens only through
+        // AuthSession.signIn(), so a client launch stays silent.
+        disableAutomaticAuthentication: true,
         userPromptCallback: (info) => {
           const prompt: DeviceCodePrompt = {
             verificationUri: info.verificationUri,
@@ -88,6 +101,8 @@ export function buildCredential(config: ServerConfig): TokenCredential {
         clientId,
         redirectUri: redirectUri ?? "http://localhost:3000",
         tokenCachePersistenceOptions,
+        authenticationRecord,
+        disableAutomaticAuthentication: true,
       });
   }
 }
