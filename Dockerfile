@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # ---- Build stage ----
-FROM node:20-alpine AS build
+FROM node:24-alpine AS build
 WORKDIR /app
 
 # Install dependencies (including dev deps for tsup/typescript build)
@@ -18,7 +18,7 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 # ---- Runtime stage ----
-FROM gcr.io/distroless/nodejs20-debian12:nonroot AS runtime
+FROM gcr.io/distroless/nodejs24-debian12:nonroot AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production \
