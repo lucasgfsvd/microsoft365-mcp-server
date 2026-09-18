@@ -5,7 +5,7 @@ import {
   ListToolsRequestSchema,
   type Tool as McpTool,
 } from "@modelcontextprotocol/sdk/types.js";
-import { zodToJsonSchema } from "zod-to-json-schema";
+import { z } from "zod";
 import type { ServerConfig } from "./types.js";
 import { buildCredential, deviceCodeEmitter, type DeviceCodePrompt } from "./auth/index.js";
 import { AuthSession, isAuthenticationRequired } from "./auth/session.js";
@@ -73,7 +73,7 @@ export async function startServer(config: ServerConfig): Promise<void> {
     const tools: McpTool[] = visible.map((t) => ({
       name: t.name,
       description: t.description + (t.mutating ? " [MUTATING]" : ""),
-      inputSchema: zodToJsonSchema(t.inputSchema, { target: "jsonSchema7" }) as McpTool["inputSchema"],
+      inputSchema: z.toJSONSchema(t.inputSchema, { target: "draft-7" }) as McpTool["inputSchema"],
     }));
     return { tools };
   });

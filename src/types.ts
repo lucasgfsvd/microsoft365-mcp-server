@@ -30,7 +30,14 @@ export interface ToolContext {
   auth: AuthSession;
 }
 
-export type ZodObj = z.ZodTypeAny;
+/**
+ * Any zod schema. The `any` type arguments are deliberate — this is the
+ * "accepts any schema" constraint for ToolDefinition, and narrowing them makes
+ * z.infer resolve to `unknown` in every tool handler. (zod 4 replaced the old
+ * z.ZodTypeAny, whose bare z.ZodType successor defaults to `unknown`.)
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ZodObj = z.ZodType<any, any>;
 
 export interface ToolDefinition<I extends ZodObj = ZodObj> {
   name: string;

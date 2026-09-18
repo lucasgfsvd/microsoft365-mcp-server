@@ -9,7 +9,7 @@ const DateTimeTZ = z.object({
 });
 
 const Attendee = z.object({
-  email: z.string().email(),
+  email: z.email(),
   name: z.string().optional(),
   type: z.enum(["required", "optional", "resource"]).default("required"),
 });
@@ -86,7 +86,7 @@ export const calendarTools: ToolDefinition[] = [
     description: "Get free/busy schedule for a list of people.",
     requiredScopes: ["Calendars.Read.Shared"],
     inputSchema: z.object({
-      schedules: z.array(z.string().email()).min(1),
+      schedules: z.array(z.email()).min(1),
       startDateTime: z.string(),
       endDateTime: z.string(),
       timeZone: z.string().default("UTC"),

@@ -4,7 +4,7 @@ import { fetchPage } from "../../graph/pagination.js";
 import { PaginationInput, trimEmpty } from "../../util/schema.js";
 
 const Recipient = z.object({
-  address: z.string().email(),
+  address: z.email(),
   name: z.string().optional(),
 });
 

@@ -3,7 +3,28 @@ import type { ToolDefinition } from "../../types.js";
 import { fetchPage } from "../../graph/pagination.js";
 import { PaginationInput } from "../../util/schema.js";
 
-const EmailAddr = z.object({ address: z.string().email(), name: z.string().optional() });
+const EmailAddr = z.object({ address: z.email(), name: z.string().optional() });
+
+/**
+ * Fields Microsoft Graph accepts on a personal contact. Shared by create and
+ * update so the two cannot drift apart.
+ */
+const ContactShape = z.object({
+  givenName: z.string(),
+  surname: z.string().optional(),
+  middleName: z.string().optional(),
+  nickName: z.string().optional(),
+  emailAddresses: z.array(EmailAddr).optional(),
+  companyName: z.string().optional(),
+  jobTitle: z.string().optional(),
+  department: z.string().optional(),
+  officeLocation: z.string().optional(),
+  mobilePhone: z.string().optional(),
+  businessPhones: z.array(z.string()).optional(),
+  homePhones: z.array(z.string()).optional(),
+  personalNotes: z.string().optional(),
+  birthday: z.string().optional(),
+});
 
 export const contactsTools: ToolDefinition[] = [
   {
@@ -38,13 +59,7 @@ export const contactsTools: ToolDefinition[] = [
     description: "Create a personal contact.",
     mutating: true,
     requiredScopes: ["Contacts.ReadWrite"],
-    inputSchema: z.object({
-      givenName: z.string(),
-      surname: z.string().optional(),
-      emailAddresses: z.array(EmailAddr).optional(),
-      companyName: z.string().optional(),
-      mobilePhone: z.string().optional(),
-    }),
+    inputSchema: ContactShape,
     handler: async (input, ctx) => ctx.graph.api(`/me/contacts`).post(input),
   },
   {
@@ -55,7 +70,7 @@ export const contactsTools: ToolDefinition[] = [
     requiredScopes: ["Contacts.ReadWrite"],
     inputSchema: z.object({
       id: z.string(),
-      patch: z.record(z.any()).describe("Fields to update, e.g. {mobilePhone:'+1...'}"),
+      patch: ContactShape.partial().describe("Fields to update, e.g. {mobilePhone:'+1...'}"),
     }),
     handler: async ({ id, patch }, ctx) => ctx.graph.api(`/me/contacts/${id}`).patch(patch),
   },
