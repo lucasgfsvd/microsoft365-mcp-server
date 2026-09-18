@@ -20,7 +20,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm test
+      - run: npm run test:coverage
       - run: npm run build
       # Hard gate: production dependencies must stay clear of high-severity
       # advisories. The `overrides` block in package.json pins patched
