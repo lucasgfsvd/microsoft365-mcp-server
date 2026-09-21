@@ -4,6 +4,9 @@
 # CI runs gitleaks too, but only after a push — by then a secret is already
 # on GitHub. This is the only check that runs while the secret is still local.
 #
+# Uses `gitleaks git --staged`, not the older `gitleaks protect` — the latter
+# still runs in 8.30 but is hidden from --help and on its way out.
+#
 # Enable once per clone:  git config core.hooksPath .githooks
 # Bypass deliberately:    git commit --no-verify
 
@@ -15,7 +18,7 @@ if ! command -v gitleaks >/dev/null 2>&1; then
   exit 0
 fi
 
-gitleaks protect --staged --redact --config .gitleaks.toml
+gitleaks git --staged --redact --config .gitleaks.toml
 status=$?
 if [ $status -ne 0 ]; then
   echo "" >&2
