@@ -27,6 +27,19 @@ jobs:
       # transitives; if a new advisory lands, this fails the build.
       - run: npm audit --omit=dev --audit-level=high
 
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Full history: a secret that was committed and later removed is
+          # still in the objects, so scanning only the tip would miss it.
+          fetch-depth: 0
+      - name: Scan history for committed secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   docker:
     runs-on: ubuntu-latest
     needs: lint-typecheck-test
