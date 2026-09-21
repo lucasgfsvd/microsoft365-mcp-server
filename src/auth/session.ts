@@ -83,12 +83,17 @@ export class AuthSession {
     if (this.state === "signed-in") return true;
     try {
       const token = await this.credential.getToken(this.scopes);
-      this.state = token ? "signed-in" : "sign-in-required";
+      if (!token) {
+        this.state = "sign-in-required";
+        return false;
+      }
+      this.markSignedIn();
+      return true;
     } catch (err) {
       if (!isAuthenticationRequired(err)) throw err;
       this.state = "sign-in-required";
+      return false;
     }
-    return this.state === "signed-in";
   }
 
   async status(): Promise<AuthStatus> {
@@ -131,7 +136,7 @@ export class AuthSession {
         .authenticate(this.scopes)
         .then(
           async (record) => {
-            this.state = "signed-in";
+            this.markSignedIn();
             if (record) await this.persistRecord(record);
             logger.info("interactive sign-in completed");
           },
@@ -168,6 +173,16 @@ export class AuthSession {
       status: "failed",
       message: "Sign-in could not be started. Check the server log on stderr for details.",
     };
+  }
+
+  /**
+   * Becoming signed in retires any device code we were showing. Without this the
+   * code outlives the sign-in it belongs to, and status() keeps reporting a
+   * pendingPrompt that nobody is waiting on.
+   */
+  private markSignedIn(): void {
+    this.state = "signed-in";
+    clearLastDeviceCodePrompt();
   }
 
   /** Persist the record so the next process start can authenticate silently. */
