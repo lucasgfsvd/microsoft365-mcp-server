@@ -1,0 +1,27 @@
+#!/bin/sh
+# Block commits containing secrets, before they can reach a public remote.
+#
+# CI runs gitleaks too, but only after a push — by then a secret is already
+# on GitHub. This is the only check that runs while the secret is still local.
+#
+# Enable once per clone:  git config core.hooksPath .githooks
+# Bypass deliberately:    git commit --no-verify
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks not found — skipping local secret scan." >&2
+  echo "            Install it so secrets are caught before they leave this machine:" >&2
+  echo "              choco install gitleaks     (run as Administrator)" >&2
+  echo "            CI still scans on push." >&2
+  exit 0
+fi
+
+gitleaks protect --staged --redact --config .gitleaks.toml
+status=$?
+if [ $status -ne 0 ]; then
+  echo "" >&2
+  echo "pre-commit: gitleaks flagged staged content — commit blocked." >&2
+  echo "  Remove the secret and rotate it if it was ever real." >&2
+  echo "  False positive? Add it to the allowlist in .gitleaks.toml." >&2
+  echo "  Override (rare):  git commit --no-verify" >&2
+fi
+exit $status

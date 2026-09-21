@@ -39,7 +39,7 @@ Mail · Calendar · Contacts · OneDrive · SharePoint · Teams · To Do · Plan
 | 📝 **Word** | ✅ | ✅ | Create documents (from scratch or **from templates** with placeholder fill-in), append headings/bullets/paragraphs, insert at index, find-and-replace |
 | 🎞️ **PowerPoint** | ✅ | ✅ | Create decks (from scratch or **from templates** with placeholder fill-in + extra slides), append/delete slides, find-and-replace across slides |
 
-~92 tools total. The full reference is in [docs/tools.md](./docs/tools.md).
+94 tools total. The full reference is in [docs/tools.md](./docs/tools.md).
 
 ---
 
@@ -99,7 +99,11 @@ On **Windows**, give the full path to `node.exe` and escape backslashes (`\\`) �
 }
 ```
 
-Fully quit and reopen Claude Desktop (tray icon → *Quit* — closing the window alone does not reload the config). On first tool call the server emits a sign-in prompt as an MCP logging notification *and* as a tool-error fallback, so you'll see the URL + code directly in the chat; no need to tail stderr. Tokens are cached at `~/.microsoft365-mcp/tokencache.json` (chmod 600) so you only sign in once.
+Fully quit and reopen Claude Desktop (tray icon → *Quit* — closing the window alone does not reload the config).
+
+The server starts **signed out and silent** — it will not prompt you on launch. When you're ready, call the **`auth_sign_in`** tool: it returns a URL and device code immediately. Enter them in a browser, then call **`auth_status`** to confirm. Any Graph tool called while signed out fails fast with the same instruction rather than hanging.
+
+Tokens are cached under `~/.microsoft365-mcp/` (OS keychain where available, `chmod 600` file otherwise) alongside an `authrecord.json` identifying the account, so later starts authenticate silently and you only sign in once.
 
 > **Writes are disabled by default.** To allow sending mail, creating events, posting to Teams, etc. add `"MCP_ENABLE_WRITES": "true"` to the `env` block above — or scope it: `"MCP_ENABLE_MAIL_WRITE": "true"`.
 
@@ -178,7 +182,7 @@ Once published, the per-tenant deployment will look like this:
 }
 ```
 
-The image is multi-arch (`linux/amd64`, `linux/arm64`), built on distroless Node 20, runs as nonroot, and caches tokens in the `m365-mcp-tokens` named volume.
+The image is multi-arch (`linux/amd64`, `linux/arm64`), built on distroless Node 24, runs as nonroot, and caches tokens in the `m365-mcp-tokens` named volume.
 
 ---
 
@@ -277,7 +281,7 @@ One app registration shared by the whole org. Each user signs in **as themselves
 **Each user does — once:**
 
 1. Add the config block to their MCP client with the two values IT provided.
-2. On first tool call, complete the device-code sign-in **as themselves**. Their personal refresh token is cached in their own home directory.
+2. Call `auth_sign_in` and complete the device-code sign-in **as themselves**. Their personal refresh token is cached in their own home directory.
 
 That's it — no per-user Entra config, no IDs to collect, no IT ticket per person. Add a new hire by onboarding them to the MCP client config; they sign in and they're live.
 
@@ -675,12 +679,18 @@ Most "this doesn't work" reports on business tenants aren't bugs in this server 
 - **Token cache is per-OS-user.** Cached at `~/.microsoft365-mcp/tokencache.json`. Switching Microsoft accounts means deleting that file first — there's no in-product account switcher.
 - **Refresh tokens expire.** After ~90 days of inactivity (or on password change / revocation) the next call will prompt for re-auth via device code. Not a bug.
 - **`keytar` is optional.** On headless Linux without a keyring, install fails gracefully and the cache falls back to the `chmod 600` JSON file. No encryption at rest in that case — acceptable for a personal machine, not for shared hosts.
-- **First-run device-code sign-in is surfaced two ways, both in-client.** When there's no cached token, most MCP clients — including Claude Desktop — **do not render a server's stderr in the chat**, so if we only wrote the code there, the first tool call would appear to hang with no visible prompt. To work around that, the server:
-  1. Kicks off the device-code flow at **startup** (not on first tool call) so the prompt is ready before you invoke anything.
-  2. Emits the URL + code as an **MCP `notifications/message`** (logging channel) so clients that render server logs can show it in-UI.
-  3. If a tool is called while sign-in is still pending, the tool returns an `isError` response containing the URL + code as its text — so even clients that *don't* render logging notifications will show the sign-in instructions inline in the chat. After signing in, re-run the tool and the cached token is used.
+- **Sign-in is lazy and explicit.** Starting the server performs no interactive authentication. Credentials are built with `disableAutomaticAuthentication`, so acquiring a token can only ever spend one already cached — it can never raise a prompt on its own. A device code is issued *only* when you call `auth_sign_in`.
 
-  All three paths co-exist; the stderr write is still there for CLI users and log-tailers (`%APPDATA%\Claude\logs\mcp-server-microsoft365.log` on Windows).
+  This matters because the server is launched every time your MCP client starts. An earlier version warmed the credential up at startup so the code would be ready before you invoked anything; in practice that minted a fresh device code on every single launch, nobody entered it, and it expired unused ~15 minutes later. One unwanted prompt per launch, and a server that never actually held a token.
+
+  The current flow:
+  1. **At startup:** one silent probe. If a cached token exists it is used and the server logs `using cached Microsoft 365 credentials`. If not, it logs `signed out` and waits. Nothing is displayed to you.
+  2. **`auth_sign_in`** returns the URL + code straight away as the tool result, rather than blocking for the minutes the browser step takes. The flow completes in the background.
+  3. **`auth_status`** reports whether it worked. Graph tools called while signed out return an `isError` telling you to run `auth_sign_in`, instead of hanging on a prompt you cannot see.
+
+  The code is also emitted as an MCP `notifications/message` and written to stderr for CLI users and log-tailers (`%APPDATA%\Claude\logs\mcp-server-microsoft365.log` on Windows), since most clients — Claude Desktop included — don't render a server's stderr in the chat.
+
+  Because neither `auth_sign_in` nor `auth_status` is marked mutating, both stay available when writes are disabled — otherwise a read-only deployment could never authenticate.
 
 ### Current implementation scope
 

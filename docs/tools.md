@@ -6,6 +6,19 @@ Every tool name is stable across releases — the catalogue grows additively. If
 
 ---
 
+## 🔐 Auth — 2 tools
+
+Start here: every other tool needs a signed-in session. Neither of these is mutating, so both remain available when writes are disabled — otherwise a read-only deployment could never authenticate.
+
+| Tool | Scopes | Mutating |
+|---|---|:---:|
+| `auth_status` | — | |
+| `auth_sign_in` | — | |
+
+- `auth_sign_in` starts the interactive flow and returns the verification URL and device code **immediately**, rather than blocking for the minutes the browser step takes. The flow finishes in the background.
+- `auth_status` reports `signed-in` / `sign-in-required`, and surfaces a device code that is still waiting to be entered.
+- The server never starts a sign-in on its own. Launching it issues no prompt; a code appears only when you ask for one.
+
 ## 📧 Mail (Outlook) — 9 tools
 
 | Tool | Scopes | Mutating |
@@ -164,4 +177,5 @@ For multi-step edits, call `excel_create_session` first and pass the returned se
 - All paginated tools accept `top`, `skip`, and `nextLink` from [`PaginationInput`](../src/util/schema.ts).
 - Mutating tools throw `WriteBlockedError` if writes are not enabled — the error message names the exact env var to set (`MCP_ENABLE_WRITES` or `MCP_ENABLE_<SURFACE>_WRITE`).
 - Drive scope is selected uniformly: pass `driveId` for an explicit drive, `siteId` for a SharePoint site's default drive, or omit both to target the user's OneDrive (`/me/drive`).
+- Graph tools called while signed out return an error pointing at `auth_sign_in`, instead of blocking on a prompt the client may not render.
 - Errors are normalized to `<code>: <message>` — Graph's `code` and `message` are preserved, so you can pattern-match on the code from a client.
