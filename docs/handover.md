@@ -66,7 +66,7 @@ A later attempt at a standalone reproduction also failed to converge: a script c
 
 All five resources were exercised against a live tenant: initial sync, resuming from a `nextLink`, and a follow-up from the `deltaLink` returning nothing new. Page sizing is resource-specific — Outlook resources honour `Prefer: odata.maxpagesize`, drive ignores it and needs `$top` instead.
 
-**Not yet seen live: a removal.** The tenant had no deletions between calls, so `@removed` (Outlook family) and the drive `deleted` facet are handled only as documented and unit-tested. Delete something between two calls and confirm it lands in `removed`.
+**Removals, live:** the `@removed` form is confirmed — a contact created, synced, deleted and synced again came back in `removed` with its id and reason `deleted`. The drive's `deleted` facet is still only unit-tested; confirm it the same way with a throwaway file (`files_upload`, `files_delete`). To Do has no delete tool, so it cannot be tested through the server.
 
 ---
 
