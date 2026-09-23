@@ -10,6 +10,7 @@ import { excelTools } from "./excel/index.js";
 import { wordTools } from "./word/index.js";
 import { powerpointTools } from "./powerpoint/index.js";
 import { authTools } from "./auth/index.js";
+import { graphTools } from "./graph/index.js";
 
 export function allTools(): ToolDefinition[] {
   return [
@@ -24,5 +25,6 @@ export function allTools(): ToolDefinition[] {
     ...wordTools,
     ...powerpointTools,
     ...authTools,
+    ...graphTools,
   ];
 }

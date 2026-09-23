@@ -19,6 +19,18 @@ Start here: every other tool needs a signed-in session. Neither of these is muta
 - `auth_status` reports `signed-in` / `sign-in-required`, and surfaces a device code that is still waiting to be entered.
 - The server never starts a sign-in on its own. Launching it issues no prompt; a code appears only when you ask for one.
 
+## ⚡ Graph — 1 tool
+
+| Tool | Scopes | Mutating |
+|---|---|:---:|
+| `graph_batch_get` | *(whatever the sub-requests need)* | |
+
+Runs up to 20 Graph **GET** requests as a single round trip. Measured at ~2.4× faster than four separate tool calls against a live tenant, and the gap widens with more requests since it stays one round trip either way.
+
+Each item takes an `id` you choose and a Graph-relative `url`; results come back in the order requested, each with its own `status`, so one failing sub-request does not lose the others.
+
+**GET only, deliberately.** Batching arbitrary methods would route mutations around `writeGuard`, which is the single place writes are authorised. Sub-request URLs are validated to be Graph-relative — an absolute URL would send your token to a host of the caller's choosing.
+
 ## 📧 Mail (Outlook) — 9 tools
 
 | Tool | Scopes | Mutating |
@@ -177,5 +189,6 @@ For multi-step edits, call `excel_create_session` first and pass the returned se
 - All paginated tools accept `top`, `skip`, and `nextLink` from [`PaginationInput`](../src/util/schema.ts).
 - Mutating tools throw `WriteBlockedError` if writes are not enabled — the error message names the exact env var to set (`MCP_ENABLE_WRITES` or `MCP_ENABLE_<SURFACE>_WRITE`).
 - Drive scope is selected uniformly: pass `driveId` for an explicit drive, `siteId` for a SharePoint site's default drive, or omit both to target the user's OneDrive (`/me/drive`).
+- Prefer `graph_batch_get` when you need several independent reads; it is one round trip instead of N.
 - Graph tools called while signed out return an error pointing at `auth_sign_in`, instead of blocking on a prompt the client may not render.
 - Errors are normalized to `<code>: <message>` — Graph's `code` and `message` are preserved, so you can pattern-match on the code from a client.

@@ -62,7 +62,8 @@ export type Surface =
   | "excel"
   | "word"
   | "powerpoint"
-  | "auth";
+  | "auth"
+  | "graph";
 
 export const SURFACES: Surface[] = [
   "mail",
@@ -76,4 +77,5 @@ export const SURFACES: Surface[] = [
   "word",
   "powerpoint",
   "auth",
+  "graph",
 ];
