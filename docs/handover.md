@@ -52,13 +52,19 @@ A later attempt at a standalone reproduction also failed to converge: a script c
 - Several server processes were running concurrently during every failed observation (a client-connected one plus test instances). **Contention on the OS credential store between processes sharing one cache is untested but plausible.**
 - A single server, running alone, has never been observed to fail.
 
+### What the library code says
+
+Reading `@azure/identity` (4.x, `msalClient.js`) undercuts the leading hypothesis. `authenticate()` stores the signed-in account in the credential's own state (`state.cachedAccount = response.account`), and every later `getToken` on that instance uses it for a silent request. A record on disk is only needed by a *new* process. Graph calls and `auth_sign_in` share one credential instance (`startServer` builds it once), so a missing record should not be able to cause this in-process.
+
+### Shared-cache finding
+
+Until the fix that gave each path its own store, **every server process shared one token store** whatever `MCP_TOKEN_CACHE_PATH` said: the plugin keys its store by name, and the name was fixed. That fits the one observation that holds — failures only ever happened with several processes running — and it also meant no test process could have been isolated before. A non-default `MCP_TOKEN_CACHE_PATH` now gets its own store.
+
 ### Suggested approach
 
-1. Reproduce first, with **exactly one** process touching the cache. Delete the token cache directory, start one server, sign in, then call a Graph tool *without* restarting.
-2. If it fails there, the hypothesis holds and `SwappableCredential` is the right shape of fix. Reinstate it and verify live, not just in tests.
-3. If it does not fail, suspect multi-process cache contention and test that directly: two servers, one cache, interleaved `getToken`.
-
-`status()` now verifies against the credential instead of trusting its cached flag, so the server at least reports this honestly rather than claiming to be signed in while failing.
+1. Reproduce with one process on its own store: point `MCP_TOKEN_CACHE_PATH` at an empty directory (that alone gives a fresh store now), start one server, `auth_sign_in`, then call Graph without restarting. Run with `AZURE_LOG_LEVEL=info`: the library logs `No cached account found in local state` when the account is missing, which separates the two explanations. An attempt was set up but the device code was never entered, so this is still untested.
+2. If it passes, test contention directly: two servers pointed at the **same** path, one signing in while the other calls `getToken`.
+3. `SwappableCredential` is not the fix unless step 1 fails, and the library code above says it should not.
 
 ---
 
@@ -75,6 +81,12 @@ All five resources were exercised against a live tenant: initial sync, resuming 
 Verified running. The distroless runtime has no `libsecret`, so the cache plugin fails to load (`libsecret-1.so.0: cannot open shared object file`) and the server falls back to an in-memory token cache. It starts, serves tools and answers `auth_status`. CI now runs the image and requires it to answer `initialize`, so a regression to a static import fails the build.
 
 **Consequence for device-code users:** in the container a sign-in does not survive a restart. Client-credentials mode, the natural fit for a container, needs no cache. Making device-code persist there would mean installing `libsecret` in the runtime image (not available on distroless) or adding a file-based cache for this case.
+
+---
+
+## `--logout` leaves tokens in the store
+
+`runLogout` removes `authrecord.json` (and a `tokencache.json` that has never existed). The tokens live in the identity plugin's store (`%LOCALAPPDATA%\.IdentityService\<name>` on Windows, keychain/keyring elsewhere) and are not touched. The next start is signed out, so this is not a functional bug, but a refresh token stays on disk until it expires. The README says so. Fixing it means deleting the store per platform, including the keychain entry, and the `.cae` variant the plugin may create.
 
 ---
 
