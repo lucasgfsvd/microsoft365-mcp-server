@@ -70,15 +70,11 @@ All five resources were exercised against a live tenant: initial sync, resuming 
 
 ---
 
-## Unverified: the container image
+## The container image
 
-The cache plugin (which loads `keytar`, which dlopens `libsecret`) is now imported
-lazily, and a failed load degrades to an in-memory token cache instead of killing
-the process. CI no longer installs `libsecret`, so any regression to a static
-import fails there.
+Verified running. The distroless runtime has no `libsecret`, so the cache plugin fails to load (`libsecret-1.so.0: cannot open shared object file`) and the server falls back to an in-memory token cache. It starts, serves tools and answers `auth_status`. CI now runs the image and requires it to answer `initialize`, so a regression to a static import fails the build.
 
-What has **not** been done is running the distroless image. CI builds it but never
-starts it. `docker run` it once and confirm the server reaches `ready (stdio)`.
+**Consequence for device-code users:** in the container a sign-in does not survive a restart. Client-credentials mode, the natural fit for a container, needs no cache. Making device-code persist there would mean installing `libsecret` in the runtime image (not available on distroless) or adding a file-based cache for this case.
 
 ---
 

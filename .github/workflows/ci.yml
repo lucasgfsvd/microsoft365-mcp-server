@@ -53,5 +53,17 @@ jobs:
           push: false
           platforms: linux/amd64
           tags: microsoft365-mcp-server:ci
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      # Building proves nothing about starting. The runtime image has no
+      # libsecret, which once killed the process at import; make sure it still
+      # comes up and answers an MCP initialize.
+      - name: Smoke test (starts and answers initialize)
+        run: |
+          init='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}'
+          (echo "$init"; sleep 5) \
+            | timeout 30 docker run --rm -i microsoft365-mcp-server:ci > out.txt 2> err.txt || true
+          cat err.txt
+          grep -q '"serverInfo"' out.txt
+          grep -q 'ready (stdio)' err.txt
