@@ -258,7 +258,7 @@ Set `MCP_CLIENT_ID` (and for tenant use, `MCP_TENANT_ID` + `MCP_CLIENT_SECRET`) 
 }
 ```
 
-Delete any existing `~/.microsoft365-mcp/tokencache.json` so the next login uses your new app, and you're done.
+Run `microsoft365-mcp-server --logout` so the next start forgets the old sign-in, then call `auth_sign_in` once with your new app, and you're done.
 
 ---
 
@@ -647,7 +647,7 @@ All settings can be passed as CLI flags **or** environment variables.
 | `MCP_ENABLE_WRITES` | `--enable-writes` | `false` | Unlock all mutating tools |
 | `MCP_ENABLE_<SURFACE>_WRITE` | – | `false` | e.g. `MCP_ENABLE_MAIL_WRITE`, `MCP_ENABLE_FILES_WRITE` |
 | `MCP_DISABLED_TOOLS` | `--disabled-tools` | – | CSV of tool names to hide entirely |
-| `MCP_TOKEN_CACHE_PATH` | `--token-cache` | `~/.microsoft365-mcp/tokencache.json` | |
+| `MCP_TOKEN_CACHE_PATH` | `--token-cache` | `~/.microsoft365-mcp/tokencache.json` | Its directory holds `authrecord.json`; a non-default path also gets its own token store |
 | `MCP_LOG_LEVEL` | – | `info` | Pino log level (stderr) |
 
 ---
@@ -676,7 +676,8 @@ Most "this doesn't work" reports on business tenants aren't bugs in this server 
 
 ### Auth & token cache
 
-- **Token cache is per-OS-user.** Cached at `~/.microsoft365-mcp/tokencache.json`. Switching Microsoft accounts means deleting that file first — there's no in-product account switcher.
+- **Where tokens live.** Two things are kept. `authrecord.json`, next to `MCP_TOKEN_CACHE_PATH`, names which account to use. The tokens themselves are in the identity library's store: a DPAPI-encrypted file under `%LOCALAPPDATA%\.IdentityService\` on Windows, the keychain on macOS, the keyring (or a file under `~/.IdentityService/`) on Linux. The default path uses the store `microsoft365-mcp`; any other path gets its own store, so two servers with different paths never share tokens.
+- **Switching accounts:** run `--logout` (which removes `authrecord.json`), then `auth_sign_in`. There is no in-product account switcher. `--logout` does not yet erase the tokens from the store — they go unused, but stay on disk until they expire.
 - **Refresh tokens expire.** After ~90 days of inactivity (or on password change / revocation) the next call will prompt for re-auth via device code. Not a bug.
 - **`keytar` is optional.** Where it is present but no keyring is running, the cache is written to an unencrypted file instead — acceptable for a personal machine, not for shared hosts. Where it cannot load at all (headless Linux without `libsecret`, the distroless container image), the server still starts but holds tokens in memory only: sign-in works, and does not survive a restart. The startup log says so with `persistent token cache unavailable`. Client-credentials mode never needs the cache.
 - **Sign-in is lazy and explicit.** Starting the server performs no interactive authentication. Credentials are built with `disableAutomaticAuthentication`, so acquiring a token can only ever spend one already cached — it can never raise a prompt on its own. A device code is issued *only* when you call `auth_sign_in`.

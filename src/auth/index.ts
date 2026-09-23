@@ -9,7 +9,7 @@ import {
 } from "@azure/identity";
 import { logger } from "../util/logger.js";
 import type { ServerConfig } from "../types.js";
-import { defaultCachePath } from "./tokenCache.js";
+import { defaultCachePath, persistentCacheName } from "./tokenCache.js";
 
 let cachePlugin: Promise<boolean> | undefined;
 
@@ -84,7 +84,7 @@ export async function buildCredential(
     (await ensureCachePlugin())
       ? ({
           enabled: true,
-          name: "microsoft365-mcp",
+          name: persistentCacheName(config.tokenCachePath),
           unsafeAllowUnencryptedStorage: true,
         } as const)
       : undefined;

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import type { AuthenticationRecord } from "@azure/identity";
 import path from "node:path";
@@ -5,6 +6,22 @@ import os from "node:os";
 
 export function defaultCachePath(): string {
   return path.join(os.homedir(), ".microsoft365-mcp", "tokencache.json");
+}
+
+/**
+ * Name of the MSAL persistent cache the identity plugin keeps (under
+ * %LOCALAPPDATA%\.IdentityService, ~/.IdentityService or the OS keychain).
+ *
+ * The plugin keys its store by this name alone, not by any path of ours, so a
+ * fixed name made every server share one token cache whatever
+ * MCP_TOKEN_CACHE_PATH said. The default path keeps the original name, so an
+ * existing sign-in survives; any other path gets a cache of its own.
+ */
+export function persistentCacheName(cachePath: string): string {
+  const base = "microsoft365-mcp";
+  if (path.resolve(cachePath) === path.resolve(defaultCachePath())) return base;
+  const digest = createHash("sha256").update(path.resolve(cachePath)).digest("hex").slice(0, 12);
+  return `${base}-${digest}`;
 }
 
 export async function readCache(cachePath: string): Promise<string | undefined> {

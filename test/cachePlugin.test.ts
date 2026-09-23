@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import os from "node:os";
+import path from "node:path";
 import { DeviceCodeCredential } from "@azure/identity";
 import type { ServerConfig } from "../src/types.js";
 import {
@@ -6,6 +8,7 @@ import {
   ensureCachePlugin,
   resetCachePluginForTests,
 } from "../src/auth/index.js";
+import { defaultCachePath, persistentCacheName } from "../src/auth/tokenCache.js";
 
 const config = {
   authMode: "device-code",
@@ -57,5 +60,21 @@ describe("persistent cache plugin", () => {
       return Promise.reject(new Error("unavailable"));
     });
     expect(loads).toBe(1);
+  });
+});
+
+// Regression: the plugin's cache name was fixed, so MCP_TOKEN_CACHE_PATH moved
+// only the auth record while every server shared one token store.
+describe("persistentCacheName", () => {
+  it("keeps the original name for the default path, so existing sign-ins survive", () => {
+    expect(persistentCacheName(defaultCachePath())).toBe("microsoft365-mcp");
+  });
+
+  it("gives other paths their own stable cache", () => {
+    const a = persistentCacheName(path.join(os.tmpdir(), "a", "tokencache.json"));
+    const b = persistentCacheName(path.join(os.tmpdir(), "b", "tokencache.json"));
+    expect(a).toMatch(/^microsoft365-mcp-[0-9a-f]{12}$/);
+    expect(a).not.toBe(b);
+    expect(persistentCacheName(path.join(os.tmpdir(), "a", "tokencache.json"))).toBe(a);
   });
 });
