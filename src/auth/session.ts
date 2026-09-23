@@ -80,7 +80,21 @@ export class AuthSession {
    * not misreported to the user as "please sign in".
    */
   async probe(): Promise<boolean> {
+    // Fast path for the per-call gate: a token we already spent successfully
+    // is almost certainly still good, and this runs before every Graph tool.
     if (this.state === "signed-in") return true;
+    return this.verify();
+  }
+
+  /**
+   * Ask the credential outright, ignoring what we last believed.
+   *
+   * `signed-in` is only ever an assumption: it records that a token was
+   * obtained once, not that one can be obtained now. Trusting it in status()
+   * meant auth_status could keep reporting `signedIn: true` while every Graph
+   * call failed — which sends you looking for a bug in the wrong place.
+   */
+  private async verify(): Promise<boolean> {
     try {
       const token = await this.credential.getToken(this.scopes);
       if (!token) {
@@ -99,9 +113,9 @@ export class AuthSession {
   async status(): Promise<AuthStatus> {
     let signedIn = false;
     try {
-      signedIn = await this.probe();
+      signedIn = await this.verify();
     } catch (err) {
-      logger.warn({ err }, "auth probe failed");
+      logger.warn({ err }, "auth check failed");
     }
     return {
       state: this.state,
