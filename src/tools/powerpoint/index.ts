@@ -11,6 +11,7 @@ import {
   replaceText,
   type SlideSpec as MinimalSlideSpec,
 } from "../../ooxml/pptx.js";
+import { uploadContent } from "../../graph/upload.js";
 
 const DeckRef = z.object({
   driveId: z.string().optional(),
@@ -33,8 +34,7 @@ async function downloadPptx(ctx: ToolContext, ref: z.infer<typeof DeckRef>): Pro
 }
 
 async function uploadPptx(ctx: ToolContext, ref: z.infer<typeof DeckRef>, buf: Buffer): Promise<unknown> {
-  const base = drivePrefix(ref);
-  return ctx.graph.api(`${base}/items/${ref.itemId}/content`).put(buf);
+  return uploadContent(ctx.graph, drivePrefix(ref), { itemId: ref.itemId }, buf);
 }
 
 async function uploadNewPptxToPath(
@@ -42,10 +42,7 @@ async function uploadNewPptxToPath(
   scope: { driveId?: string; siteId?: string; parentPath: string; filename: string },
   buf: Buffer,
 ): Promise<unknown> {
-  const base = drivePrefix(scope);
-  const parent = scope.parentPath.replace(/\/$/, "");
-  const path = `${base}/root:${parent}/${scope.filename}:/content`;
-  return ctx.graph.api(path).put(buf);
+  return uploadContent(ctx.graph, drivePrefix(scope), scope, buf);
 }
 
 async function downloadTemplateBytes(

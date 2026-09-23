@@ -21,6 +21,8 @@ export interface ServerConfig {
   listTools: boolean;
   /** When true, delete the cached OAuth tokens and exit before starting the server. */
   logout: boolean;
+  /** Largest single MCP message accepted on stdin. Bounds how big a base64 upload can be. */
+  maxMessageBytes: number;
 }
 
 export interface ToolContext {

@@ -14,6 +14,7 @@ import {
   listParagraphs,
   replaceText,
 } from "../../ooxml/docx.js";
+import { uploadContent } from "../../graph/upload.js";
 
 /**
  * Word tools download the .docx, manipulate document.xml (OOXML) via the
@@ -40,8 +41,7 @@ async function downloadDocx(ctx: ToolContext, ref: z.infer<typeof DocRef>): Prom
 }
 
 async function uploadDocx(ctx: ToolContext, ref: z.infer<typeof DocRef>, buf: Buffer): Promise<unknown> {
-  const base = drivePrefix(ref);
-  return ctx.graph.api(`${base}/items/${ref.itemId}/content`).put(buf);
+  return uploadContent(ctx.graph, drivePrefix(ref), { itemId: ref.itemId }, buf);
 }
 
 async function uploadNewDocxToPath(
@@ -49,10 +49,7 @@ async function uploadNewDocxToPath(
   scope: { driveId?: string; siteId?: string; parentPath: string; filename: string },
   buf: Buffer,
 ): Promise<unknown> {
-  const base = drivePrefix(scope);
-  const parent = scope.parentPath.replace(/\/$/, "");
-  const path = `${base}/root:${parent}/${scope.filename}:/content`;
-  return ctx.graph.api(path).put(buf);
+  return uploadContent(ctx.graph, drivePrefix(scope), scope, buf);
 }
 
 async function downloadTemplateBytes(

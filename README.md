@@ -649,6 +649,7 @@ All settings can be passed as CLI flags **or** environment variables.
 | `MCP_DISABLED_TOOLS` | `--disabled-tools` | – | CSV of tool names to hide entirely |
 | `MCP_TOKEN_CACHE_PATH` | `--token-cache` | `~/.microsoft365-mcp/tokencache.json` | Its directory holds `authrecord.json`; a non-default path also gets its own token store |
 | `MCP_LOG_LEVEL` | – | `info` | Pino log level (stderr) |
+| `MCP_MAX_MESSAGE_MB` | – | `64` | Largest MCP message accepted, in MiB. Caps `files_upload` at roughly ¾ of this, since content arrives base64-encoded |
 
 ---
 
@@ -697,7 +698,7 @@ Most "this doesn't work" reports on business tenants aren't bugs in this server 
 
 These are real gaps in *this* server, tracked in [Roadmap](#roadmap):
 
-- **Large file uploads (>4 MB) not yet supported.** `files_upload` uses the single-shot endpoint. Bigger files return a 413 from Graph. Upload sessions are on the roadmap.
+- **Upload size.** Anything over 4 MB goes through a Graph upload session automatically, including Office files the server generates and `files_copy`. `files_upload` receives content base64-encoded inside the tool call, so it is bounded by `MCP_MAX_MESSAGE_MB` (default 64 MiB, so files up to about 47 MB). For bigger files, let the OneDrive client sync them.
 - **Downloads are base64-encoded in the tool result.** Fine for small files; memory-heavy for large ones. Streaming/resource-URI downloads are planned.
 - **No webhook / change-notification tools.** You can't subscribe to mailbox or drive changes — only poll.
 - **Retry is bounded.** The Graph SDK's default `RetryHandler` automatically retries 429/503/504 responses up to 3 times with 3-second base delay (honoring the `Retry-After` header). If a request still fails after that, the error propagates to the caller. Re-invoke the tool, or work in smaller batches if you're hitting tenant throttle ceilings.
@@ -764,7 +765,7 @@ Picking this up cold? [docs/handover.md](./docs/handover.md) has the current sta
 
 ## Roadmap
 
-- [ ] Large-file upload sessions (>4 MB)
+- [x] Large-file upload sessions (>4 MB)
 - [ ] Streaming downloads (return resource URIs instead of base64)
 - [ ] Subscription/webhook tools (real-time change notifications)
 - [ ] MCP Resources for notebooks, sites, and mailboxes

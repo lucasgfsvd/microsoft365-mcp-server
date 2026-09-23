@@ -37,4 +37,4 @@ Microsoft Graph throttles per-tenant and per-app. Back off, reduce `top` page si
 
 ## Large files
 
-`files_upload` is capped at 4 MB in v0.1. Upload sessions for larger files are on the roadmap — track the issue or contribute a PR.
+`files_upload` takes files up to about 47 MB: the content arrives base64-encoded inside the tool call, and MCP messages are capped at `MCP_MAX_MESSAGE_MB` (default 64). Raise that for larger files, or let the OneDrive client sync them. If the server exits in the middle of a large call, look for `MCP transport error` / `ReadBuffer exceeded maximum size` in its log — that is this limit.

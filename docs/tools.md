@@ -97,7 +97,7 @@ Graph combines entity types only within the SharePoint/OneDrive family (`driveIt
 | `files_copy` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
 | `files_share` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
 
-`files_upload` and `files_copy` are capped at 4 MB in v0.1; large-file upload sessions are on the roadmap.
+`files_upload` and `files_copy` use a Graph upload session above 4 MB, sent in 10 MiB chunks with retry and resume. `files_upload` is bounded by `MCP_MAX_MESSAGE_MB`, because its content arrives base64-encoded in the tool call: about 47 MB at the default of 64. `files_copy` downloads and re-uploads, so it holds the file in memory.
 
 ## 💬 Teams — 9 tools
 

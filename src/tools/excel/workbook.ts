@@ -4,6 +4,7 @@ import type { ToolDefinition, ToolContext } from "../../types.js";
 import { DrivePath, Filename } from "../../util/schema.js";
 import { drivePrefix } from "./shared.js";
 import type { Cell } from "./shared.js";
+import { uploadContent } from "../../graph/upload.js";
 
 /**
  * Whole-file operations. The only Excel tools that build bytes locally with
@@ -16,10 +17,7 @@ async function uploadNewXlsxToPath(
   scope: { driveId?: string; siteId?: string; parentPath: string; filename: string },
   buf: Buffer,
 ): Promise<unknown> {
-  const base = drivePrefix(scope);
-  const parent = scope.parentPath.replace(/\/$/, "");
-  const path = `${base}/root:${parent}/${scope.filename}:/content`;
-  return ctx.graph.api(path).put(buf);
+  return uploadContent(ctx.graph, drivePrefix(scope), scope, buf);
 }
 
 async function downloadTemplateBytes(

@@ -10,6 +10,7 @@ const ENV_KEYS = [
   "MCP_ENABLE_MAIL_WRITE",
   "MCP_DISABLED_TOOLS",
   "MCP_SCOPES",
+  "MCP_MAX_MESSAGE_MB",
 ];
 
 describe("loadConfig", () => {
@@ -85,5 +86,20 @@ describe("loadConfig", () => {
     process.env.MCP_ENABLE_WRITES = "true";
     const c = loadConfig(["node", "idx"]);
     expect(c.scopes).toEqual(["User.Read", "Mail.Read"]);
+  });
+
+  // The SDK's 10 MiB stdio default capped base64 uploads near 7.5 MB, and an
+  // over-limit message ended the server.
+  it("accepts 64 MiB messages by default, configurable", () => {
+    expect(loadConfig(["node", "x"]).maxMessageBytes).toBe(64 * 1024 * 1024);
+    process.env.MCP_MAX_MESSAGE_MB = "128";
+    expect(loadConfig(["node", "x"]).maxMessageBytes).toBe(128 * 1024 * 1024);
+  });
+
+  it("rejects a message limit that is not a positive whole number", () => {
+    for (const bad of ["0", "-5", "1.5", "lots"]) {
+      process.env.MCP_MAX_MESSAGE_MB = bad;
+      expect(() => loadConfig(["node", "x"])).toThrow(/MCP_MAX_MESSAGE_MB/);
+    }
   });
 });

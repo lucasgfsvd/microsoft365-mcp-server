@@ -120,6 +120,13 @@ export function loadConfig(argv: string[]): ServerConfig {
       .filter(Boolean),
   );
 
+  // The MCP SDK's stdio default is 10 MiB, which caps base64 uploads near 7.5 MB,
+  // and a message over the limit closes the transport and ends the server.
+  const maxMessageMb = Number(process.env.MCP_MAX_MESSAGE_MB ?? 64);
+  if (!Number.isInteger(maxMessageMb) || maxMessageMb < 1) {
+    throw new Error(`MCP_MAX_MESSAGE_MB must be a positive whole number of MiB, got "${process.env.MCP_MAX_MESSAGE_MB}".`);
+  }
+
   return {
     authMode,
     tenantId,
@@ -134,5 +141,6 @@ export function loadConfig(argv: string[]): ServerConfig {
     logLevel: process.env.MCP_LOG_LEVEL ?? "info",
     listTools: Boolean(opts.listTools),
     logout: Boolean(opts.logout),
+    maxMessageBytes: maxMessageMb * 1024 * 1024,
   };
 }

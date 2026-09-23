@@ -111,7 +111,14 @@ export async function startServer(config: ServerConfig): Promise<void> {
     }
   });
 
-  const transport = new StdioServerTransport();
+  // An over-limit message makes the SDK close the transport, and with it the
+  // process. Say so, rather than vanishing with exit code 0.
+  server.onerror = (err) => logger.error({ err: err.message }, "MCP transport error");
+  server.onclose = () => logger.warn("MCP transport closed; server exiting");
+
+  const transport = new StdioServerTransport(process.stdin, process.stdout, {
+    maxBufferSize: config.maxMessageBytes,
+  });
   await server.connect(transport);
   logger.info({ toolCount: registry.list(config).length }, "microsoft365-mcp-server ready (stdio)");
 

@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { ToolDefinition } from "../../types.js";
 import { fetchPage } from "../../graph/pagination.js";
 import { DrivePath, Filename, PaginationInput } from "../../util/schema.js";
+import { uploadContent } from "../../graph/upload.js";
 
 function drivePrefix(input: { driveId?: string; siteId?: string }): string {
   if (input.driveId) return `/drives/${input.driveId}`;
@@ -94,7 +95,11 @@ export const filesTools: ToolDefinition[] = [
   {
     name: "files_upload",
     surface: "files",
-    description: "Upload (or overwrite) a file. Use for files ≤ 4 MB; larger files require an upload session (not yet exposed).",
+    description:
+      "Upload (or overwrite) a file. Any size: files over 4 MB are sent through an upload session " +
+      "automatically. Content travels base64-encoded inside the tool call, which caps a file at " +
+      "roughly 47 MB under the default MCP_MAX_MESSAGE_MB of 64; very large files are better " +
+      "synced by the OneDrive client.",
     mutating: true,
     requiredScopes: ["Files.ReadWrite.All", "Sites.ReadWrite.All"],
     inputSchema: ScopeInput.extend({
@@ -103,13 +108,8 @@ export const filesTools: ToolDefinition[] = [
       contentBase64: z.string().describe("File bytes, base64-encoded."),
     }),
     handler: async (input, ctx) => {
-      const base = drivePrefix(input);
       const buf = Buffer.from(input.contentBase64, "base64");
-      if (buf.byteLength > 4 * 1024 * 1024) {
-        throw new Error("files_upload only supports <=4 MB. Large file upload sessions are not yet implemented.");
-      }
-      const path = `${base}/root:${input.parentPath.replace(/\/$/, "")}/${input.filename}:/content`;
-      return ctx.graph.api(path).put(buf);
+      return uploadContent(ctx.graph, drivePrefix(input), input, buf);
     },
   },
   {
@@ -170,14 +170,7 @@ export const filesTools: ToolDefinition[] = [
       const chunks: Buffer[] = [];
       for await (const c of stream) chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c));
       const buf = Buffer.concat(chunks);
-      if (buf.byteLength > 4 * 1024 * 1024) {
-        throw new Error(
-          "files_copy currently downloads+uploads and is capped at 4 MB. Use Graph's async copy for larger files.",
-        );
-      }
-      const parent = input.destinationParentPath.replace(/\/$/, "");
-      const targetPath = `${base}/root:${parent}/${input.destinationName}:/content`;
-      return ctx.graph.api(targetPath).put(buf);
+      return uploadContent(ctx.graph, base, { parentPath: input.destinationParentPath, filename: input.destinationName }, buf);
     },
   },
   {
