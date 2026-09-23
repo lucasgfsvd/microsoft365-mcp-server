@@ -1,12 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { promises as fs } from "node:fs";
-import os from "node:os";
-import path from "node:path";
+import { describe, it, expect } from "vitest";
 import type { AccessToken, TokenCredential } from "@azure/identity";
 import type { ServerConfig } from "../src/types.js";
 import { AuthSession } from "../src/auth/session.js";
-import { authRecordPath } from "../src/auth/tokenCache.js";
-import { runLogout } from "../src/cli.js";
 
 function makeConfig(over: Partial<ServerConfig> = {}): ServerConfig {
   return {
@@ -66,40 +61,5 @@ describe("AuthSession.status", () => {
     expect((await auth.status()).signedIn).toBe(false);
     state.ok = true;
     expect((await auth.status()).signedIn).toBe(true);
-  });
-});
-
-describe("runLogout", () => {
-  let dir: string;
-  beforeEach(async () => {
-    dir = await fs.mkdtemp(path.join(os.tmpdir(), "m365-logout-"));
-  });
-  afterEach(async () => {
-    await fs.rm(dir, { recursive: true, force: true });
-  });
-
-  // Regression: logout removed the token cache but left authrecord.json, so a
-  // restart still believed it knew the account whose token had just been deleted.
-  it("removes the authentication record as well as the token cache", async () => {
-    const cachePath = path.join(dir, "tokencache.json");
-    await fs.writeFile(cachePath, "{}");
-    await fs.writeFile(authRecordPath(cachePath), "{}");
-
-    await runLogout(makeConfig({ tokenCachePath: cachePath }));
-
-    await expect(fs.access(cachePath)).rejects.toThrow();
-    await expect(fs.access(authRecordPath(cachePath))).rejects.toThrow();
-  });
-
-  it("is idempotent when nothing is there", async () => {
-    const cachePath = path.join(dir, "tokencache.json");
-    await expect(runLogout(makeConfig({ tokenCachePath: cachePath }))).resolves.toBeUndefined();
-  });
-
-  it("still clears the record when only the record remains", async () => {
-    const cachePath = path.join(dir, "tokencache.json");
-    await fs.writeFile(authRecordPath(cachePath), "{}");
-    await runLogout(makeConfig({ tokenCachePath: cachePath }));
-    await expect(fs.access(authRecordPath(cachePath))).rejects.toThrow();
   });
 });

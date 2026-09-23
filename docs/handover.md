@@ -59,12 +59,6 @@ Verified running. The distroless runtime has no `libsecret`, so the cache plugin
 
 ---
 
-## `--logout` leaves tokens in the store
-
-`runLogout` removes `authrecord.json` (and a `tokencache.json` that has never existed). The tokens live in the identity plugin's store (`%LOCALAPPDATA%\.IdentityService\<name>` on Windows, keychain/keyring elsewhere) and are not touched. The next start is signed out, so this is not a functional bug, but a refresh token stays on disk until it expires. The README says so. Fixing it means deleting the store per platform, including the keychain entry, and the `.cae` variant the plugin may create.
-
----
-
 ## Other candidates
 
 From the roadmap, roughly in value order:
@@ -77,6 +71,8 @@ From the roadmap, roughly in value order:
 ---
 
 ## Working notes
+
+**The token store is not ours, and not always private.** `@azure/identity-cache-persistence` owns it and offers no clear/delete API; `src/auth/tokenStore.ts` mirrors its platform selection to reach it. On macOS and Linux with a keyring it is one keychain item (`Microsoft.Developer.IdentityService`/`MSALCache`) shared by every app on the machine using that plugin, whatever name is passed; even the Windows file held tokens for two client ids on the development machine. So anything that edits it must remove only entries with our `client_id`, never the whole item. If the plugin changes where it stores things, `tokenStore.ts` has to follow.
 
 Things that cost time to learn.
 

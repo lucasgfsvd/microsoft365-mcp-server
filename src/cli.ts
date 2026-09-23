@@ -1,9 +1,9 @@
 import { promises as fs } from "node:fs";
-import path from "node:path";
 import { allTools } from "./tools/index.js";
 import { isToolAllowed } from "./util/writeGuard.js";
 import { SURFACES, type ServerConfig } from "./types.js";
 import { authRecordPath } from "./auth/tokenCache.js";
+import { clearStoredTokens } from "./auth/tokenStore.js";
 
 /**
  * Print the tool catalogue grouped by surface, marking which tools are
@@ -39,36 +39,43 @@ export function runListTools(config: ServerConfig): void {
 }
 
 /**
- * Delete the cached OAuth token file. Best-effort: ENOENT is treated as
- * already-logged-out. Note that on platforms with `keytar`, the OS keychain
- * may also hold a copy of the cache — that gets overwritten on the next
- * sign-in, but if you're trying to fully revoke access, do it from
- * https://myapps.microsoft.com as well.
+ * Sign out: remove this server's tokens from the persistent store, and the
+ * record naming which account to reuse. Either alone is not enough — the record
+ * without tokens makes a restart believe it is signed in, and tokens without the
+ * record leave a usable refresh token on disk.
+ *
+ * Revoking the grant itself is separate: https://myapps.microsoft.com.
  */
-export async function runLogout(config: ServerConfig): Promise<void> {
-  // Both files matter. The record names which account to reuse, so leaving it
-  // behind means the next start believes it is still signed in to an account
-  // whose token we just deleted.
-  const targets = [config.tokenCachePath, authRecordPath(config.tokenCachePath)];
-  let removed = 0;
+export async function runLogout(
+  config: ServerConfig,
+  clear: typeof clearStoredTokens = clearStoredTokens,
+): Promise<void> {
+  const out = (line: string) => process.stdout.write(line + "\n");
 
-  for (const target of targets) {
-    try {
-      await fs.unlink(target);
-      process.stdout.write(`Removed ${target}\n`);
-      removed++;
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
-    }
+  const store = await clear(config);
+  switch (store.status) {
+    case "cleared":
+      out(
+        store.deletedStore
+          ? `Removed the token store ${store.location}`
+          : `Removed ${store.removed} token(s) for this app from ${store.location} (other apps' tokens kept)`,
+      );
+      break;
+    case "nothing-stored":
+      out(`No tokens stored in ${store.location}`);
+      break;
+    case "unavailable":
+      out(`No persistent token store on this system (${store.reason}); nothing to clear there.`);
+      break;
   }
 
-  if (removed === 0) {
-    process.stdout.write(
-      `Nothing to remove under ${path.dirname(config.tokenCachePath)} - already logged out.\n`,
-    );
+  const record = authRecordPath(config.tokenCachePath);
+  try {
+    await fs.unlink(record);
+    out(`Removed ${record}`);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+    out(`No authentication record at ${record}`);
   }
-  process.stdout.write(
-    "Note: where a keychain is in use the OS store may still hold a copy until the " +
-      "next sign-in overwrites it. To revoke access outright, use https://myapps.microsoft.com.\n",
-  );
+  out("To revoke this app's access outright, use https://myapps.microsoft.com.");
 }

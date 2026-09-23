@@ -76,7 +76,7 @@ export function loadConfig(argv: string[]): ServerConfig {
     .option("--disabled-tools <csv>", "Comma-separated tool names to hide")
     .option("--token-cache <path>", "Token cache file path")
     .option("--list-tools", "Print the tool catalogue and exit (no server, no auth)")
-    .option("--logout", "Delete the cached OAuth token and exit (forces re-auth on next run)")
+    .option("--logout", "Remove this app's stored tokens and sign-in record, then exit (forces re-auth on next run)")
     .allowExcessArguments(true)
     .allowUnknownOption(true)
     .parse(argv);
