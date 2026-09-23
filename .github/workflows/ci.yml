@@ -17,10 +17,6 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      # keytar is an optionalDependency, but @azure/identity-cache-persistence
-      # imports it statically, so anything touching the auth module needs
-      # libsecret present or the import throws ERR_DLOPEN_FAILED.
-      - run: sudo apt-get update && sudo apt-get install -y libsecret-1-0
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck

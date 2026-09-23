@@ -7,16 +7,45 @@ import {
   useIdentityPlugin,
   type TokenCredential,
 } from "@azure/identity";
-import { cachePersistencePlugin } from "@azure/identity-cache-persistence";
 import { logger } from "../util/logger.js";
 import type { ServerConfig } from "../types.js";
 import { defaultCachePath } from "./tokenCache.js";
 
-let cachePluginRegistered = false;
-function ensureCachePlugin(): void {
-  if (cachePluginRegistered) return;
-  useIdentityPlugin(cachePersistencePlugin);
-  cachePluginRegistered = true;
+let cachePlugin: Promise<boolean> | undefined;
+
+/**
+ * Register the persistent token cache, reporting whether it is available.
+ *
+ * Loaded lazily because the plugin pulls in `keytar` at module load, and keytar
+ * dlopens libsecret on Linux. Where libsecret is missing (headless hosts, the
+ * distroless image) a static import would take the whole process down before
+ * any fallback could run. Instead we degrade to an in-memory cache: sign-in
+ * still works, it just does not survive a restart.
+ */
+export function ensureCachePlugin(
+  load: () => Promise<{ cachePersistencePlugin: Parameters<typeof useIdentityPlugin>[0] }> = () =>
+    import("@azure/identity-cache-persistence"),
+): Promise<boolean> {
+  cachePlugin ??= load().then(
+    ({ cachePersistencePlugin }) => {
+      useIdentityPlugin(cachePersistencePlugin);
+      return true;
+    },
+    (err: unknown) => {
+      logger.warn(
+        { err: err instanceof Error ? err.message : String(err) },
+        "auth: persistent token cache unavailable; tokens will be held in memory only " +
+          "and sign-in will not survive a restart",
+      );
+      return false;
+    },
+  );
+  return cachePlugin;
+}
+
+/** Test seam: forget the memoised plugin load. */
+export function resetCachePluginForTests(): void {
+  cachePlugin = undefined;
 }
 
 export interface DeviceCodePrompt {
@@ -44,20 +73,25 @@ export const deviceCodeEmitter = new EventEmitter();
  * - client-credentials: unattended; requires tenant + client id + secret and admin-consented app perms.
  * - interactive: opens a local browser for auth code + PKCE.
  */
-export function buildCredential(
+export async function buildCredential(
   config: ServerConfig,
   authenticationRecord?: AuthenticationRecord,
-): TokenCredential {
+): Promise<TokenCredential> {
   const { authMode, tenantId, clientId, clientSecret, redirectUri } = config;
-  const tokenCachePersistenceOptions = {
-    enabled: true,
-    name: "microsoft365-mcp",
-    unsafeAllowUnencryptedStorage: true,
-  } as const;
+  // Only ask for persistence when the plugin actually loaded: requesting it with
+  // no provider registered makes @azure/identity throw.
+  const persist = async () =>
+    (await ensureCachePlugin())
+      ? ({
+          enabled: true,
+          name: "microsoft365-mcp",
+          unsafeAllowUnencryptedStorage: true,
+        } as const)
+      : undefined;
 
   switch (authMode) {
-    case "device-code":
-      ensureCachePlugin();
+    case "device-code": {
+      const tokenCachePersistenceOptions = await persist();
       logger.info({ tenantId, clientId }, "auth: using device code flow");
       return new DeviceCodeCredential({
         tenantId,
@@ -82,6 +116,7 @@ export function buildCredential(
           );
         },
       });
+    }
 
     case "client-credentials":
       if (!clientSecret) {
@@ -93,8 +128,8 @@ export function buildCredential(
       logger.info({ tenantId, clientId }, "auth: using client credentials flow");
       return new ClientSecretCredential(tenantId, clientId, clientSecret);
 
-    case "interactive":
-      ensureCachePlugin();
+    case "interactive": {
+      const tokenCachePersistenceOptions = await persist();
       logger.info({ tenantId, clientId }, "auth: using interactive browser flow");
       return new InteractiveBrowserCredential({
         tenantId,
@@ -104,6 +139,7 @@ export function buildCredential(
         authenticationRecord,
         disableAutomaticAuthentication: true,
       });
+    }
   }
 }
 

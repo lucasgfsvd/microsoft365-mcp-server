@@ -6,7 +6,7 @@ State of play and what to pick up next. Written for whoever continues this work 
 
 ## Where things stand
 
-96 tools across 12 surfaces. 97 tests. CI gates lint, typecheck, coverage thresholds, `npm audit` (blocking, high severity, production deps), a full-history gitleaks scan, and the Docker build.
+96 tools across 12 surfaces. 100 tests. CI gates lint, typecheck, coverage thresholds, `npm audit` (blocking, high severity, production deps), a full-history gitleaks scan, and the Docker build.
 
 Recently landed and worth knowing about:
 
@@ -93,33 +93,15 @@ There is no single delta endpoint. Each resource has its own shape:
 
 ---
 
-## Second open defect: keytar is documented as optional but is not
+## Unverified: the container image
 
-The README says the token cache falls back to a `chmod 600` JSON file where no
-keyring is available, and `keytar` is declared in `optionalDependencies`. Both
-suggest its absence degrades gracefully.
+The cache plugin (which loads `keytar`, which dlopens `libsecret`) is now imported
+lazily, and a failed load degrades to an in-memory token cache instead of killing
+the process. CI no longer installs `libsecret`, so any regression to a static
+import fails there.
 
-It does not. `src/auth/index.ts` statically imports
-`@azure/identity-cache-persistence`, which requires `keytar` at module load. On
-a system without `libsecret`, that import throws `ERR_DLOPEN_FAILED` before any
-fallback logic can run — so importing the auth module at all is fatal, not just
-using the persistent cache.
-
-Surfaced when a CI runner (headless Linux) failed on a test that imports
-`AuthSession`. CI now installs `libsecret-1-0` to unblock itself, which is a
-workaround, not the fix.
-
-**Where this likely bites for real:** the Dockerfile runs on
-`gcr.io/distroless/nodejs24-debian12`, which almost certainly has no libsecret,
-and `npm prune --omit=dev` keeps optional deps. CI builds that image but never
-runs it, so this would not be caught. **Worth verifying before anyone relies on
-the container** — run it and see whether the server starts.
-
-The fix is to load the plugin lazily and tolerate failure, so `ensureCachePlugin`
-degrades to the documented file-based cache instead of taking the process down.
-Note that `buildCredential` is synchronous, so a plain `await import()` changes
-its signature; `createRequire` inside a try/catch keeps it sync, but check how
-tsup bundles that before committing to it.
+What has **not** been done is running the distroless image. CI builds it but never
+starts it. `docker run` it once and confirm the server reaches `ready (stdio)`.
 
 ---
 
