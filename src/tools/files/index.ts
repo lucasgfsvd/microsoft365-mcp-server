@@ -3,17 +3,8 @@ import type { ToolDefinition } from "../../types.js";
 import { fetchPage } from "../../graph/pagination.js";
 import { DrivePath, Filename, PaginationInput } from "../../util/schema.js";
 import { uploadContent } from "../../graph/upload.js";
-
-function drivePrefix(input: { driveId?: string; siteId?: string }): string {
-  if (input.driveId) return `/drives/${input.driveId}`;
-  if (input.siteId) return `/sites/${input.siteId}/drive`;
-  return `/me/drive`;
-}
-
-const ScopeInput = z.object({
-  driveId: z.string().optional().describe("Drive id. Omit to use the user's OneDrive."),
-  siteId: z.string().optional().describe("SharePoint site id (use sites_search to discover)."),
-});
+import { drivePrefix, ScopeInput } from "./scope.js";
+import { filesDownloadTools } from "./download.js";
 
 export const filesTools: ToolDefinition[] = [
   {
@@ -61,18 +52,6 @@ export const filesTools: ToolDefinition[] = [
     handler: async (input, ctx) => {
       const base = drivePrefix(input);
       return fetchPage(ctx.graph, `${base}/root/search(q='${encodeURIComponent(input.query)}')`, input);
-    },
-  },
-  {
-    name: "files_download",
-    surface: "files",
-    description: "Download a file's bytes (base64-encoded in the response).",
-    requiredScopes: ["Files.Read.All", "Sites.Read.All"],
-    inputSchema: ScopeInput.extend({ itemId: z.string() }),
-    handler: async (input, ctx) => {
-      const base = drivePrefix(input);
-      const ab: ArrayBuffer = await ctx.graph.api(`${base}/items/${input.itemId}/content`).getStream().then(streamToArrayBuffer);
-      return { base64: Buffer.from(ab).toString("base64"), byteLength: ab.byteLength };
     },
   },
   {
@@ -192,13 +171,5 @@ export const filesTools: ToolDefinition[] = [
       });
     },
   },
+  ...filesDownloadTools,
 ];
-
-async function streamToArrayBuffer(stream: NodeJS.ReadableStream): Promise<ArrayBuffer> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
-  const buf = Buffer.concat(chunks);
-  return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
-}

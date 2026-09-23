@@ -649,6 +649,7 @@ All settings can be passed as CLI flags **or** environment variables.
 | `MCP_DISABLED_TOOLS` | `--disabled-tools` | – | CSV of tool names to hide entirely |
 | `MCP_TOKEN_CACHE_PATH` | `--token-cache` | `~/.microsoft365-mcp/tokencache.json` | Its directory holds `authrecord.json`; a non-default path also gets its own token store |
 | `MCP_LOG_LEVEL` | – | `info` | Pino log level (stderr) |
+| `MCP_DOWNLOAD_DIR` | – | *(unset)* | Folder `files_download` may stream files into with `saveToDisk: true`. Unset, saving to disk is refused. The server never overwrites a file there |
 | `MCP_MAX_MESSAGE_MB` | – | `64` | Largest MCP message accepted, in MiB. Caps `files_upload` at roughly ¾ of this, since content arrives base64-encoded |
 
 ---
@@ -699,7 +700,7 @@ Most "this doesn't work" reports on business tenants aren't bugs in this server 
 These are real gaps in *this* server, tracked in [Roadmap](#roadmap):
 
 - **Upload size.** Anything over 4 MB goes through a Graph upload session automatically, including Office files the server generates and `files_copy`. `files_upload` receives content base64-encoded inside the tool call, so it is bounded by `MCP_MAX_MESSAGE_MB` (default 64 MiB, so files up to about 47 MB). For bigger files, let the OneDrive client sync them.
-- **Downloads are base64-encoded in the tool result.** Fine for small files; memory-heavy for large ones. Streaming/resource-URI downloads are planned.
+- **Downloads.** Whatever `files_download` returns inline lands in the conversation, so it returns text files as text, anything else as base64, and nothing over 5 MB. For larger or binary files, set `MCP_DOWNLOAD_DIR` and pass `saveToDisk: true`: the file is streamed to that folder in constant memory and the result is only its path, size and SHA-256. Existing files are never overwritten.
 - **No webhook / change-notification tools.** You can't subscribe to mailbox or drive changes — only poll.
 - **Retry is bounded.** The Graph SDK's default `RetryHandler` automatically retries 429/503/504 responses up to 3 times with 3-second base delay (honoring the `Retry-After` header). If a request still fails after that, the error propagates to the caller. Re-invoke the tool, or work in smaller batches if you're hitting tenant throttle ceilings.
 - **OOXML edits (Word / PowerPoint) download → mutate → re-upload.** No partial updates. Large decks mean large round-trips; concurrent edits by a human in the web app can be overwritten.
@@ -766,7 +767,7 @@ Picking this up cold? [docs/handover.md](./docs/handover.md) has the current sta
 ## Roadmap
 
 - [x] Large-file upload sessions (>4 MB)
-- [ ] Streaming downloads (return resource URIs instead of base64)
+- [x] Streaming downloads (to a configured folder, via `saveToDisk`)
 - [ ] Subscription/webhook tools (real-time change notifications)
 - [ ] MCP Resources for notebooks, sites, and mailboxes
 - [ ] Prompt templates for common workflows (triage, meeting-prep)

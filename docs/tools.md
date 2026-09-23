@@ -97,6 +97,8 @@ Graph combines entity types only within the SharePoint/OneDrive family (`driveIt
 | `files_copy` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
 | `files_share` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
 
+`files_download` returns up to 5 MB inline, as text for text files and base64 otherwise, since the result lands in the conversation. With `saveToDisk: true` it streams any size into `MCP_DOWNLOAD_DIR` and returns only the path, size and SHA-256; it never overwrites a file there, and refuses if the folder is not configured.
+
 `files_upload` and `files_copy` use a Graph upload session above 4 MB, sent in 10 MiB chunks with retry and resume. `files_upload` is bounded by `MCP_MAX_MESSAGE_MB`, because its content arrives base64-encoded in the tool call: about 47 MB at the default of 64. `files_copy` downloads and re-uploads, so it holds the file in memory.
 
 ## 💬 Teams — 9 tools

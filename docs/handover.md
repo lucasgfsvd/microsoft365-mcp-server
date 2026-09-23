@@ -63,7 +63,6 @@ Verified running. The distroless runtime has no `libsecret`, so the cache plugin
 
 From the roadmap, roughly in value order:
 
-- **Streaming downloads** — downloads are base64 inside the tool result, which is memory-heavy for anything sizeable. MCP Resources would be the idiomatic fix, and are also on the roadmap.
 - **Prompt templates** — triage, meeting-prep. Low effort, and the place where multi-surface workflows become discoverable instead of something the caller has to invent.
 - **Per-tool retry policy** — currently the SDK default: 3 retries, 3s base delay, honours `Retry-After`.
 
@@ -72,6 +71,8 @@ From the roadmap, roughly in value order:
 ## Working notes
 
 **Large MCP messages end the server.** The SDK's stdio transport rejects any message over its buffer limit by closing the transport, and the process then exits with code 0. The server now sets that limit from `MCP_MAX_MESSAGE_MB` (default 64) and logs the error and the close. Anything that puts big payloads in a tool call, `files_upload` above all, is bounded by it. Upload sessions (`src/graph/upload.ts`) have been verified live at 6, 25 and 45 MB.
+
+**Nothing big goes back through a tool result either.** A result lands in the model's context and has to fit the *client's* inbound message limit (10 MiB by the SDK default), so `files_download` refuses more than 5 MB inline. Big files stream to `MCP_DOWNLOAD_DIR` instead (`src/graph/download.ts`), verified live at 45 MB with flat memory. MCP resources were considered and not built: each read is still one message, so they would not lift the size limit.
 
 **The token store is not ours, and not always private.** `@azure/identity-cache-persistence` owns it and offers no clear/delete API; `src/auth/tokenStore.ts` mirrors its platform selection to reach it. On macOS and Linux with a keyring it is one keychain item (`Microsoft.Developer.IdentityService`/`MSALCache`) shared by every app on the machine using that plugin, whatever name is passed; even the Windows file held tokens for two client ids on the development machine. So anything that edits it must remove only entries with our `client_id`, never the whole item. If the plugin changes where it stores things, `tokenStore.ts` has to follow.
 

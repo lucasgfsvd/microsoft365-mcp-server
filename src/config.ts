@@ -1,3 +1,4 @@
+import path from "node:path";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -142,5 +143,6 @@ export function loadConfig(argv: string[]): ServerConfig {
     listTools: Boolean(opts.listTools),
     logout: Boolean(opts.logout),
     maxMessageBytes: maxMessageMb * 1024 * 1024,
+    downloadDir: process.env.MCP_DOWNLOAD_DIR ? path.resolve(process.env.MCP_DOWNLOAD_DIR) : undefined,
   };
 }

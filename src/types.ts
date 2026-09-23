@@ -23,6 +23,8 @@ export interface ServerConfig {
   logout: boolean;
   /** Largest single MCP message accepted on stdin. Bounds how big a base64 upload can be. */
   maxMessageBytes: number;
+  /** Where files_download may write with saveToDisk. Unset disables writing to disk. */
+  downloadDir?: string;
 }
 
 export interface ToolContext {
