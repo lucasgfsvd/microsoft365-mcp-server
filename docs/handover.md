@@ -10,6 +10,7 @@ State of play and what to pick up next. Written for whoever continues this work 
 
 Recently landed and worth knowing about:
 
+- **Per-path token stores.** `MCP_TOKEN_CACHE_PATH` now selects a token store of its own; before, every process shared one whatever the path said.
 - **Lazy auth.** The server starts silent and signs in only when `auth_sign_in` is called. It used to warm the credential at startup, which minted a device code on *every* client launch that nobody entered, and which expired unused ~15 minutes later. The README's "Auth & token cache" section has the full reasoning.
 - **`graph_batch_get`** — up to 20 Graph GETs in one `$batch`. Measured 2.4× faster than four sequential tool calls against a live tenant; the gap widens with more requests.
 - **`graph_search`** — one relevance-ranked Microsoft Search query across mail, files, SharePoint, Teams or people.
@@ -17,54 +18,28 @@ Recently landed and worth knowing about:
 
 ---
 
-## Open defect: token acquisition can fail after an in-process sign-in
+## Sign-in defect: not reproducible, probably a code handed to the wrong process
 
-**The most valuable thing in this document. Do not "fix" it without a reproduction.**
+**Status: closed unless it recurs.** Kept here because the reasoning is what to reuse if it does.
 
-### Symptom
+### The symptom
 
-After completing `auth_sign_in` in a running server, `auth_status` reported `signedIn: true` while every Graph call failed with:
+After `auth_sign_in`, `auth_status` said `signedIn: true` while every Graph call failed with `AuthenticationRequiredError: Automatic authentication has been disabled`. A restart fixed it.
 
-```
-AuthenticationRequiredError: Automatic authentication has been disabled.
-You may call the authentication() method.
-```
+### What was tested
 
-Restarting the process fixed it immediately, and the startup log then read `using cached Microsoft 365 credentials`.
+- **One process, its own store, first-ever sign-in.** The server started with no auth record, a sign-in was completed within that running process, and it called Graph immediately and again 60 seconds later without restarting. All six calls succeeded; all seven silent token requests after sign-in succeeded. This was the exact scenario the old "credential built without a record" hypothesis blamed, and it does not fail. That matches the library: `authenticate()` keeps the account in the credential's own state (`state.cachedAccount`, `@azure/identity` 4.x `msalClient.js`), so the record on disk only matters to a *new* process.
+- **Contention.** Three servers on one signed-in store, 45 interleaved Graph calls, no failures and no lock errors.
 
-### Leading hypothesis
+`SwappableCredential`, the fix that was tried and reverted, is therefore not needed.
 
-The credential is constructed once in `startServer`, reading `authrecord.json` from disk. On a first-ever sign-in that file does not exist yet, so the credential is built **without** an `authenticationRecord`. `authenticate()` then succeeds and writes the record to disk — but the live credential instance still has none, and a credential with `disableAutomaticAuthentication: true` and no record cannot select an account from the persistent cache silently.
+### The explanation that fits
 
-That would explain a restart fixing it: the next start does find the record.
+At the time, every server warmed its credential at startup, so every process printed its own device code, and several processes were always running. Entering one process's code signs in *that* process. The process being queried kept no account in its state and failed with exactly this error. `auth_status` said otherwise because of the since-fixed stale-flag bug. A restart helped because the new process read the auth record the *other* process had written. And a lone server never failed because it had only one code.
 
-### Why it is not fixed
+Both halves are already closed: codes are only issued by an explicit `auth_sign_in`, and `status()` checks the credential. The one remaining edge: a server that is running when *another* process signs in does not pick that up until it restarts. If that ever matters, the fix is to re-read `authrecord.json` when a token request finds no account, not to wrap the credential.
 
-An attempt was made — a `SwappableCredential` wrapper, so `AuthSession` could replace the credential with one built around the new record. It typechecked, passed every test, then failed a live Graph call. The subsequent "revert" test then *passed* with the same code still in the working tree, because uncommitted changes had followed a branch switch. Same code, same test, opposite results.
-
-So the failure is **intermittent**, and the wrapper was never shown to be either the cause or the cure. It was reverted rather than shipped on a guess.
-
-A later attempt at a standalone reproduction also failed to converge: a script constructing a credential with the same options as `buildCredential` could not acquire a token, while the server could, minutes apart, against the same cache.
-
-### What is known
-
-- Consent is not the problem. Every scope group — including the admin-consent Teams ones, and `.default` — acquires a token silently when the credential has a record.
-- Several server processes were running concurrently during every failed observation (a client-connected one plus test instances). **Contention on the OS credential store between processes sharing one cache is untested but plausible.**
-- A single server, running alone, has never been observed to fail.
-
-### What the library code says
-
-Reading `@azure/identity` (4.x, `msalClient.js`) undercuts the leading hypothesis. `authenticate()` stores the signed-in account in the credential's own state (`state.cachedAccount = response.account`), and every later `getToken` on that instance uses it for a silent request. A record on disk is only needed by a *new* process. Graph calls and `auth_sign_in` share one credential instance (`startServer` builds it once), so a missing record should not be able to cause this in-process.
-
-### Shared-cache finding
-
-Until the fix that gave each path its own store, **every server process shared one token store** whatever `MCP_TOKEN_CACHE_PATH` said: the plugin keys its store by name, and the name was fixed. That fits the one observation that holds — failures only ever happened with several processes running — and it also meant no test process could have been isolated before. A non-default `MCP_TOKEN_CACHE_PATH` now gets its own store.
-
-### Suggested approach
-
-1. Reproduce with one process on its own store: point `MCP_TOKEN_CACHE_PATH` at an empty directory (that alone gives a fresh store now), start one server, `auth_sign_in`, then call Graph without restarting. Run with `AZURE_LOG_LEVEL=info`: the library logs `No cached account found in local state` when the account is missing, which separates the two explanations. An attempt was set up but the device code was never entered, so this is still untested.
-2. If it passes, test contention directly: two servers pointed at the **same** path, one signing in while the other calls `getToken`.
-3. `SwappableCredential` is not the fix unless step 1 fails, and the library code above says it should not.
+To reproduce it on purpose: start two servers on one fresh `MCP_TOKEN_CACHE_PATH`, call `auth_sign_in` on both, enter only the first code, then call Graph on the second.
 
 ---
 
