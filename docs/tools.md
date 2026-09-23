@@ -19,17 +19,22 @@ Start here: every other tool needs a signed-in session. Neither of these is muta
 - `auth_status` reports `signed-in` / `sign-in-required`, and surfaces a device code that is still waiting to be entered.
 - The server never starts a sign-in on its own. Launching it issues no prompt; a code appears only when you ask for one.
 
-## ⚡ Graph — 1 tool
+## ⚡ Graph — 2 tools
 
 | Tool | Scopes | Mutating |
 |---|---|:---:|
 | `graph_batch_get` | *(whatever the sub-requests need)* | |
+| `graph_search` | `Mail.Read`, `Files.Read.All`, `Sites.Read.All` | |
 
 Runs up to 20 Graph **GET** requests as a single round trip. Measured at ~2.4× faster than four separate tool calls against a live tenant, and the gap widens with more requests since it stays one round trip either way.
 
 Each item takes an `id` you choose and a Graph-relative `url`; results come back in the order requested, each with its own `status`, so one failing sub-request does not lose the others.
 
 **GET only, deliberately.** Batching arbitrary methods would route mutations around `writeGuard`, which is the single place writes are authorised. Sub-request URLs are validated to be Graph-relative — an absolute URL would send your token to a host of the caller's choosing.
+
+`graph_search` runs one relevance-ranked query across mail, files, SharePoint, Teams or people — use it when you don't already know which surface something lives on, rather than running four `*_search` tools and merging by hand.
+
+Graph combines entity types only within the SharePoint/OneDrive family (`driveItem`, `list`, `listItem`, `site`). `message`, `event`, `chatMessage` and `person` each need their own call — **including `message` and `event`, which cannot be combined**, despite both being mail-ish. The tool refuses an invalid combination before spending a round trip.
 
 ## 📧 Mail (Outlook) — 9 tools
 
