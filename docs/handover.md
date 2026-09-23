@@ -66,7 +66,7 @@ A later attempt at a standalone reproduction also failed to converge: a script c
 
 All five resources were exercised against a live tenant: initial sync, resuming from a `nextLink`, and a follow-up from the `deltaLink` returning nothing new. Page sizing is resource-specific — Outlook resources honour `Prefer: odata.maxpagesize`, drive ignores it and needs `$top` instead.
 
-**Removals, live:** the `@removed` form is confirmed — a contact created, synced, deleted and synced again came back in `removed` with its id and reason `deleted`. The drive's `deleted` facet is still only unit-tested; confirm it the same way with a throwaway file (`files_upload`, `files_delete`). To Do has no delete tool, so it cannot be tested through the server.
+**Removals, live:** both forms are confirmed. A contact and a OneDrive file were each created, synced, deleted and synced again; each came back in `removed` with its id and reason `deleted`, and not in `changed`. On drive, the parent folder also shows up in `changed`, because a child changing modifies it — expected, not a leak. To Do has no delete tool, so its removals cannot be tested through the server, but it shares the contacts' `@removed` form.
 
 ---
 
