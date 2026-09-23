@@ -757,6 +757,10 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) — contributions welcome, especially n
 
 ---
 
+## Handover
+
+Picking this up cold? [docs/handover.md](./docs/handover.md) has the current state, the one open defect (with what has been ruled out), and the next feature written up in enough detail to start on.
+
 ## Roadmap
 
 - [ ] Large-file upload sessions (>4 MB)
