@@ -19,12 +19,13 @@ Start here: every other tool needs a signed-in session. Neither of these is muta
 - `auth_status` reports `signed-in` / `sign-in-required`, and surfaces a device code that is still waiting to be entered.
 - The server never starts a sign-in on its own. Launching it issues no prompt; a code appears only when you ask for one.
 
-## ⚡ Graph — 2 tools
+## ⚡ Graph — 3 tools
 
 | Tool | Scopes | Mutating |
 |---|---|:---:|
 | `graph_batch_get` | *(whatever the sub-requests need)* | |
 | `graph_search` | `Mail.Read`, `Files.Read.All`, `Sites.Read.All` | |
+| `graph_delta` | `Mail.Read`, `Calendars.Read`, `Files.Read`, `Contacts.Read`, `Tasks.Read` (per resource) | |
 
 Runs up to 20 Graph **GET** requests as a single round trip. Measured at ~2.4× faster than four separate tool calls against a live tenant, and the gap widens with more requests since it stays one round trip either way.
 
@@ -35,6 +36,12 @@ Each item takes an `id` you choose and a Graph-relative `url`; results come back
 `graph_search` runs one relevance-ranked query across mail, files, SharePoint, Teams or people — use it when you don't already know which surface something lives on, rather than running four `*_search` tools and merging by hand.
 
 Graph combines entity types only within the SharePoint/OneDrive family (`driveItem`, `list`, `listItem`, `site`). `message`, `event`, `chatMessage` and `person` each need their own call — **including `message` and `event`, which cannot be combined**, despite both being mail-ish. The tool refuses an invalid combination before spending a round trip.
+
+`graph_delta` is incremental sync: what was added, changed **or deleted** since last time, for mail (one folder, default inbox), calendar (a `startDateTime`–`endDateTime` window), drive, contacts, or one To Do list. The first call returns the current state and a `deltaLink`; pass that back as `cursor` to get only later changes. Deletions come back in `removed`, which is the reason to use delta at all — a listing can only show that something is absent.
+
+- **The server stores nothing.** The `deltaLink` goes back to the caller, so there is no sync state to go stale or migrate.
+- **Large first syncs are cut at `maxItems`** (default 500) with `complete: false` and a `nextLink` to continue. Treat the sync as done only once a `deltaLink` arrives. Drive pages can overshoot the cap slightly, and drive may repeat an item within one sync; the last occurrence wins.
+- **Cursors must be Graph delta URLs.** The Graph client attaches your token to whatever URL it is given, so anything else is refused before a request is made.
 
 ## 📧 Mail (Outlook) — 9 tools
 

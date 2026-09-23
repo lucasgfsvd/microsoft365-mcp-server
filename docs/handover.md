@@ -6,13 +6,14 @@ State of play and what to pick up next. Written for whoever continues this work 
 
 ## Where things stand
 
-96 tools across 12 surfaces. 100 tests. CI gates lint, typecheck, coverage thresholds, `npm audit` (blocking, high severity, production deps), a full-history gitleaks scan, and the Docker build.
+97 tools across 12 surfaces. 113 tests. CI gates lint, typecheck, coverage thresholds, `npm audit` (blocking, high severity, production deps), a full-history gitleaks scan, and the Docker build.
 
 Recently landed and worth knowing about:
 
 - **Lazy auth.** The server starts silent and signs in only when `auth_sign_in` is called. It used to warm the credential at startup, which minted a device code on *every* client launch that nobody entered, and which expired unused ~15 minutes later. The README's "Auth & token cache" section has the full reasoning.
 - **`graph_batch_get`** — up to 20 Graph GETs in one `$batch`. Measured 2.4× faster than four sequential tool calls against a live tenant; the gap widens with more requests.
 - **`graph_search`** — one relevance-ranked Microsoft Search query across mail, files, SharePoint, Teams or people.
+- **`graph_delta`** — incremental sync for mail, calendar, drive, contacts and To Do; the `deltaLink` goes back to the caller. See [tools.md](./tools.md#-graph--3-tools).
 
 ---
 
@@ -61,35 +62,11 @@ A later attempt at a standalone reproduction also failed to converge: a script c
 
 ---
 
-## Next feature: delta queries
+## Delta: what live testing has and has not covered
 
-The highest-value remaining item, and the prerequisite for anything recurring.
+All five resources were exercised against a live tenant: initial sync, resuming from a `nextLink`, and a follow-up from the `deltaLink` returning nothing new. Page sizing is resource-specific — Outlook resources honour `Prefer: odata.maxpagesize`, drive ignores it and needs `$top` instead.
 
-### Why
-
-Delta is incremental sync: ask what changed since last time and get back only additions, modifications and **deletions**, plus a fresh token. That last part is the point — a full listing cannot tell you something was deleted, only that it is absent.
-
-Subscriptions (on the roadmap) address a similar need but require a public webhook endpoint, which a local stdio server does not have. Delta gets most of the value with no infrastructure.
-
-### Why it is more work than it looks
-
-There is no single delta endpoint. Each resource has its own shape:
-
-| Resource | Path | Wrinkle |
-|---|---|---|
-| Mail | `/me/mailFolders/{id}/messages/delta` | needs a folder id; there is no `/me/messages/delta` |
-| Calendar | `/me/calendarView/delta` | requires `startDateTime` and `endDateTime` |
-| Drive | `/me/drive/root/delta` | the straightforward one |
-| Contacts | `/me/contacts/delta` | straightforward |
-| To Do | `/me/todo/lists/{id}/tasks/delta` | needs a list id |
-
-### Design sketch
-
-- Put `src/graph/delta.ts` alongside `batch.ts` and `search.ts`, exporting a resource descriptor table plus one `fetchDelta()`.
-- Expose `graph_delta` on the `graph` surface, taking either a resource enum with its required parameters, or an opaque `deltaLink` from a prior call.
-- **Return the `@odata.deltaLink` to the caller rather than persisting it.** Server-side sync state means a store, a staleness question and a migration path. Handing the token back keeps the server stateless, which everything else here already is.
-- Paging: a delta response may carry `@odata.nextLink` instead of `@odata.deltaLink`. Follow those to completion before returning, or the caller gets a partial picture with no way to know.
-- `@removed` markers are the whole reason to use delta. Surface them explicitly; do not filter them out.
+**Not yet seen live: a removal.** The tenant had no deletions between calls, so `@removed` (Outlook family) and the drive `deleted` facet are handled only as documented and unit-tested. Delete something between two calls and confirm it lands in `removed`.
 
 ---
 

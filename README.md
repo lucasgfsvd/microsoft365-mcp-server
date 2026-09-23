@@ -39,7 +39,7 @@ Mail · Calendar · Contacts · OneDrive · SharePoint · Teams · To Do · Plan
 | 📝 **Word** | ✅ | ✅ | Create documents (from scratch or **from templates** with placeholder fill-in), append headings/bullets/paragraphs, insert at index, find-and-replace |
 | 🎞️ **PowerPoint** | ✅ | ✅ | Create decks (from scratch or **from templates** with placeholder fill-in + extra slides), append/delete slides, find-and-replace across slides |
 
-96 tools total. The full reference is in [docs/tools.md](./docs/tools.md).
+97 tools total. The full reference is in [docs/tools.md](./docs/tools.md).
 
 ---
 
