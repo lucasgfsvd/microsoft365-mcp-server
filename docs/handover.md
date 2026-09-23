@@ -93,6 +93,36 @@ There is no single delta endpoint. Each resource has its own shape:
 
 ---
 
+## Second open defect: keytar is documented as optional but is not
+
+The README says the token cache falls back to a `chmod 600` JSON file where no
+keyring is available, and `keytar` is declared in `optionalDependencies`. Both
+suggest its absence degrades gracefully.
+
+It does not. `src/auth/index.ts` statically imports
+`@azure/identity-cache-persistence`, which requires `keytar` at module load. On
+a system without `libsecret`, that import throws `ERR_DLOPEN_FAILED` before any
+fallback logic can run — so importing the auth module at all is fatal, not just
+using the persistent cache.
+
+Surfaced when a CI runner (headless Linux) failed on a test that imports
+`AuthSession`. CI now installs `libsecret-1-0` to unblock itself, which is a
+workaround, not the fix.
+
+**Where this likely bites for real:** the Dockerfile runs on
+`gcr.io/distroless/nodejs24-debian12`, which almost certainly has no libsecret,
+and `npm prune --omit=dev` keeps optional deps. CI builds that image but never
+runs it, so this would not be caught. **Worth verifying before anyone relies on
+the container** — run it and see whether the server starts.
+
+The fix is to load the plugin lazily and tolerate failure, so `ensureCachePlugin`
+degrades to the documented file-based cache instead of taking the process down.
+Note that `buildCredential` is synchronous, so a plain `await import()` changes
+its signature; `createRequire` inside a try/catch keeps it sync, but check how
+tsup bundles that before committing to it.
+
+---
+
 ## Other candidates
 
 From the roadmap, roughly in value order:
