@@ -23,7 +23,8 @@ updated = 2026-09-24
 next_actions = [
   "Add subscription/webhook tools for real-time Graph change notifications (roadmap; 'Known limitations' notes you can only poll today).",
   "Expose MCP Resources for notebooks, sites and mailboxes (roadmap).",
-  "Exercise the remaining ~90 tools against a live tenant and harden the OOXML paths (PowerPoint add_slide/delete_slide, Word append_heading/insert_paragraph_at/delete_paragraph) before tagging 0.2.0.",
+  "Exercise the last 8 tools live (OneNote page writes, Planner tasks, Teams channel posts) in a sandbox team/plan/notebook; 89/97 pass today (scripts/live/).",
+  "Give powerpoint_create_deck slides real title placeholders (outline view and screen readers see them as untitled).",
   "Publish the npm package and Docker/GHCR image so the npx quickstart section stops being a stub.",
 ]
 

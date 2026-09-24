@@ -63,7 +63,8 @@ Verified running. The distroless runtime has no `libsecret`, so the cache plugin
 
 From the roadmap, roughly in value order:
 
-- **Exercise the remaining tools live**, and harden the OOXML paths (PowerPoint `add_slide`/`delete_slide`, Word `append_heading`/`insert_paragraph_at`/`delete_paragraph`) before tagging 0.2.0. Every live pass so far has found something the mocks could not.
+- **Title placeholders on created decks.** `powerpoint_create_deck` (pptxgenjs) writes slide titles as plain text boxes, so PowerPoint's outline view, its accessibility checker and screen readers see those slides as untitled; `powerpoint_add_slide` slides do have a title placeholder. Found by python-pptx in the live run. Fix: a pptxgenjs slide master with a title placeholder.
+- **The last 8 tools live:** OneNote page create/read/delete needs an account with a notebook; Planner and Teams channel posts need a sandbox team or plan nobody else relies on.
 - **MCP Resources** for notebooks, sites and mailboxes. Not for downloads: each resource read is one message, so it would not lift the size limit.
 - **Subscriptions (webhooks)** need a public HTTPS endpoint, which a local stdio server does not have. `graph_delta` covers most of the need without one.
 - **Publishing** to npm and GHCR is deliberately waiting on alpha feedback.
@@ -71,6 +72,8 @@ From the roadmap, roughly in value order:
 ---
 
 ## Working notes
+
+**Live tests live in `scripts/live/`** and are the first thing to rerun after touching a tool; see its README for what they write and clean up. Index arguments are 1-based throughout (`slideIndex`, `paragraphIndex`; `after: 0` means the top), which is easy to get wrong in a test and look like a tool bug. python-docx reports `None` as the style of unstyled paragraphs in documents made by the `docx` library, which declares no default paragraph style; that is harmless, since Word falls back to the document defaults.
 
 **A retried POST can act twice.** The SDK retries 429/503/504 for any JSON-bodied request, POSTs included, and a 503 or 504 can arrive after Graph already sent the mail or posted the message. `graphForTool` (`src/graph/retry.ts`) gives each tool call a client whose requests carry that tool's retry options; for a mutating tool, a POST is retried only on 429, which Graph returns before acting. Keep `mutating: true` accurate on new tools: it now decides retries as well as the write guard. `test/retry.test.ts` runs the SDK's real RetryHandler under nock, including a baseline showing the double send without the policy.
 

@@ -47,12 +47,12 @@ Mail · Calendar · Contacts · OneDrive · SharePoint · Teams · To Do · Plan
 
 This is an **early alpha**. Please calibrate expectations before depending on it:
 
-- **Verified end-to-end against a real Microsoft 365 business tenant:** device-code auth (incl. the in-chat sign-in prompt fallback), token caching, write-gate toggling, `mail_list_folders`.
-- **Unit tested (15 tests):** config parsing, the tool registry, the write-guard, and the full tool catalogue (see `test/`). CI runs these on every push.
-- **Code-reviewed but not yet exercised against a live tenant:** the remaining ~90 tools. Graph passthroughs (mail / calendar / files / teams / tasks / OneNote / Excel-via-Graph) are low risk — if Graph accepts the payload, it works. The higher-risk area is the **OOXML surgery** in the PowerPoint `add_slide`/`delete_slide` and Word `append_heading`/`insert_paragraph_at`/`delete_paragraph` tools: they generate and splice raw XML, so edge-case deck/document layouts can produce a file that opens but rendered slightly off, or in the worst case refuses to open. If you hit that, **please [open an issue](https://github.com/lucasgfsvd/microsoft365-mcp-server/issues) and attach the input file** — it's the fastest way to harden those paths.
+- **Exercised against a real Microsoft 365 business tenant: 89 of 97 tools.** Each call's result was checked, not just accepted. Word, PowerPoint and Excel files edited in place were also downloaded and opened with independent parsers (python-docx, python-pptx, openpyxl), including the OOXML surgery in `word_insert_paragraph_at` / `word_delete_paragraph` / `word_append_*` and `powerpoint_add_slide` / `powerpoint_delete_slide`. The live scripts are in [`scripts/live/`](./scripts/live/).
+- **Not yet exercised live:** OneNote page create / read / delete (the test account has no notebook), Planner task list / create / complete (no plans; writes are visible to plan members), and Teams channel post / reply (visible to the team).
+- **Unit tested:** 159 tests, including the SDK's real retry middleware under nock. CI runs lint, typecheck, tests with coverage, a production `npm audit`, a secret scan, and builds *and starts* the Docker image.
 - **Not yet published** — no npm package, no Docker image, no GHCR release. Install today is **clone + build locally** (see the Quickstart below). npm / Docker artefacts will come after the alpha shakes out.
 
-If you're evaluating this for anything more serious than experimentation, wait for the `0.2.0` tag — at which point more of the write-surface tools will have been exercised and the OOXML paths hardened based on early-alpha feedback.
+If you're evaluating this for anything more serious than experimentation, wait for the `0.2.0` tag. Documents with layouts the tests did not cover can still trip the OOXML editing: if a file comes out wrong, please [open an issue](https://github.com/lucasgfsvd/microsoft365-mcp-server/issues) and attach it.
 
 ---
 
