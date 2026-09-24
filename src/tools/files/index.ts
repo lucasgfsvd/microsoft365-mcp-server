@@ -3,7 +3,7 @@ import type { ToolDefinition } from "../../types.js";
 import { fetchPage } from "../../graph/pagination.js";
 import { DrivePath, Filename, PaginationInput } from "../../util/schema.js";
 import { uploadContent } from "../../graph/upload.js";
-import { drivePrefix, ScopeInput } from "./scope.js";
+import { drivePrefix, itemByPath, ScopeInput } from "./scope.js";
 import { filesDownloadTools } from "./download.js";
 
 export const filesTools: ToolDefinition[] = [
@@ -20,9 +20,7 @@ export const filesTools: ToolDefinition[] = [
       const base = drivePrefix(input);
       const target = input.itemId
         ? `${base}/items/${input.itemId}/children`
-        : input.path
-          ? `${base}/root:${input.path}:/children`
-          : `${base}/root/children`;
+        : `${itemByPath(base, input.path)}/children`;
       return fetchPage(ctx.graph, target, input);
     },
   },
@@ -39,7 +37,7 @@ export const filesTools: ToolDefinition[] = [
       const base = drivePrefix(input);
       const target = input.itemId
         ? `${base}/items/${input.itemId}`
-        : `${base}/root:${input.path ?? ""}`;
+        : itemByPath(base, input.path);
       return ctx.graph.api(target).get();
     },
   },
@@ -103,7 +101,7 @@ export const filesTools: ToolDefinition[] = [
     }),
     handler: async (input, ctx) => {
       const base = drivePrefix(input);
-      const target = `${base}/root:${input.parentPath}:/children`;
+      const target = `${itemByPath(base, input.parentPath)}/children`;
       return ctx.graph.api(target).post({
         name: input.name,
         folder: {},
@@ -144,7 +142,7 @@ export const filesTools: ToolDefinition[] = [
       const base = drivePrefix(input);
       const sourceUrl = input.itemId
         ? `${base}/items/${input.itemId}/content`
-        : `${base}/root:${input.path}:/content`;
+        : `${itemByPath(base, input.path)}/content`;
       const stream: NodeJS.ReadableStream = await ctx.graph.api(sourceUrl).getStream();
       const chunks: Buffer[] = [];
       for await (const c of stream) chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c));

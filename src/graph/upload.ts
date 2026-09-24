@@ -23,7 +23,7 @@ export interface UploadOptions {
 /** Graph address of the target, without the trailing `/content` or action. */
 function address(base: string, target: UploadTarget): string {
   if ("itemId" in target) return `${base}/items/${target.itemId}`;
-  return `${base}/root:${target.parentPath.replace(/\/$/, "")}/${target.filename}:`;
+  return `${base}/root:${target.parentPath.replace(/\/+$/, "")}/${target.filename}:`;
 }
 
 /**
