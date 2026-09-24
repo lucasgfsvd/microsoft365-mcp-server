@@ -12,6 +12,9 @@ import type { TokenCredential } from "@azure/identity";
  * don't need to implement their own retry logic — Graph throttling is handled
  * transparently up to that ceiling. Beyond that, errors propagate as
  * `GraphError` and are surfaced via `normalizeGraphError`.
+ *
+ * Tools never use this client directly: `graphForTool` (./retry.ts) wraps it
+ * per call, so a POST that sends or creates is retried only on 429.
  */
 export function buildGraphClient(credential: TokenCredential, scopes: string[]): GraphClient {
   const authProvider = new TokenCredentialAuthenticationProvider(credential, { scopes });

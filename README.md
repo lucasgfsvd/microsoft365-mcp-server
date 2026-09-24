@@ -714,7 +714,7 @@ These are real gaps in *this* server, tracked in [Roadmap](#roadmap):
 - **Upload size.** Anything over 4 MB goes through a Graph upload session automatically, including Office files the server generates and `files_copy`. `files_upload` receives content base64-encoded inside the tool call, so it is bounded by `MCP_MAX_MESSAGE_MB` (default 64 MiB, so files up to about 47 MB). For bigger files, let the OneDrive client sync them.
 - **Downloads.** Whatever `files_download` returns inline lands in the conversation, so it returns text files as text, anything else as base64, and nothing over 5 MB. For larger or binary files, set `MCP_DOWNLOAD_DIR` and pass `saveToDisk: true`: the file is streamed to that folder in constant memory and the result is only its path, size and SHA-256. Existing files are never overwritten.
 - **No webhook / change-notification tools.** You can't subscribe to mailbox or drive changes — only poll.
-- **Retry is bounded.** The Graph SDK's default `RetryHandler` automatically retries 429/503/504 responses up to 3 times with 3-second base delay (honoring the `Retry-After` header). If a request still fails after that, the error propagates to the caller. Re-invoke the tool, or work in smaller batches if you're hitting tenant throttle ceilings.
+- **Retry is bounded, and never repeats a send.** The Graph SDK retries 429/503/504 up to 3 times with a 3-second base delay, honouring `Retry-After`. The exception is a `POST` from a tool that sends or creates something (`mail_send_message`, `mail_reply_message`, `teams_post_*`, the `*_create_*` tools): those are retried only on 429. Graph turns a throttled request away before acting on it, whereas a 503 or 504 can arrive after the mail was already sent, and retrying would send it twice. If a request still fails, the error reaches the caller. For a failed send, check Sent Items before trying again.
 - **OOXML edits (Word / PowerPoint) download → mutate → re-upload.** No partial updates. Large decks mean large round-trips; concurrent edits by a human in the web app can be overwritten.
 - **Excel requires a workbook session for writes.** You must call `excel_create_session` first — this is a Graph requirement, not something we can abstract away.
 
@@ -785,7 +785,7 @@ Picking this up cold? [docs/handover.md](./docs/handover.md) has the current sta
 - [ ] MCP Resources for notebooks, sites, and mailboxes
 - [x] Prompt templates for common workflows (daily brief, inbox triage, meeting prep)
 - [ ] Loop/Whiteboard/Viva surfaces when Graph exposes them
-- [ ] Per-tool customisation of the SDK's retry policy (currently uses defaults: 3 retries, 3s base delay, honors `Retry-After`)
+- [x] Per-tool retry policy (mutating `POST`s retry only on 429; tools can set their own retry count and delay)
 
 ---
 

@@ -22,7 +22,6 @@ updated = 2026-09-24
 # The real next moves, most important first - taken from this repo's docs.
 next_actions = [
   "Add subscription/webhook tools for real-time Graph change notifications (roadmap; 'Known limitations' notes you can only poll today).",
-  "Make the SDK retry policy configurable per tool instead of the default 3 retries / 3s base delay (roadmap + handover.md).",
   "Expose MCP Resources for notebooks, sites and mailboxes (roadmap).",
   "Exercise the remaining ~90 tools against a live tenant and harden the OOXML paths (PowerPoint add_slide/delete_slide, Word append_heading/insert_paragraph_at/delete_paragraph) before tagging 0.2.0.",
   "Publish the npm package and Docker/GHCR image so the npx quickstart section stops being a stub.",

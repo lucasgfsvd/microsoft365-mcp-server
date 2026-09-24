@@ -63,11 +63,16 @@ Verified running. The distroless runtime has no `libsecret`, so the cache plugin
 
 From the roadmap, roughly in value order:
 
-- **Per-tool retry policy** — currently the SDK default: 3 retries, 3s base delay, honours `Retry-After`.
+- **Exercise the remaining tools live**, and harden the OOXML paths (PowerPoint `add_slide`/`delete_slide`, Word `append_heading`/`insert_paragraph_at`/`delete_paragraph`) before tagging 0.2.0. Every live pass so far has found something the mocks could not.
+- **MCP Resources** for notebooks, sites and mailboxes. Not for downloads: each resource read is one message, so it would not lift the size limit.
+- **Subscriptions (webhooks)** need a public HTTPS endpoint, which a local stdio server does not have. `graph_delta` covers most of the need without one.
+- **Publishing** to npm and GHCR is deliberately waiting on alpha feedback.
 
 ---
 
 ## Working notes
+
+**A retried POST can act twice.** The SDK retries 429/503/504 for any JSON-bodied request, POSTs included, and a 503 or 504 can arrive after Graph already sent the mail or posted the message. `graphForTool` (`src/graph/retry.ts`) gives each tool call a client whose requests carry that tool's retry options; for a mutating tool, a POST is retried only on 429, which Graph returns before acting. Keep `mutating: true` accurate on new tools: it now decides retries as well as the write guard. `test/retry.test.ts` runs the SDK's real RetryHandler under nock, including a baseline showing the double send without the policy.
 
 **To Do rejects query options that work elsewhere.** Seen live: `/me/todo/lists` answers "Invalid request" to a multi-field `$select` (a single field is silently ignored), and tasks inside `$batch` reject any `$filter` or `$select`; only `$top` works. The prompt templates (`src/prompts/`) fetch tasks plainly and filter in the model. Any new Graph query in a prompt should be run live before it ships: the prompts' queries were, and this is what it caught.
 
