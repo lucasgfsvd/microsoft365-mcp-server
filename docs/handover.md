@@ -70,6 +70,8 @@ From the roadmap, roughly in value order:
 
 ## Working notes
 
+**Tool results must go through `serializeResult`** (`src/util/redact.ts`). Graph attaches `@microsoft.graph.downloadUrl` to drive items: a `tempauth` link that downloads the file without authentication for about an hour. Results land in the model's context, transcripts and logs, so those keys are stripped at any depth, which covers listings, search, delta and batch alike.
+
 **Large MCP messages end the server.** The SDK's stdio transport rejects any message over its buffer limit by closing the transport, and the process then exits with code 0. The server now sets that limit from `MCP_MAX_MESSAGE_MB` (default 64) and logs the error and the close. Anything that puts big payloads in a tool call, `files_upload` above all, is bounded by it. Upload sessions (`src/graph/upload.ts`) have been verified live at 6, 25 and 45 MB.
 
 **Nothing big goes back through a tool result either.** A result lands in the model's context and has to fit the *client's* inbound message limit (10 MiB by the SDK default), so `files_download` refuses more than 5 MB inline. Big files stream to `MCP_DOWNLOAD_DIR` instead (`src/graph/download.ts`), verified live at 45 MB with flat memory. MCP resources were considered and not built: each read is still one message, so they would not lift the size limit.

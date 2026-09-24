@@ -711,6 +711,7 @@ These are real gaps in *this* server, tracked in [Roadmap](#roadmap):
 ## Security
 
 - **Read-only default.** Every mutating tool is hidden from `tools/list` until writes are enabled. Defense in depth: the handler re-checks at call time.
+- **No pre-authenticated links in results.** Graph attaches a temporary, unauthenticated download link (`@microsoft.graph.downloadUrl`) to every file it lists. The server strips these from all tool results, so they never reach the model or its transcripts.
 - **Token storage.** Cached locally with `chmod 600` (POSIX). On platforms with `keytar`, the cache is encrypted by the OS keychain. No tokens are logged — logger redacts common token fields.
 - **Least-privilege scopes.** The default scope set is read-only; write scopes are added automatically when `MCP_ENABLE_WRITES` (or any `MCP_ENABLE_<SURFACE>_WRITE` flag) is set. Override `MCP_SCOPES` to request a custom subset; tools whose scopes aren't granted simply won't succeed — the server stays up.
 - **Bring-your-own app registration.** The default public `MCP_CLIENT_ID` is convenient for trying things out; **don't use it in production**. Register your own app and set `MCP_CLIENT_ID` / `MCP_TENANT_ID`. The server logs a warning at startup when the default is in use.

@@ -17,6 +17,7 @@ import { assertAllowed } from "./util/writeGuard.js";
 import { normalizeGraphError } from "./graph/errors.js";
 import { logger } from "./util/logger.js";
 import { DEFAULT_PUBLIC_CLIENT_ID } from "./config.js";
+import { serializeResult } from "./util/redact.js";
 
 const SIGN_IN_HINT =
   "Not signed in to Microsoft 365. Call auth_sign_in to get a device code, enter it " +
@@ -95,7 +96,7 @@ export async function startServer(config: ServerConfig): Promise<void> {
 
       const result = await tool.handler(args, { graph, credential, config, auth });
       return {
-        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+        content: [{ type: "text", text: serializeResult(result) }],
         ...(tool.mutating ? { _meta: { requires_confirmation: true } } : {}),
       };
     } catch (err) {
