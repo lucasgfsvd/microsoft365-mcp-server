@@ -63,12 +63,13 @@ Verified running. The distroless runtime has no `libsecret`, so the cache plugin
 
 From the roadmap, roughly in value order:
 
-- **Prompt templates** — triage, meeting-prep. Low effort, and the place where multi-surface workflows become discoverable instead of something the caller has to invent.
 - **Per-tool retry policy** — currently the SDK default: 3 retries, 3s base delay, honours `Retry-After`.
 
 ---
 
 ## Working notes
+
+**To Do rejects query options that work elsewhere.** Seen live: `/me/todo/lists` answers "Invalid request" to a multi-field `$select` (a single field is silently ignored), and tasks inside `$batch` reject any `$filter` or `$select`; only `$top` works. The prompt templates (`src/prompts/`) fetch tasks plainly and filter in the model. Any new Graph query in a prompt should be run live before it ships: the prompts' queries were, and this is what it caught.
 
 **Tool results must go through `serializeResult`** (`src/util/redact.ts`). Graph attaches `@microsoft.graph.downloadUrl` to drive items: a `tempauth` link that downloads the file without authentication for about an hour. Results land in the model's context, transcripts and logs, so those keys are stripped at any depth, which covers listings, search, delta and batch alike.
 

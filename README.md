@@ -466,6 +466,18 @@ These stitch multiple tools together in a single prompt, which is the real pay-o
 
 ---
 
+### Built-in prompt templates
+
+The server also ships MCP **prompts**: ready-made workflows your client offers as commands (in Claude Code, `/mcp__microsoft365__daily-brief` and so on).
+
+| Prompt | Arguments | What it does |
+|---|---|---|
+| `daily-brief` | `date` (YYYY-MM-DD, default today) | Agenda with free blocks, unread and flagged mail, and open To Do tasks, gathered in one batched round trip |
+| `inbox-triage` | `since` (`24h` default, `3d`, or a date), `folder` | Sorts recent mail into act now / reply / read later / ignore, and drafts the replies (drafts only) |
+| `meeting-prep` | `meeting` (event id or subject words; default the next meeting) | One-page brief: attendees, recent related mail, documents, earlier meetings, and questions to raise |
+
+The prompts never send, reply, delete or move anything: replies are left in Drafts. A prompt is listed only when the tools it needs are enabled, and each adapts to what is. With writes off, triage writes suggested replies instead of drafting them. Dates are computed in the server's time zone.
+
 ## Tool reference
 
 <details>
@@ -771,7 +783,7 @@ Picking this up cold? [docs/handover.md](./docs/handover.md) has the current sta
 - [x] Streaming downloads (to a configured folder, via `saveToDisk`)
 - [ ] Subscription/webhook tools (real-time change notifications)
 - [ ] MCP Resources for notebooks, sites, and mailboxes
-- [ ] Prompt templates for common workflows (triage, meeting-prep)
+- [x] Prompt templates for common workflows (daily brief, inbox triage, meeting prep)
 - [ ] Loop/Whiteboard/Viva surfaces when Graph exposes them
 - [ ] Per-tool customisation of the SDK's retry policy (currently uses defaults: 3 retries, 3s base delay, honors `Retry-After`)
 
