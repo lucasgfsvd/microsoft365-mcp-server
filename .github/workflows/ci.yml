@@ -36,7 +36,7 @@ jobs:
           # still in the objects, so scanning only the tip would miss it.
           fetch-depth: 0
       - name: Scan history for committed secrets
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
