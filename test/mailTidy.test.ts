@@ -13,18 +13,17 @@ const msg = () => ({
 
 // Found live: 41% of a newsletter's text body was invisible padding.
 describe("mail_get_message tidying", () => {
-  it("strips padding from the text body and the preview", () => {
+  // The preview is tidied for every tool by serializeResult (see redact.test.ts).
+  it("strips padding from the text body", () => {
     const out = tidyMessage(msg(), "text");
     expect(out.body?.content).toBe("Hello world\n\nBye");
-    expect(out.bodyPreview).toBe("Offer inside");
     expect(out.subject).toBe("News");
   });
 
-  it("leaves an HTML body as sent, tidying only the preview", () => {
+  it("leaves an HTML body as sent", () => {
     const html = { ...msg(), body: { contentType: "html", content: "<pre>a   b\n\n\n c</pre>" } };
     const out = tidyMessage(html, "html");
     expect(out.body.content).toBe("<pre>a   b\n\n\n c</pre>");
-    expect(out.bodyPreview).toBe("Offer inside");
   });
 
   it("is applied by the tool, which still asks Outlook for the requested format", async () => {

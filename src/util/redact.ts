@@ -1,3 +1,5 @@
+import { tidyText } from "./text.js";
+
 /**
  * Keys Graph fills with pre-authenticated URLs. `@microsoft.graph.downloadUrl`
  * (and its older name `@content.downloadUrl`) carries a `tempauth` token: anyone
@@ -8,7 +10,25 @@
  */
 const PRE_AUTHENTICATED = new Set(["@microsoft.graph.downloadUrl", "@content.downloadUrl"]);
 
-/** Serialize a tool result for the client, dropping pre-authenticated links at any depth. */
+/**
+ * `bodyPreview` is always plain text, and it is where newsletters put their
+ * invisible padding (228 of one message's 255 characters). Tidying it here covers
+ * every tool that returns messages: list, search, delta and raw batch results.
+ */
+const TIDY = new Set(["bodyPreview"]);
+
+/**
+ * Serialize a tool result for the client: drop pre-authenticated links and tidy
+ * message previews, at any depth.
+ */
 export function serializeResult(result: unknown): string {
-  return JSON.stringify(result, (key, value) => (PRE_AUTHENTICATED.has(key) ? undefined : value), 2);
+  return JSON.stringify(
+    result,
+    (key, value) => {
+      if (PRE_AUTHENTICATED.has(key)) return undefined;
+      if (TIDY.has(key) && typeof value === "string") return tidyText(value);
+      return value;
+    },
+    2,
+  );
 }

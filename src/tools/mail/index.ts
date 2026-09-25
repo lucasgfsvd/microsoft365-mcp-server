@@ -14,13 +14,12 @@ const toRecipient = (r: z.infer<typeof Recipient>) => ({
 });
 
 /**
- * Strip invisible padding from a message's text. Only the plain-text body is
- * tidied: collapsing whitespace in HTML could change how it renders (<pre>).
- * The preview is plain text in either format, and is where the padding lives.
+ * Strip invisible padding from a message's plain-text body. An HTML body is
+ * left alone: collapsing its whitespace could change how it renders (<pre>).
+ * `bodyPreview` is tidied for every tool by serializeResult.
  */
-export function tidyMessage<M extends { body?: { content?: string }; bodyPreview?: string }>(msg: M, bodyFormat: "text" | "html"): M {
+export function tidyMessage<M extends { body?: { content?: string } }>(msg: M, bodyFormat: "text" | "html"): M {
   const out = { ...msg };
-  if (typeof out.bodyPreview === "string") out.bodyPreview = tidyText(out.bodyPreview);
   if (bodyFormat === "text" && typeof out.body?.content === "string") out.body = { ...out.body, content: tidyText(out.body.content) };
   return out;
 }

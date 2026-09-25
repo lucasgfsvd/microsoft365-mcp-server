@@ -25,6 +25,19 @@ describe("serializeResult", () => {
     });
   });
 
+  // Found live: 228 of one newsletter's 255 preview characters were padding.
+  it("tidies message previews wherever they appear, and nothing else", () => {
+    const pad = "‌ ͏­ ‌ ";
+    const listing = {
+      value: [{ subject: `Keep${pad}this`, bodyPreview: `Offer${pad}${pad}inside` }],
+      responses: [{ body: { value: [{ bodyPreview: `Nested${pad}preview` }] } }],
+    };
+    expect(JSON.parse(serializeResult(listing))).toEqual({
+      value: [{ subject: `Keep${pad}this`, bodyPreview: "Offer inside" }],
+      responses: [{ body: { value: [{ bodyPreview: "Nested preview" }] } }],
+    });
+  });
+
   it("serializes ordinary results unchanged", () => {
     expect(serializeResult({ a: [1, "b"], c: null })).toBe(JSON.stringify({ a: [1, "b"], c: null }, null, 2));
   });
