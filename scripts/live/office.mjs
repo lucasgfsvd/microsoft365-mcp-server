@@ -112,7 +112,7 @@ try {
     const all = await srv.call("powerpoint_extract_all_text", { itemId: id });
     record("powerpoint_delete_slide (check)", all.ok && !all.text.includes("Slide Two") && all.text.includes("Slide Three") && (await count()).length === 2, all.text.slice(0, 200));
     await saveAndParse("powerpoint (python-pptx parse)", id,
-      "import sys, pptx; p = pptx.Presentation(sys.argv[1]); print(len(p.slides), 'slides:', [s.shapes.title.text if s.shapes.title else None for s in p.slides])");
+      "import sys, pptx; p = pptx.Presentation(sys.argv[1]); t = [s.shapes.title.text if s.shapes.title else None for s in p.slides]; print(len(p.slides), 'slides:', t); sys.exit(1 if None in t else 0)");
     await step(srv, "powerpoint_create_from_template", {
       templateItemId: id, parentPath: root, filename: "from-template.pptx",
       replacements: [{ find: "Point A", replace: "Point Templated" }],

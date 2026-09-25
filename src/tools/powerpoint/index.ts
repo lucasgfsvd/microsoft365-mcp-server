@@ -1,5 +1,4 @@
 import { z } from "zod";
-import PptxGenJS from "pptxgenjs";
 import type { ToolDefinition, ToolContext } from "../../types.js";
 import { DrivePath, Filename } from "../../util/schema.js";
 import {
@@ -12,6 +11,7 @@ import {
   type SlideSpec as MinimalSlideSpec,
 } from "../../ooxml/pptx.js";
 import { uploadContent } from "../../graph/upload.js";
+import { buildDeck } from "../../ooxml/newDeck.js";
 
 const DeckRef = z.object({
   driveId: z.string().optional(),
@@ -142,7 +142,8 @@ export const powerpointTools: ToolDefinition[] = [
     surface: "powerpoint",
     description:
       "Create a brand new .pptx from a list of slide specs and upload it to OneDrive/SharePoint. " +
-      "Each slide supports a title, bullet list, and speaker notes. Uses pptxgenjs (16:9, default theme). " +
+      "Each slide supports a title, bullet list, and speaker notes. 16:9, default theme; titles and bullets use real " +
+      "title and body placeholders, so outline view and screen readers see each slide's title. " +
       "Returns the driveItem metadata of the new file.",
     mutating: true,
     requiredScopes: ["Files.ReadWrite.All", "Sites.ReadWrite.All"],
@@ -156,24 +157,7 @@ export const powerpointTools: ToolDefinition[] = [
       slides: z.array(SlideSpec).min(1),
     }),
     handler: async (input, ctx) => {
-      const pres = new PptxGenJS();
-      pres.layout = "LAYOUT_WIDE";
-      if (input.title) pres.title = input.title;
-      if (input.author) pres.author = input.author;
-      for (const spec of input.slides) {
-        const slide = pres.addSlide();
-        if (spec.title) {
-          slide.addText(spec.title, { x: 0.5, y: 0.3, w: 12, h: 1, fontSize: 32, bold: true });
-        }
-        if (spec.bullets && spec.bullets.length) {
-          slide.addText(
-            (spec.bullets as string[]).map((t: string) => ({ text: t, options: { bullet: true } })),
-            { x: 0.5, y: 1.5, w: 12, h: 5.5, fontSize: 18, valign: "top" },
-          );
-        }
-        if (spec.notes) slide.addNotes(spec.notes);
-      }
-      const out = (await pres.write({ outputType: "nodebuffer" })) as Buffer;
+      const out = await buildDeck(input.slides, { title: input.title, author: input.author });
       const result = await uploadNewPptxToPath(
         ctx,
         {
@@ -182,7 +166,7 @@ export const powerpointTools: ToolDefinition[] = [
           parentPath: input.parentPath,
           filename: ensurePptxExt(input.filename),
         },
-        Buffer.isBuffer(out) ? out : Buffer.from(out),
+        out,
       );
       return { ok: true, slides: input.slides.length, driveItem: result };
     },

@@ -63,7 +63,6 @@ Verified running. The distroless runtime has no `libsecret`, so the cache plugin
 
 From the roadmap, roughly in value order:
 
-- **Title placeholders on created decks.** `powerpoint_create_deck` (pptxgenjs) writes slide titles as plain text boxes, so PowerPoint's outline view, its accessibility checker and screen readers see those slides as untitled; `powerpoint_add_slide` slides do have a title placeholder. Found by python-pptx in the live run. Fix: a pptxgenjs slide master with a title placeholder.
 - **The last 8 tools live:** OneNote page create/read/delete needs an account with a notebook; Planner and Teams channel posts need a sandbox team or plan nobody else relies on.
 - **MCP Resources** for notebooks, sites and mailboxes. Not for downloads: each resource read is one message, so it would not lift the size limit.
 - **Subscriptions (webhooks)** need a public HTTPS endpoint, which a local stdio server does not have. `graph_delta` covers most of the need without one.
