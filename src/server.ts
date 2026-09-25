@@ -20,6 +20,7 @@ import { DEFAULT_PUBLIC_CLIENT_ID } from "./config.js";
 import { serializeResult } from "./util/redact.js";
 import { registerPrompts } from "./prompts/index.js";
 import { graphForTool } from "./graph/retry.js";
+import { registerResources } from "./resources/index.js";
 
 const SIGN_IN_HINT =
   "Not signed in to Microsoft 365. Call auth_sign_in to get a device code, enter it " +
@@ -55,7 +56,7 @@ export async function startServer(config: ServerConfig): Promise<void> {
 
   const server = new Server(
     { name: "microsoft365-mcp-server", version: "0.1.0" },
-    { capabilities: { tools: {}, prompts: {}, logging: {} } },
+    { capabilities: { tools: {}, prompts: {}, resources: {}, logging: {} } },
   );
 
   // Surface the device-code prompt as an MCP logging notification so clients
@@ -71,7 +72,9 @@ export async function startServer(config: ServerConfig): Promise<void> {
       });
   });
 
-  registerPrompts(server, () => new Set(registry.list(config).map((t) => t.name)));
+  const visibleTools = () => new Set(registry.list(config).map((t) => t.name));
+  registerPrompts(server, visibleTools);
+  registerResources(server, { graph, visibleTools, signedIn: () => auth.probe(), signInHint: SIGN_IN_HINT });
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     const visible = registry.list(config);

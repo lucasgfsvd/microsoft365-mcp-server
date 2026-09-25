@@ -49,7 +49,7 @@ This is an **early alpha**. Please calibrate expectations before depending on it
 
 - **Exercised against a real Microsoft 365 business tenant: 89 of 97 tools.** Each call's result was checked, not just accepted. Word, PowerPoint and Excel files edited in place were also downloaded and opened with independent parsers (python-docx, python-pptx, openpyxl), including the OOXML surgery in `word_insert_paragraph_at` / `word_delete_paragraph` / `word_append_*` and `powerpoint_add_slide` / `powerpoint_delete_slide`. The live scripts are in [`scripts/live/`](./scripts/live/).
 - **Not yet exercised live:** OneNote page create / read / delete (the test account has no notebook), Planner task list / create / complete (no plans; writes are visible to plan members), and Teams channel post / reply (visible to the team).
-- **Unit tested:** 159 tests, including the SDK's real retry middleware under nock. CI runs lint, typecheck, tests with coverage, a production `npm audit`, a secret scan, and builds *and starts* the Docker image.
+- **Unit tested:** 172 tests, including the SDK's real retry middleware under nock. CI runs lint, typecheck, tests with coverage, a production `npm audit`, a secret scan, and builds *and starts* the Docker image.
 - **Not yet published** — no npm package, no Docker image, no GHCR release. Install today is **clone + build locally** (see the Quickstart below). npm / Docker artefacts will come after the alpha shakes out.
 
 If you're evaluating this for anything more serious than experimentation, wait for the `0.2.0` tag. Documents with layouts the tests did not cover can still trip the OOXML editing: if a file comes out wrong, please [open an issue](https://github.com/lucasgfsvd/microsoft365-mcp-server/issues) and attach it.
@@ -477,6 +477,18 @@ The server also ships MCP **prompts**: ready-made workflows your client offers a
 | `meeting-prep` | `meeting` (event id or subject words; default the next meeting) | One-page brief: attendees, recent related mail, documents, earlier meetings, and questions to raise |
 
 The prompts never send, reply, delete or move anything: replies are left in Drafts. A prompt is listed only when the tools it needs are enabled, and each adapts to what is. With writes off, triage writes suggested replies instead of drafting them. Dates are computed in the server's time zone.
+
+### Attaching mail, files and notes (MCP resources)
+
+The server exposes mail messages, OneDrive/SharePoint files and OneNote pages as MCP **resources**: things *you* attach as context, as opposed to tools the model decides to call. In Claude Code, `@`-mention them. The list offers your 20 most recent inbox messages, recent files and recent OneNote pages, and any item can be read by URI:
+
+| Resource | URI | Comes back as |
+|---|---|---|
+| Mail message | `m365://mail/{messageId}` | Headers and the plain-text body, with invisible padding stripped |
+| File | `m365://drive/{driveId}/{itemId}` | Word and PowerPoint as their text; other text files as text; anything else as a blob. Up to 5 MB, beyond which use `files_download` with `saveToDisk` |
+| OneNote page | `m365://onenote/{pageId}` | The page as plain text |
+
+A resource type is offered only while its read tool (`mail_get_message`, `files_download`, `onenote_get_page_content`) is enabled, so `MCP_DISABLED_TOOLS` covers resources too. Signed out, the list is empty and reading one points you to `auth_sign_in`.
 
 ## Tool reference
 

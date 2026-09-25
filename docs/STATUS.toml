@@ -22,7 +22,6 @@ updated = 2026-09-25
 # The real next moves, most important first - taken from this repo's docs.
 next_actions = [
   "Exercise the last 8 tools live (OneNote page writes, Planner tasks, Teams channel posts); 89/97 pass today (scripts/live/). Needs a sandbox team, plan and notebook, which the account owner has to approve.",
-  "Expose MCP Resources for notebooks, sites and mailboxes (roadmap).",
   "Add subscription/webhook tools for real-time change notifications - needs a public HTTPS endpoint a local stdio server lacks; graph_delta covers most of the need meanwhile.",
   "Publish the npm package and Docker/GHCR image so the npx quickstart section stops being a stub.",
 ]

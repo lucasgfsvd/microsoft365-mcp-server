@@ -6,7 +6,7 @@ State of play and what to pick up next. Written for whoever continues this work 
 
 ## Where things stand
 
-97 tools across 12 surfaces, plus three prompt templates. 162 unit tests. CI gates lint, typecheck, coverage thresholds, `npm audit` (blocking, high severity, production deps), a full-history gitleaks scan, and builds *and starts* the Docker image.
+97 tools across 12 surfaces, three prompt templates, and three resource types. 172 unit tests. CI gates lint, typecheck, coverage thresholds, `npm audit` (blocking, high severity, production deps), a full-history gitleaks scan, and builds *and starts* the Docker image.
 
 **Live coverage: 89 of 97 tools pass against a real tenant** (`scripts/live/`), with Word, PowerPoint and Excel output also opened by independent parsers. The 8 not exercised are OneNote page writes, Planner tasks and Teams channel posts; see *Other candidates*. No open defects are known.
 
@@ -17,6 +17,7 @@ What the server can now do that it could not before, grouped by concern (git has
 - **Safety.** A `POST` from a mutating tool is retried only on 429, so a send is never repeated. Pre-authenticated `downloadUrl` links are stripped from every result. `--logout` removes this app's tokens from the store, leaving other apps' alone. Sign-in is lazy and explicit.
 - **Portability.** The token-cache plugin loads lazily, so the server runs where `libsecret` is missing (headless Linux, the distroless image) with an in-memory cache. `MCP_TOKEN_CACHE_PATH` gets its own token store on Windows and with the Linux file fallback.
 - **Workflows.** `daily-brief`, `inbox-triage` and `meeting-prep` prompts, with Graph queries computed server-side and verified live.
+- **Attachable context.** Mail, files and OneNote pages as MCP resources (`src/resources/`): recent items in one `$batch`, any item by `m365://` URI, returned as text (Word and PowerPoint extracted). Gated on the matching read tool, like the prompts.
 
 **Next up:** the last 8 tools live, which needs a sandbox team, plan and OneNote notebook. Creating a Microsoft 365 group is visible across the organisation, so get the account owner's go-ahead first, or use ones they point to.
 
@@ -68,7 +69,6 @@ Verified running. The distroless runtime has no `libsecret`, so the cache plugin
 From the roadmap, roughly in value order:
 
 - **The last 8 tools live:** OneNote page create/read/delete needs an account with a notebook; Planner tasks and Teams channel post/reply need a sandbox team or plan nobody else relies on. Ask before creating one: a new group is visible organisation-wide.
-- **MCP Resources** for notebooks, sites and mailboxes. Not for downloads: each resource read is one message, so it would not lift the size limit.
 - **Subscriptions (webhooks)** need a public HTTPS endpoint, which a local stdio server does not have. `graph_delta` covers most of the need without one.
 - **Publishing** to npm and GHCR is deliberately waiting on alpha feedback.
 
@@ -77,6 +77,8 @@ From the roadmap, roughly in value order:
 ## Working notes
 
 Things that cost time to learn.
+
+**Marketing mail is mostly padding.** Newsletters fill their preview line with zero-width non-joiners, combining grapheme joiners and soft hyphens: 41% of one real message's text body. `tidyText` (`src/resources/html.ts`) strips them from resources. The `mail_get_message` tool does not yet, and would benefit in the same way.
 
 **Live tests live in `scripts/live/`** and are the first thing to rerun after touching a tool; see its README for what they write and clean up. Index arguments are 1-based throughout (`slideIndex`, `paragraphIndex`; `after: 0` means the top), which is easy to get wrong in a test and look like a tool bug. python-docx reports `None` as the style of unstyled paragraphs in documents made by the `docx` library, which declares no default paragraph style; that is harmless, since Word falls back to the document defaults.
 
