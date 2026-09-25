@@ -6,15 +6,19 @@ State of play and what to pick up next. Written for whoever continues this work 
 
 ## Where things stand
 
-97 tools across 12 surfaces. 113 tests. CI gates lint, typecheck, coverage thresholds, `npm audit` (blocking, high severity, production deps), a full-history gitleaks scan, and the Docker build.
+97 tools across 12 surfaces, plus three prompt templates. 162 unit tests. CI gates lint, typecheck, coverage thresholds, `npm audit` (blocking, high severity, production deps), a full-history gitleaks scan, and builds *and starts* the Docker image.
 
-Recently landed and worth knowing about:
+**Live coverage: 89 of 97 tools pass against a real tenant** (`scripts/live/`), with Word, PowerPoint and Excel output also opened by independent parsers. The 8 not exercised are OneNote page writes, Planner tasks and Teams channel posts; see *Other candidates*. No open defects are known.
 
-- **Per-path token stores.** `MCP_TOKEN_CACHE_PATH` now selects a token store of its own; before, every process shared one whatever the path said.
-- **Lazy auth.** The server starts silent and signs in only when `auth_sign_in` is called. It used to warm the credential at startup, which minted a device code on *every* client launch that nobody entered, and which expired unused ~15 minutes later. The README's "Auth & token cache" section has the full reasoning.
-- **`graph_batch_get`** — up to 20 Graph GETs in one `$batch`. Measured 2.4× faster than four sequential tool calls against a live tenant; the gap widens with more requests.
-- **`graph_search`** — one relevance-ranked Microsoft Search query across mail, files, SharePoint, Teams or people.
-- **`graph_delta`** — incremental sync for mail, calendar, drive, contacts and To Do; the `deltaLink` goes back to the caller. See [tools.md](./tools.md#-graph--3-tools).
+What the server can now do that it could not before, grouped by concern (git has the history):
+
+- **Sync.** `graph_delta` gives incremental changes, deletions included, for mail, calendar, drive, contacts and To Do; the caller keeps the `deltaLink`. `graph_search` and `graph_batch_get` cover cross-surface search and parallel reads.
+- **Large files.** Uploads over 4 MB use Graph upload sessions (all seven write paths, Office tools included). Downloads over 5 MB stream to `MCP_DOWNLOAD_DIR` in constant memory instead of entering the conversation. `MCP_MAX_MESSAGE_MB` (default 64) bounds a single MCP message.
+- **Safety.** A `POST` from a mutating tool is retried only on 429, so a send is never repeated. Pre-authenticated `downloadUrl` links are stripped from every result. `--logout` removes this app's tokens from the store, leaving other apps' alone. Sign-in is lazy and explicit.
+- **Portability.** The token-cache plugin loads lazily, so the server runs where `libsecret` is missing (headless Linux, the distroless image) with an in-memory cache. `MCP_TOKEN_CACHE_PATH` gets its own token store on Windows and with the Linux file fallback.
+- **Workflows.** `daily-brief`, `inbox-triage` and `meeting-prep` prompts, with Graph queries computed server-side and verified live.
+
+**Next up:** the last 8 tools live, which needs a sandbox team, plan and OneNote notebook. Creating a Microsoft 365 group is visible across the organisation, so get the account owner's go-ahead first, or use ones they point to.
 
 ---
 
@@ -63,7 +67,7 @@ Verified running. The distroless runtime has no `libsecret`, so the cache plugin
 
 From the roadmap, roughly in value order:
 
-- **The last 8 tools live:** OneNote page create/read/delete needs an account with a notebook; Planner and Teams channel posts need a sandbox team or plan nobody else relies on.
+- **The last 8 tools live:** OneNote page create/read/delete needs an account with a notebook; Planner tasks and Teams channel post/reply need a sandbox team or plan nobody else relies on. Ask before creating one: a new group is visible organisation-wide.
 - **MCP Resources** for notebooks, sites and mailboxes. Not for downloads: each resource read is one message, so it would not lift the size limit.
 - **Subscriptions (webhooks)** need a public HTTPS endpoint, which a local stdio server does not have. `graph_delta` covers most of the need without one.
 - **Publishing** to npm and GHCR is deliberately waiting on alpha feedback.
@@ -71,6 +75,8 @@ From the roadmap, roughly in value order:
 ---
 
 ## Working notes
+
+Things that cost time to learn.
 
 **Live tests live in `scripts/live/`** and are the first thing to rerun after touching a tool; see its README for what they write and clean up. Index arguments are 1-based throughout (`slideIndex`, `paragraphIndex`; `after: 0` means the top), which is easy to get wrong in a test and look like a tool bug. python-docx reports `None` as the style of unstyled paragraphs in documents made by the `docx` library, which declares no default paragraph style; that is harmless, since Word falls back to the document defaults.
 
@@ -85,8 +91,6 @@ From the roadmap, roughly in value order:
 **Nothing big goes back through a tool result either.** A result lands in the model's context and has to fit the *client's* inbound message limit (10 MiB by the SDK default), so `files_download` refuses more than 5 MB inline. Big files stream to `MCP_DOWNLOAD_DIR` instead (`src/graph/download.ts`), verified live at 45 MB with flat memory. MCP resources were considered and not built: each read is still one message, so they would not lift the size limit.
 
 **The token store is not ours, and not always private.** `@azure/identity-cache-persistence` owns it and offers no clear/delete API; `src/auth/tokenStore.ts` mirrors its platform selection to reach it. On macOS and Linux with a keyring it is one keychain item (`Microsoft.Developer.IdentityService`/`MSALCache`) shared by every app on the machine using that plugin, whatever name is passed; even the Windows file held tokens for two client ids on the development machine. So anything that edits it must remove only entries with our `client_id`, never the whole item. If the plugin changes where it stores things, `tokenStore.ts` has to follow.
-
-Things that cost time to learn.
 
 **Test against a live tenant, not just the mocks.** `graph_search` was first written with a wrong model of which entity types Graph will combine: `message` + `event` is rejected, even though both are mail-ish. The unit tests encoded the same wrong assumption and passed happily. Only a live call caught it. Mocks verify the model, not reality.
 

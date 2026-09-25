@@ -17,13 +17,13 @@ purpose = "Your own MCP server exposing 97 tools over Microsoft 365 (Mail, Calen
 stage = "active"
 
 # The date this file was last made true.
-updated = 2026-09-24
+updated = 2026-09-25
 
 # The real next moves, most important first - taken from this repo's docs.
 next_actions = [
-  "Add subscription/webhook tools for real-time Graph change notifications (roadmap; 'Known limitations' notes you can only poll today).",
+  "Exercise the last 8 tools live (OneNote page writes, Planner tasks, Teams channel posts); 89/97 pass today (scripts/live/). Needs a sandbox team, plan and notebook, which the account owner has to approve.",
   "Expose MCP Resources for notebooks, sites and mailboxes (roadmap).",
-  "Exercise the last 8 tools live (OneNote page writes, Planner tasks, Teams channel posts) in a sandbox team/plan/notebook; 89/97 pass today (scripts/live/).",
+  "Add subscription/webhook tools for real-time change notifications - needs a public HTTPS endpoint a local stdio server lacks; graph_delta covers most of the need meanwhile.",
   "Publish the npm package and Docker/GHCR image so the npx quickstart section stops being a stub.",
 ]
 
