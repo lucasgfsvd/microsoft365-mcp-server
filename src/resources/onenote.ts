@@ -1,6 +1,7 @@
 import { tidyText } from "../util/text.js";
 import { htmlTitle, htmlToText } from "./html.js";
-import { enc, uriFor, values, type ResourceKind } from "./types.js";
+import { getPageHtml } from "../graph/onenote.js";
+import { uriFor, values, type ResourceKind } from "./types.js";
 
 export const onenoteResource: ResourceKind = {
   key: "onenote",
@@ -24,8 +25,7 @@ export const onenoteResource: ResourceKind = {
       mimeType: "text/plain",
     })),
   async read(graph, [id], uri) {
-    const raw: unknown = await graph.api(`/me/onenote/pages/${enc(id!)}/content`).get();
-    const html = typeof raw === "string" ? raw : String(raw);
+    const html = await getPageHtml(graph, id!);
     const title = htmlTitle(html);
     const text = tidyText(htmlToText(html));
     return { uri, mimeType: "text/plain", text: title && !text.startsWith(title) ? `${title}\n\n${text}` : text };

@@ -20,6 +20,8 @@ export function htmlToText(html: string): string {
     html
       .replace(/<(head|script|style|template)\b[\s\S]*?<\/\1>/gi, "")
       .replace(/<!--[\s\S]*?-->/g, "")
+      // Source whitespace, line breaks included, is insignificant in HTML; tags make the structure.
+      .replace(/\s+/g, " ")
       .replace(/<br\s*\/?>/gi, "\n")
       .replace(/<li\b[^>]*>/gi, "\n- ")
       .replace(/<\/(p|div|h[1-6]|tr|table|ul|ol|blockquote|pre)>/gi, "\n")

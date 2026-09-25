@@ -32,6 +32,17 @@ describe("text conversion", () => {
     expect(htmlToText(html)).toBe("Goals\nFirst line\nsecond\n\n- one\n- two €5");
   });
 
+  // Found live: OneNote serves indented HTML with CRLF line endings, whose
+  // source whitespace leaked into the text as \r and blank lines.
+  it("ignores source whitespace, as a browser does", () => {
+    const html = "<body>\r\n  <h1>Heading</h1>\r\n  <p>First\r\n  paragraph</p>\r\n  <ul>\r\n    <li>item one</li>\r\n    <li>item two</li>\r\n  </ul>\r\n</body>";
+    expect(tidyText(htmlToText(html))).toBe("Heading\nFirst paragraph\n\n- item one\n- item two");
+  });
+
+  it("normalises CRLF in plain text too (Outlook text bodies use it)", () => {
+    expect(tidyText("line one\r\nline two\r\n\r\n\r\nend")).toBe("line one\nline two\n\nend");
+  });
+
   // Found live: 41% of a real newsletter's text body was this padding.
   it("drops invisible preview-line padding and collapses whitespace", () => {
     const padded = `Hello‌ ͏­ ‌   world\n\n\n\n  next  `;

@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { ToolDefinition } from "../../types.js";
 import { fetchPage } from "../../graph/pagination.js";
 import { PaginationInput } from "../../util/schema.js";
+import { getPageHtml } from "../../graph/onenote.js";
 
 export const onenoteTools: ToolDefinition[] = [
   {
@@ -45,8 +46,7 @@ export const onenoteTools: ToolDefinition[] = [
     requiredScopes: ["Notes.Read"],
     inputSchema: z.object({ pageId: z.string() }),
     handler: async ({ pageId }, ctx) => {
-      const html = await ctx.graph.api(`/me/onenote/pages/${pageId}/content`).get();
-      return { html: typeof html === "string" ? html : String(html) };
+      return { html: await getPageHtml(ctx.graph, pageId) };
     },
   },
   {

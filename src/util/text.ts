@@ -5,6 +5,7 @@
  */
 export function tidyText(text: string): string {
   return text
+    .replace(/\r\n?/g, "\n")
     .replace(/[\u200B\u200C\u200D\u2060\uFEFF\u034F\u00AD\u180E]/g, "")
     .replace(/[ \t\u00A0]+/g, " ")
     .replace(/ *\n */g, "\n")
