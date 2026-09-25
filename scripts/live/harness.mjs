@@ -41,7 +41,13 @@ export function startServer(dist, env = {}) {
     await send("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "live", version: "1" } });
     srv.stdin.write(JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) + "\n");
   };
-  return { call, init, kill: () => srv.kill(), stderr: () => stderr };
+  /** Read an MCP resource; returns the result, or undefined with the error logged. */
+  const readResource = async (uri) => {
+    const r = await send("resources/read", { uri });
+    if (r.error) { console.log(`resource read failed: ${r.error.message}`); return undefined; }
+    return r.result;
+  };
+  return { call, init, readResource, kill: () => srv.kill(), stderr: () => stderr };
 }
 
 export function makeRun(label) {
