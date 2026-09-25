@@ -78,7 +78,7 @@ From the roadmap, roughly in value order:
 
 Things that cost time to learn.
 
-**Marketing mail is mostly padding.** Newsletters fill their preview line with zero-width non-joiners, combining grapheme joiners and soft hyphens: 41% of one real message's text body. `tidyText` (`src/resources/html.ts`) strips them from resources. The `mail_get_message` tool does not yet, and would benefit in the same way.
+**Marketing mail is mostly padding.** Newsletters fill their preview line with zero-width non-joiners, combining grapheme joiners and soft hyphens: 41% of one real message's text body, and 228 of its 255-character `bodyPreview`. `tidyText` (`src/util/text.ts`) strips them from mail resources and from `mail_get_message` (the plain-text body and the preview; an HTML body is left as sent, since collapsing its whitespace could change how it renders). `mail_list_messages` previews still carry the padding.
 
 **Live tests live in `scripts/live/`** and are the first thing to rerun after touching a tool; see its README for what they write and clean up. Index arguments are 1-based throughout (`slideIndex`, `paragraphIndex`; `after: 0` means the top), which is easy to get wrong in a test and look like a tool bug. python-docx reports `None` as the style of unstyled paragraphs in documents made by the `docx` library, which declares no default paragraph style; that is harmless, since Word falls back to the document defaults.
 

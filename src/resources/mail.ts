@@ -1,4 +1,4 @@
-import { tidyText } from "./html.js";
+import { tidyText } from "../util/text.js";
 import { enc, uriFor, values, type ResourceKind } from "./types.js";
 
 interface Address {

@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { ToolDefinition } from "../../types.js";
 import { fetchPage } from "../../graph/pagination.js";
 import { PaginationInput, trimEmpty } from "../../util/schema.js";
+import { tidyText } from "../../util/text.js";
 
 const Recipient = z.object({
   address: z.email(),
@@ -11,6 +12,18 @@ const Recipient = z.object({
 const toRecipient = (r: z.infer<typeof Recipient>) => ({
   emailAddress: { address: r.address, name: r.name },
 });
+
+/**
+ * Strip invisible padding from a message's text. Only the plain-text body is
+ * tidied: collapsing whitespace in HTML could change how it renders (<pre>).
+ * The preview is plain text in either format, and is where the padding lives.
+ */
+export function tidyMessage<M extends { body?: { content?: string }; bodyPreview?: string }>(msg: M, bodyFormat: "text" | "html"): M {
+  const out = { ...msg };
+  if (typeof out.bodyPreview === "string") out.bodyPreview = tidyText(out.bodyPreview);
+  if (bodyFormat === "text" && typeof out.body?.content === "string") out.body = { ...out.body, content: tidyText(out.body.content) };
+  return out;
+}
 
 export const mailTools: ToolDefinition[] = [
   {
@@ -50,11 +63,18 @@ export const mailTools: ToolDefinition[] = [
   {
     name: "mail_get_message",
     surface: "mail",
-    description: "Fetch a single message with full body.",
+    description:
+      "Fetch a single message with full body. The text body (the default) has the invisible padding " +
+      "newsletters put in their preview line removed; request html for the original markup.",
     requiredScopes: ["Mail.Read"],
     inputSchema: z.object({ id: z.string(), bodyFormat: z.enum(["text", "html"]).default("text") }),
-    handler: async ({ id, bodyFormat }, ctx) =>
-      ctx.graph.api(`/me/messages/${id}`).header("Prefer", `outlook.body-content-type="${bodyFormat}"`).get(),
+    handler: async ({ id, bodyFormat }, ctx) => {
+      const msg = (await ctx.graph
+        .api(`/me/messages/${id}`)
+        .header("Prefer", `outlook.body-content-type="${bodyFormat}"`)
+        .get()) as { body?: { contentType?: string; content?: string }; bodyPreview?: string };
+      return tidyMessage(msg, bodyFormat);
+    },
   },
   {
     name: "mail_list_folders",

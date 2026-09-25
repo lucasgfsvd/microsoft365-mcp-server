@@ -1,4 +1,5 @@
-import { htmlTitle, htmlToText, tidyText } from "./html.js";
+import { tidyText } from "../util/text.js";
+import { htmlTitle, htmlToText } from "./html.js";
 import { enc, uriFor, values, type ResourceKind } from "./types.js";
 
 export const onenoteResource: ResourceKind = {
