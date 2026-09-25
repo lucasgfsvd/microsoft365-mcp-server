@@ -16,7 +16,7 @@ import { allTools } from "./tools/index.js";
 import { assertAllowed } from "./util/writeGuard.js";
 import { normalizeGraphError } from "./graph/errors.js";
 import { logger } from "./util/logger.js";
-import { DEFAULT_PUBLIC_CLIENT_ID } from "./config.js";
+import { DEFAULT_PUBLIC_CLIENT_ID, readPackageVersion } from "./config.js";
 import { serializeResult } from "./util/redact.js";
 import { registerPrompts } from "./prompts/index.js";
 import { graphForTool } from "./graph/retry.js";
@@ -55,7 +55,7 @@ export async function startServer(config: ServerConfig): Promise<void> {
   registry.registerAll(allTools());
 
   const server = new Server(
-    { name: "microsoft365-mcp-server", version: "0.1.0" },
+    { name: "microsoft365-mcp-server", version: readPackageVersion() },
     { capabilities: { tools: {}, prompts: {}, resources: {}, logging: {} } },
   );
 

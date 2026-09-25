@@ -23,7 +23,7 @@ updated = 2026-09-25
 next_actions = [
   "Exercise the last 8 tools live (OneNote page writes, Planner tasks, Teams channel posts); 89/97 pass today (scripts/live/). Needs a sandbox team, plan and notebook, which the account owner has to approve.",
   "Webhooks: decide whether to build (docs/webhooks.md recommends staying on graph_delta, or Azure Event Hubs delivery if real-time is needed).",
-  "Publish the npm package and Docker/GHCR image so the npx quickstart section stops being a stub.",
+  "Publishing is prepared (docs/releasing.md): claim the npm scope @microsoft365-mcp now - the docs already point npx at it and anyone could register it - then set up the publish credential and push a tag when alpha feedback allows.",
 ]
 
 blockers = [

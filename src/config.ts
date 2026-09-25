@@ -7,7 +7,8 @@ import type { AuthMode, ServerConfig } from "./types.js";
 import { SURFACES } from "./types.js";
 import { defaultCachePath } from "./auth/tokenCache.js";
 
-function readPackageVersion(): string {
+/** The version in package.json, which a release tag must match. */
+export function readPackageVersion(): string {
   try {
     const here = dirname(fileURLToPath(import.meta.url));
     const pkg = JSON.parse(readFileSync(resolve(here, "../package.json"), "utf8")) as { version: string };

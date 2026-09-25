@@ -70,7 +70,7 @@ From the roadmap, roughly in value order:
 
 - **The last 8 tools live:** OneNote page create/read/delete needs an account with a notebook; Planner tasks and Teams channel post/reply need a sandbox team or plan nobody else relies on. Ask before creating one: a new group is visible organisation-wide.
 - **Subscriptions (webhooks)**: designed, not built; see [webhooks.md](./webhooks.md). The public endpoint is the smaller problem: a stdio server exists only while a client runs, and nothing wakes a model when data changes. Recommendation: keep `graph_delta`; if real-time is ever needed, use Azure Event Hubs delivery (no inbound endpoint, holds messages while the server is off). Needs an owner decision on consumer, Azure subscription and scope.
-- **Publishing** to npm and GHCR is deliberately waiting on alpha feedback.
+- **Publishing** is prepared but not done; see [releasing.md](./releasing.md). The release workflow now refuses to publish unless the tagged commit passes the CI gates and the tag matches `package.json`, and keeps pre-releases off `latest`. **The npm scope `@microsoft365-mcp` is unclaimed while the docs already say `npx -y @microsoft365-mcp/server`**: claiming it (`npm org create microsoft365-mcp`) closes a squatting risk and needs no release. The unscoped `microsoft365-mcp-server` is someone else's package.
 
 ---
 
