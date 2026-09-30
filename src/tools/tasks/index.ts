@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { ToolDefinition } from "../../types.js";
 import { fetchPage } from "../../graph/pagination.js";
+import { listPlans } from "../../graph/planner.js";
 import { PaginationInput, trimEmpty } from "../../util/schema.js";
 
 export const tasksTools: ToolDefinition[] = [
@@ -61,10 +62,15 @@ export const tasksTools: ToolDefinition[] = [
   {
     name: "planner_list_plans",
     surface: "tasks",
-    description: "List the user's Planner plans.",
+    description:
+      "List the user's Planner plans: those shared with them and those of every team they have " +
+      "joined, each marked with its group. Pass groupId to list one Microsoft 365 group's plans " +
+      "(plans in groups that are not teams can only be reached that way).",
     requiredScopes: ["Tasks.Read"],
-    inputSchema: PaginationInput,
-    handler: async (input, ctx) => fetchPage(ctx.graph, `/me/planner/plans`, input),
+    inputSchema: z.object({
+      groupId: z.string().optional().describe("A Microsoft 365 group (or team) id, to list only its plans."),
+    }),
+    handler: async (input, ctx) => listPlans(ctx.graph, input.groupId),
   },
   {
     name: "planner_list_tasks",
