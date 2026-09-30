@@ -38,6 +38,12 @@ describe("serializeResult", () => {
     });
   });
 
+  // Found live: planner_complete_task succeeded, got 204, and the client was
+  // told it failed because the result text was not a string.
+  it("turns an empty (204) result into a valid success message", () => {
+    expect(JSON.parse(serializeResult(undefined))).toEqual({ ok: true });
+  });
+
   it("serializes ordinary results unchanged", () => {
     expect(serializeResult({ a: [1, "b"], c: null })).toBe(JSON.stringify({ a: [1, "b"], c: null }, null, 2));
   });

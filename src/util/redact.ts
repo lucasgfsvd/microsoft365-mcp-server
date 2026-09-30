@@ -22,6 +22,11 @@ const TIDY = new Set(["bodyPreview"]);
  * message previews, at any depth.
  */
 export function serializeResult(result: unknown): string {
+  // A tool whose Graph call answered 204 No Content (a Planner PATCH, for one)
+  // resolves to undefined, and JSON.stringify(undefined) is not a string: the
+  // result became an invalid MCP message and the client reported a failure for
+  // an action that had succeeded. Seen live.
+  if (result === undefined) return JSON.stringify({ ok: true }, null, 2);
   return JSON.stringify(
     result,
     (key, value) => {
