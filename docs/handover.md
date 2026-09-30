@@ -6,9 +6,9 @@ State of play and what to pick up next. Written for whoever continues this work 
 
 ## Where things stand
 
-97 tools across 12 surfaces, three prompt templates, and three resource types. 172 unit tests. CI gates lint, typecheck, coverage thresholds, `npm audit` (blocking, high severity, production deps), a full-history gitleaks scan, and builds *and starts* the Docker image.
+97 tools across 12 surfaces, three prompt templates, and three resource types. 182 unit tests. CI gates lint, typecheck, coverage thresholds, `npm audit` (blocking, high severity, production deps), a full-history gitleaks scan, and builds *and starts* the Docker image.
 
-**Live coverage: 89 of 97 tools pass against a real tenant** (`scripts/live/`), with Word, PowerPoint and Excel output also opened by independent parsers. The 8 not exercised are OneNote page writes, Planner tasks and Teams channel posts; see *Other candidates*. No open defects are known.
+**Live coverage: all 97 tools pass against a real tenant** (`scripts/live/`), with Word, PowerPoint and Excel output also opened by independent parsers. No open defects are known.
 
 What the server can now do that it could not before, grouped by concern (git has the history):
 
@@ -19,7 +19,7 @@ What the server can now do that it could not before, grouped by concern (git has
 - **Workflows.** `daily-brief`, `inbox-triage` and `meeting-prep` prompts, with Graph queries computed server-side and verified live.
 - **Attachable context.** Mail, files and OneNote pages as MCP resources (`src/resources/`): recent items in one `$batch`, any item by `m365://` URI, returned as text (Word and PowerPoint extracted). Gated on the matching read tool, like the prompts.
 
-**Next up:** the last 8 tools live, which needs a sandbox team, plan and OneNote notebook. Creating a Microsoft 365 group is visible across the organisation, so get the account owner's go-ahead first, or use ones they point to.
+**Next up:** nothing is blocked on engineering. The open items are owner decisions: claim the npm scope (see *Other candidates*), whether to publish, and whether webhooks are needed.
 
 ---
 
@@ -68,7 +68,7 @@ Verified running. The distroless runtime has no `libsecret`, so the cache plugin
 
 From the roadmap, roughly in value order:
 
-- **The last 8 tools live:** OneNote page create/read/delete needs an account with a notebook; Planner tasks and Teams channel post/reply need a sandbox team or plan nobody else relies on. Ask before creating one: a new group is visible organisation-wide.
+- **The live sandbox** is reusable for pre-release runs: a private team `mcp-live-test` (only the account owner; group/team id `e118e4d7-1a8c-4238-9f47-05dffdfbee9f`, channel `tests`), a Planner plan `mcp-live-test` in it (`ethENaSyq0qyllQYJelKF5gAER_m`), and a OneNote notebook `mcp-live-test` with a section `tests` (`1-041ccae9-c331-409f-80f8-ddcc828c3d78`). Deleting the team needs Group.ReadWrite.All, which the app does not have: do it in Teams.
 - **Subscriptions (webhooks)**: designed, not built; see [webhooks.md](./webhooks.md). The public endpoint is the smaller problem: a stdio server exists only while a client runs, and nothing wakes a model when data changes. Recommendation: keep `graph_delta`; if real-time is ever needed, use Azure Event Hubs delivery (no inbound endpoint, holds messages while the server is off). Needs an owner decision on consumer, Azure subscription and scope.
 - **Publishing** is prepared but not done; see [releasing.md](./releasing.md). The release workflow now refuses to publish unless the tagged commit passes the CI gates and the tag matches `package.json`, and keeps pre-releases off `latest`. **The npm scope `@microsoft365-mcp` is unclaimed while the docs already say `npx -y @microsoft365-mcp/server`**: claiming it (`npm org create microsoft365-mcp`) closes a squatting risk and needs no release. The unscoped `microsoft365-mcp-server` is someone else's package.
 
@@ -77,6 +77,8 @@ From the roadmap, roughly in value order:
 ## Working notes
 
 Things that cost time to learn.
+
+**Graph answers some writes with 204 No Content** (a Planner PATCH, for one). The tool then resolves to `undefined`, which `serializeResult` now turns into `{"ok": true}`; before, it produced an invalid MCP message and the client reported a failure for an action that had succeeded. **And `/me/planner/plans` omits group plans**, which is to say nearly all of them: `listPlans` (`src/graph/planner.ts`) also asks each joined team. Both were invisible to the unit tests and found by the sandbox run.
 
 **Marketing mail is mostly padding.** Newsletters fill their preview line with zero-width non-joiners, combining grapheme joiners and soft hyphens: 41% of one real message's text body, and 228 of its 255-character `bodyPreview`. `tidyText` (`src/util/text.ts`) strips them from mail resources and from `mail_get_message`'s plain-text body (an HTML body is left as sent, since collapsing its whitespace could change how it renders). `serializeResult` tidies every `bodyPreview` at any depth, so list, search, delta and raw batch results are covered without each tool opting in.
 

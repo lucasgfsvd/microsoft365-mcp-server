@@ -9,7 +9,13 @@ something the unit tests could not.
 npm run build
 node scripts/live/office.mjs "$PWD/dist/index.js" /tmp/live   # files, Word, PowerPoint, Excel
 node scripts/live/pim.mjs    "$PWD/dist/index.js" /tmp/live   # mail, calendar, contacts, To Do, Planner, OneNote, Teams
+node scripts/live/onenote.mjs "$PWD/dist/index.js" /tmp/live <sectionId>          # OneNote page writes and resource
+node scripts/live/teams-planner.mjs "$PWD/dist/index.js" /tmp/live <teamId> <planId>  # channel posts, Planner tasks
 ```
+
+The last two need a sandbox: a OneNote section, and a private team with a Planner
+plan, that nobody else uses. The ids of the current sandbox are in
+[docs/handover.md](../../docs/handover.md).
 
 The second argument is a scratch folder for downloads and `results-*.json`.
 Needs a signed-in token cache; runs with writes enabled.
@@ -25,4 +31,7 @@ Needs a signed-in token cache; runs with writes enabled.
   afterwards. It completes a To Do task (there is no delete tool, so it stays,
   completed) and posts one message to the user's own Teams notes chat (`48:notes`),
   which only they can see. Everything carries an `[mcp-live-test …]` tag.
-- Nothing is posted to Teams channels or Planner plans, which other people see.
+- `onenote.mjs` creates and deletes one page in the given section.
+- `teams-planner.mjs` posts a message and a reply in the sandbox team's channel, and
+  creates and completes a Planner task. Neither can be deleted through the server, so
+  they stay in the sandbox. Never point it at a team other people are in.

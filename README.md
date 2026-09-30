@@ -47,9 +47,8 @@ Mail · Calendar · Contacts · OneDrive · SharePoint · Teams · To Do · Plan
 
 This is an **early alpha**. Please calibrate expectations before depending on it:
 
-- **Exercised against a real Microsoft 365 business tenant: 89 of 97 tools.** Each call's result was checked, not just accepted. Word, PowerPoint and Excel files edited in place were also downloaded and opened with independent parsers (python-docx, python-pptx, openpyxl), including the OOXML surgery in `word_insert_paragraph_at` / `word_delete_paragraph` / `word_append_*` and `powerpoint_add_slide` / `powerpoint_delete_slide`. The live scripts are in [`scripts/live/`](./scripts/live/).
-- **Not yet exercised live:** OneNote page create / read / delete (the test account has no notebook), Planner task list / create / complete (no plans; writes are visible to plan members), and Teams channel post / reply (visible to the team).
-- **Unit tested:** 172 tests, including the SDK's real retry middleware under nock. CI runs lint, typecheck, tests with coverage, a production `npm audit`, a secret scan, and builds *and starts* the Docker image.
+- **Exercised against a real Microsoft 365 business tenant: all 97 tools.** Each call's result was checked, not just accepted, and Word, PowerPoint and Excel files edited in place were also opened with independent parsers (python-docx, python-pptx, openpyxl). The live scripts are in [`scripts/live/`](./scripts/live/). Teams channel posts and Planner tasks were tested in a private sandbox team with no other members.
+- **Unit tested:** 182 tests, including the SDK's real retry middleware under nock. CI runs lint, typecheck, tests with coverage, a production `npm audit`, a secret scan, and builds *and starts* the Docker image.
 - **Not yet published** — no npm package, no Docker image, no GHCR release. Install today is **clone + build locally** (see the Quickstart below). npm / Docker artefacts will come after the alpha shakes out.
 
 If you're evaluating this for anything more serious than experimentation, wait for the `0.2.0` tag. Documents with layouts the tests did not cover can still trip the OOXML editing: if a file comes out wrong, please [open an issue](https://github.com/lucasgfsvd/microsoft365-mcp-server/issues) and attach it.
