@@ -1,9 +1,11 @@
 # Changelog
 
-## [0.1.0] - 2026-10-01
+## [0.1.0] - unreleased
 
-First and only planned release. The project is provided as-is and is not
-actively maintained: see *Maintenance status* in the README.
+First and only planned release, published once the "Before 0.1.0" items in
+`docs/roadmap.md` are done (add them below as they land, and date this heading
+when tagging). After it, the project is provided as-is and not actively
+maintained: see *Maintenance status* in the README.
 
 ### What it does
 

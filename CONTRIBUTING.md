@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest. **This project is not actively maintained**, so issues and pull requests may not be reviewed or merged. Forking is the dependable route: the code, tests, CI and live-test scripts are all here, and it is MIT-licensed. If you do send a change, the notes below are how the project was built and checked.
+Thanks for your interest. A last set of features is being finished before `0.1.0` (see [docs/roadmap.md](./docs/roadmap.md)); **after that release the project is not actively maintained**, so issues and pull requests may not be reviewed or merged. Forking is the dependable route: the code, tests, CI and live-test scripts are all here, and it is MIT-licensed. If you do send a change, the notes below are how the project was built and checked.
 
 ## Getting set up
 

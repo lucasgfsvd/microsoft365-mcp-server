@@ -16,7 +16,7 @@ Mail · Calendar · Contacts · OneDrive · SharePoint · Teams · To Do · Plan
 
 > ### Maintenance status
 >
-> **Provided as-is and not actively maintained.** It works and is tested (every tool against a real tenant, see [Status](#status--whats-tested)), but there are no planned releases, no support, and no promise of security fixes. Issues and pull requests may go unanswered. It holds access to your Microsoft 365 account, so read the code before relying on it, pin a version you have reviewed, and fork freely: it is MIT-licensed.
+> **Being finished, then published once, then left as-is.** A last set of features is being added (see the [roadmap](./docs/roadmap.md)). When they are done, `0.1.0` is published to npm, and after that the project is **not actively maintained**: no planned releases, no support, no promise of security fixes, and issues or pull requests may go unanswered. It holds access to your Microsoft 365 account, so read the code before relying on it, pin the version, and fork freely: it is MIT-licensed.
 
 ---
 
@@ -54,7 +54,7 @@ This is an **early alpha**. Please calibrate expectations before depending on it
 
 - **Exercised against a real Microsoft 365 business tenant: all 97 tools.** Each call's result was checked, not just accepted, and Word, PowerPoint and Excel files edited in place were also opened with independent parsers (python-docx, python-pptx, openpyxl). The live scripts are in [`scripts/live/`](./scripts/live/). Teams channel posts and Planner tasks were tested in a private sandbox team with no other members.
 - **Unit tested:** 182 tests, including the SDK's real retry middleware under nock. CI runs lint, typecheck, tests with coverage, a production `npm audit`, a secret scan, and builds *and starts* the Docker image.
-- **Published** to npm as [`@microsoft365-mcp/server`](https://www.npmjs.com/package/@microsoft365-mcp/server) `0.1.0`, the only planned release, built in CI with npm provenance. No Docker image is published; build it from the `Dockerfile`.
+- **Not published yet.** `0.1.0` goes to npm as `@microsoft365-mcp/server` once the [roadmap](./docs/roadmap.md)'s remaining features are in; it will be the only planned release, built in CI with npm provenance. No Docker image is published; build it from the `Dockerfile`.
 
 No further releases are planned (see [Maintenance status](#maintenance-status)). Documents with layouts the tests did not cover can still trip the OOXML editing; if a file comes out wrong, the cause is usually visible by unzipping it and reading the XML the tool wrote.
 
@@ -62,7 +62,7 @@ No further releases are planned (see [Maintenance status](#maintenance-status)).
 
 ## Quickstart — from a local build
 
-To run from source or change it, clone and build; it takes about 90 seconds. To just use it, the [`npx` quickstart](#quickstart--via-npx) below needs neither.
+Until `0.1.0` is on npm, this is how to run it: clone and build, which takes about 90 seconds. Once it is published, the [`npx` quickstart](#quickstart--via-npx) below needs neither.
 
 ```bash
 git clone https://github.com/lucasgfsvd/microsoft365-mcp-server
@@ -115,7 +115,9 @@ Tokens are cached under `~/.microsoft365-mcp/` (OS keychain where available, `ch
 
 ## Quickstart — via `npx`
 
-No clone, no build. The version is pinned on purpose: `0.1.0` is the only release and will not be updated (see [Maintenance status](#maintenance-status)), so this runs exactly what was tested.
+> 🚧 **Not published yet.** This works once `0.1.0` is on npm, after the [roadmap](./docs/roadmap.md)'s remaining features. Until then, use the local build above.
+
+No clone, no build. The version is pinned on purpose: `0.1.0` will be the only release and will not be updated (see [Maintenance status](#maintenance-status)), so this runs exactly what was tested.
 
 ```json
 {
@@ -815,15 +817,18 @@ Picking this up cold? [docs/handover.md](./docs/handover.md) has the current sta
 
 ## Roadmap
 
-No further work is planned. This is what was built, and what was left open; the open items are ideas for a fork.
+The full list, with reasons and sizes, is in [docs/roadmap.md](./docs/roadmap.md). In short, **`0.1.0` is published once these are in**:
 
-- [x] Large-file upload sessions (>4 MB)
-- [x] Streaming downloads (to a configured folder, via `saveToDisk`)
-- [ ] Subscription/webhook tools (real-time change notifications): designed in [docs/webhooks.md](./docs/webhooks.md), not built
-- [x] MCP resources: mail messages, OneDrive/SharePoint files and OneNote pages
-- [x] Prompt templates for common workflows (daily brief, inbox triage, meeting prep)
-- [ ] Loop/Whiteboard/Viva surfaces when Graph exposes them
-- [x] Per-tool retry policy (mutating `POST`s retry only on 429; tools can set their own retry count and delay)
+- Upload from a local file (`localPath` in a configured folder), lifting the ~47 MB upload cap
+- Reply drafts that stay in the email thread
+- Date filters on `mail_list_messages`
+- Delete tools for To Do and Planner tasks
+- Creating OneNote notebooks and sections
+- Excel files as text when attached as resources
+- Picking up a sign-in made by another server process
+- Device-code sign-in that survives a container restart
+
+Webhooks are designed ([docs/webhooks.md](./docs/webhooks.md)) but wait on a decision. Already done: large-file uploads, streaming downloads, MCP resources, prompt templates, the per-tool retry policy, and live tests of every tool.
 
 ---
 

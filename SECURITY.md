@@ -2,11 +2,13 @@
 
 ## Supported versions and response
 
-**This project is not actively maintained.** There is no supported version in the
-sense of one that receives fixes: `0.1.0` is published as-is. Reports are still
-welcome and will be read when possible, but there is **no commitment** to
-acknowledge them, fix them, or publish a release. If you depend on this server,
-fork it so you can patch it yourself.
+**Until `0.1.0` is released**, the project is still being finished (see
+[docs/roadmap.md](./docs/roadmap.md)), and reports will be looked at as part of
+that. **After `0.1.0` it is not actively maintained:** there is no supported
+version in the sense of one that receives fixes, reports will be read when
+possible, and there is **no commitment** to acknowledge them, fix them, or
+publish a release. If you depend on this server, fork it so you can patch it
+yourself.
 
 ## Reporting a vulnerability
 

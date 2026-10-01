@@ -1,7 +1,8 @@
 # Releasing
 
-The plan is to **publish `0.1.0` to npm once** and not maintain it after that
-(see the README's *Maintenance status*). No container image is published: an
+The plan is to **publish `0.1.0` to npm once**, after the "Before 0.1.0" items
+in [roadmap.md](./roadmap.md) are done, and not maintain it after that (see the
+README's *Maintenance status*). No container image is published: an
 unmaintained image accumulates base-image vulnerabilities, and the `Dockerfile`
 is there for anyone who wants one.
 
@@ -26,12 +27,14 @@ final in the tagged commit: no "not published yet" wording.
 
 ## Publishing 0.1.0
 
+0. **The roadmap's "Before 0.1.0" items are done**, each with its live test,
+   and listed in the `CHANGELOG.md` entry.
 1. ~~**Claim the scope.**~~ Done: the npm organisation `microsoft365-mcp` exists,
    owned by `lucasgfsvd`, so no one else can publish `@microsoft365-mcp/server`.
    (The unscoped `microsoft365-mcp-server` belongs to an unrelated package:
    never point anyone at it.)
-2. **Turn on two-factor authentication** on the npm account (Account → Two-Factor
-   Authentication), then *Enable 2FA Enforcement* on the organisation.
+2. ~~**Turn on two-factor authentication**~~ Done on the account. Optionally also
+   *Enable 2FA Enforcement* on the organisation.
 3. **Give the workflow a way to publish, once.** npm is retiring tokens that
    bypass 2FA: they lost sensitive account operations in August 2026 and lose
    direct publishing around **January 2027**
@@ -51,9 +54,11 @@ final in the tagged commit: no "not published yet" wording.
    *staged publishing*, where CI stages and a person approves with 2FA. A
    one-off `npm publish --access public` from your own machine also works,
    without provenance.
-4. **Bump everything that names the version** if it is not `0.1.0`:
-   `package.json`, both versions in `server.json`, the `npx` pins in the README,
-   and a `CHANGELOG.md` entry. Then **run the live tests** against a real tenant (see
+4. **Make the README final**: it ships in the package and is what npmjs.com
+   shows. Remove both "Not published yet" notes and the "Being finished" wording
+   in *Maintenance status*. Date the `CHANGELOG.md` heading. If the version is
+   not `0.1.0`, bump `package.json`, both versions in `server.json` and the `npx`
+   pins. Then **run the live tests** against a real tenant (see
    [`scripts/live/`](../scripts/live/README.md); the sandbox ids are in the
    handover), then tag and push: `git tag v0.1.0 && git push origin v0.1.0`.
    If `verify` fails, nothing was published: fix it, delete the tag, tag again.

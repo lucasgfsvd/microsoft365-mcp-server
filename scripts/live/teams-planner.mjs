@@ -49,7 +49,14 @@ try {
   await step(srv, "planner_list_plans", {}, (v) => arr(v).some((p) => p.id === planId) || "sandbox plan not listed");
   const task = await step(srv, "planner_create_task", { planId, title: `${TAG} task` }, (v) => (!!v.id && !!v["@odata.etag"]) || `got ${JSON.stringify(v).slice(0, 120)}`);
   if (task?.id) {
-    await step(srv, "planner_list_tasks", { planId }, (v) => arr(v).some((t) => t.id === task.id) || "new task not listed");
+    // Planner is eventually consistent: a new task can take a few seconds to list.
+    let listed;
+    for (let i = 0; i < 6 && !listed; i++) {
+      const r = await srv.call("planner_list_tasks", { planId });
+      listed = r.ok && arr(r.value).some((t) => t.id === task.id);
+      if (!listed) await sleep(2000);
+    }
+    record("planner_list_tasks", !!listed, listed ? "" : "new task not listed after 12 s");
     // Planner can change a new task's etag moments after creation; use the current one.
     const current = await srv.call("planner_list_tasks", { planId });
     const etag = arr(current.value).find((t) => t.id === task.id)?.["@odata.etag"] ?? task["@odata.etag"];
