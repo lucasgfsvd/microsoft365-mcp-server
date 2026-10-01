@@ -10,8 +10,13 @@ Mail · Calendar · Contacts · OneDrive · SharePoint · Teams · To Do · Plan
 [![CI](https://img.shields.io/github/actions/workflow/status/lucasgfsvd/microsoft365-mcp-server/ci.yml?branch=main&style=flat-square)](https://github.com/lucasgfsvd/microsoft365-mcp-server/actions)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](./LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-compatible-7B3FE4?style=flat-square)](https://modelcontextprotocol.io)
+[![Maintenance: none](https://img.shields.io/badge/maintenance-none-lightgrey?style=flat-square)](#maintenance-status)
 
 </div>
+
+> ### Maintenance status
+>
+> **Provided as-is and not actively maintained.** It works and is tested (every tool against a real tenant, see [Status](#status--whats-tested)), but there are no planned releases, no support, and no promise of security fixes. Issues and pull requests may go unanswered. It holds access to your Microsoft 365 account, so read the code before relying on it, pin a version you have reviewed, and fork freely: it is MIT-licensed.
 
 ---
 
@@ -49,15 +54,15 @@ This is an **early alpha**. Please calibrate expectations before depending on it
 
 - **Exercised against a real Microsoft 365 business tenant: all 97 tools.** Each call's result was checked, not just accepted, and Word, PowerPoint and Excel files edited in place were also opened with independent parsers (python-docx, python-pptx, openpyxl). The live scripts are in [`scripts/live/`](./scripts/live/). Teams channel posts and Planner tasks were tested in a private sandbox team with no other members.
 - **Unit tested:** 182 tests, including the SDK's real retry middleware under nock. CI runs lint, typecheck, tests with coverage, a production `npm audit`, a secret scan, and builds *and starts* the Docker image.
-- **Not yet published** — no npm package, no Docker image, no GHCR release. Install today is **clone + build locally** (see the Quickstart below). npm / Docker artefacts will come after the alpha shakes out.
+- **Publishing:** `0.1.0` is to be published to npm once; no Docker image is published (build it from the `Dockerfile`). Until the npm package appears, install by cloning and building (see the Quickstart below).
 
-If you're evaluating this for anything more serious than experimentation, wait for the `0.2.0` tag. Documents with layouts the tests did not cover can still trip the OOXML editing: if a file comes out wrong, please [open an issue](https://github.com/lucasgfsvd/microsoft365-mcp-server/issues) and attach it.
+No further releases are planned (see [Maintenance status](#maintenance-status)). Documents with layouts the tests did not cover can still trip the OOXML editing; if a file comes out wrong, the cause is usually visible by unzipping it and reading the XML the tool wrote.
 
 ---
 
 ## Quickstart — from a local build (the only working path today)
 
-Until the npm package and Docker image are published, install by cloning + building. It takes about 90 seconds.
+Until the npm package is published, install by cloning and building. It takes about 90 seconds.
 
 ```bash
 git clone https://github.com/lucasgfsvd/microsoft365-mcp-server
@@ -110,7 +115,7 @@ Tokens are cached under `~/.microsoft365-mcp/` (OS keychain where available, `ch
 
 ## Quickstart — via `npx` (coming once we publish)
 
-> 🚧 **Not available yet.** The npm package `@microsoft365-mcp/server` hasn't been published — we're gating publish on alpha feedback. Once it's up, this section becomes the simplest install for anyone who isn't modifying the source.
+> 🚧 **Not published yet.** `@microsoft365-mcp/server` will be published to npm once, as `0.1.0`, and not updated after that (see [Maintenance status](#maintenance-status)). Until it appears on npm, use the local build above.
 
 ```json
 {
@@ -144,17 +149,19 @@ After editing, **fully quit Claude Desktop** (tray icon → *Quit*, not just clo
 
 ---
 
-## Quickstart — for teams / tenants (Docker + client credentials) — coming once we publish
+## Quickstart — for teams / tenants (Docker + client credentials)
 
-> 🚧 **Not available yet.** No Docker image has been pushed to GHCR or anywhere else. Once the alpha stabilises we'll publish a multi-arch distroless image. Until then, run the local build on a server (or in your own container) with `MCP_AUTH_MODE=client-credentials` — the auth/config is identical; only the launch command differs.
+No image is published; build it from the repository's `Dockerfile`. CI builds and starts it on every push, so it is known to run.
 
-Once published, the per-tenant deployment will look like this:
+```bash
+docker build -t microsoft365-mcp-server .
+```
 
 1. **Register an app** in your Azure tenant: Entra ID → App registrations → New registration.
-2. **Add API permissions** (Application type, not Delegated) from Microsoft Graph — see [docs/permissions.md](./docs/permissions.md) for the full list.
+2. **Add API permissions** (Application type, not Delegated) from Microsoft Graph. See [docs/permissions.md](./docs/permissions.md) for the full list.
 3. **Grant admin consent** for your tenant.
 4. **Create a client secret** under Certificates & secrets.
-5. **Run the image** — example Claude Desktop / MCP client config:
+5. **Run the image.** An example MCP client config:
 
 ```json
 {
@@ -163,13 +170,12 @@ Once published, the per-tenant deployment will look like this:
       "command": "docker",
       "args": [
         "run", "-i", "--rm",
-        "-v", "m365-mcp-tokens:/data",
         "-e", "MCP_AUTH_MODE=client-credentials",
         "-e", "MCP_TENANT_ID",
         "-e", "MCP_CLIENT_ID",
         "-e", "MCP_CLIENT_SECRET",
         "-e", "MCP_ENABLE_WRITES=true",
-        "ghcr.io/lucasgfsvd/microsoft365-mcp-server:latest"
+        "microsoft365-mcp-server"
       ],
       "env": {
         "MCP_TENANT_ID": "<your-tenant-guid>",
@@ -181,7 +187,7 @@ Once published, the per-tenant deployment will look like this:
 }
 ```
 
-The image is multi-arch (`linux/amd64`, `linux/arm64`), built on distroless Node 24, runs as nonroot, and caches tokens in the `m365-mcp-tokens` named volume.
+The image is distroless Node 24 and runs as nonroot. Client-credentials mode needs no token cache. Device-code sign-in works but does not survive a restart in the container: the image has no `libsecret`, so tokens are held in memory only.
 
 ---
 
@@ -790,10 +796,12 @@ Picking this up cold? [docs/handover.md](./docs/handover.md) has the current sta
 
 ## Roadmap
 
+No further work is planned. This is what was built, and what was left open; the open items are ideas for a fork.
+
 - [x] Large-file upload sessions (>4 MB)
 - [x] Streaming downloads (to a configured folder, via `saveToDisk`)
-- [ ] Subscription/webhook tools (real-time change notifications): designed in [docs/webhooks.md](./docs/webhooks.md), awaiting a decision
-- [ ] MCP Resources for notebooks, sites, and mailboxes
+- [ ] Subscription/webhook tools (real-time change notifications): designed in [docs/webhooks.md](./docs/webhooks.md), not built
+- [x] MCP resources: mail messages, OneDrive/SharePoint files and OneNote pages
 - [x] Prompt templates for common workflows (daily brief, inbox triage, meeting prep)
 - [ ] Loop/Whiteboard/Viva surfaces when Graph exposes them
 - [x] Per-tool retry policy (mutating `POST`s retry only on 429; tools can set their own retry count and delay)

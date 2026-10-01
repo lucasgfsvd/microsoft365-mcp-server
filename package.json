@@ -1,7 +1,7 @@
 {
   "name": "@microsoft365-mcp/server",
   "version": "0.1.0",
-  "description": "Model Context Protocol server for Microsoft 365 \u2014 Mail, Calendar, Files, Teams, OneNote, Excel, Word, PowerPoint and more via Microsoft Graph.",
+  "description": "Model Context Protocol server for Microsoft 365 \u2014 Mail, Calendar, Files, Teams, OneNote, Excel, Word, PowerPoint and more via Microsoft Graph. Provided as-is; not actively maintained.",
   "keywords": [
     "mcp",
     "model-context-protocol",

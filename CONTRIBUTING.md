@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest! This project welcomes contributions of all sizes — from typo fixes to new surface coverage.
+Thanks for your interest. **This project is not actively maintained**, so issues and pull requests may not be reviewed or merged. Forking is the dependable route: the code, tests, CI and live-test scripts are all here, and it is MIT-licensed. If you do send a change, the notes below are how the project was built and checked.
 
 ## Getting set up
 

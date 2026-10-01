@@ -14,18 +14,17 @@ schema = 1
 purpose = "Your own MCP server exposing 97 tools over Microsoft 365 (Mail, Calendar, Contacts, OneDrive/SharePoint, Teams, To Do/Planner, OneNote, plus in-place OOXML editing of Excel/Word/PowerPoint) to any MCP client, with writes disabled by default."
 
 # idea | prototype | active | maintenance | paused | archived
-stage = "active"
+stage = "paused"
 
 # The date this file was last made true.
-updated = 2026-09-25
+updated = 2026-10-01
 
 # The real next moves, most important first - taken from this repo's docs.
 next_actions = [
-  "Webhooks: decide whether to build (docs/webhooks.md recommends staying on graph_delta, or Azure Event Hubs delivery if real-time is needed).",
-  "Publishing is prepared (docs/releasing.md): claim the npm scope @microsoft365-mcp now - the docs already point npx at it and anyone could register it - then set up the publish credential and push a tag when alpha feedback allows.",
+  "Claim the npm scope @microsoft365-mcp (npmjs.com/org/create, free): the README already points npx at it.",
+  "Publish 0.1.0 to npm once (docs/releasing.md), then remove the README's 'Not published yet' banner. No further releases are planned.",
 ]
 
 blockers = [
-  "npm and Docker publication is deliberately gated on alpha feedback, so clone+build is the only install path today.",
-  "Device-code sign-in cannot persist in the container image: distroless has no libsecret, so the token cache falls back to in-memory - needs either libsecret in the runtime image or a file-based cache.",
+  "Publishing needs the owner's npm account: creating the org and a publish credential cannot be done from the repo.",
 ]

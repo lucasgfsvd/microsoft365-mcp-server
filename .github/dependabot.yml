@@ -1,12 +1,17 @@
+# The project is not actively maintained, so no routine version-update PRs:
+# open-pull-requests-limit: 0 turns those off. Security alerts, and security
+# update PRs if enabled in the repository settings, are unaffected.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule: { interval: weekly }
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 0
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
+    open-pull-requests-limit: 0
   - package-ecosystem: docker
     directory: /
     schedule: { interval: weekly }
+    open-pull-requests-limit: 0

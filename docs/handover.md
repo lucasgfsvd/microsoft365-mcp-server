@@ -19,7 +19,7 @@ What the server can now do that it could not before, grouped by concern (git has
 - **Workflows.** `daily-brief`, `inbox-triage` and `meeting-prep` prompts, with Graph queries computed server-side and verified live.
 - **Attachable context.** Mail, files and OneNote pages as MCP resources (`src/resources/`): recent items in one `$batch`, any item by `m365://` URI, returned as text (Word and PowerPoint extracted). Gated on the matching read tool, like the prompts.
 
-**Next up:** nothing is blocked on engineering. The open items are owner decisions: claim the npm scope (see *Other candidates*), whether to publish, and whether webhooks are needed.
+**Next up:** nothing, by design: the project is to be published once and left. What remains needs the owner's npm account (claim the scope, then publish `0.1.0`); webhooks are designed but not wanted.
 
 ---
 
@@ -70,7 +70,7 @@ From the roadmap, roughly in value order:
 
 - **The live sandbox** is reusable for pre-release runs: a private team `mcp-live-test` (only the account owner; group/team id `e118e4d7-1a8c-4238-9f47-05dffdfbee9f`, channel `tests`), a Planner plan `mcp-live-test` in it (`ethENaSyq0qyllQYJelKF5gAER_m`), and a OneNote notebook `mcp-live-test` with a section `tests` (`1-041ccae9-c331-409f-80f8-ddcc828c3d78`). Deleting the team needs Group.ReadWrite.All, which the app does not have: do it in Teams.
 - **Subscriptions (webhooks)**: designed, not built; see [webhooks.md](./webhooks.md). The public endpoint is the smaller problem: a stdio server exists only while a client runs, and nothing wakes a model when data changes. Recommendation: keep `graph_delta`; if real-time is ever needed, use Azure Event Hubs delivery (no inbound endpoint, holds messages while the server is off). Needs an owner decision on consumer, Azure subscription and scope.
-- **Publishing** is prepared but not done; see [releasing.md](./releasing.md). The release workflow now refuses to publish unless the tagged commit passes the CI gates and the tag matches `package.json`, and keeps pre-releases off `latest`. **The npm scope `@microsoft365-mcp` is unclaimed while the docs already say `npx -y @microsoft365-mcp/server`**: claiming it (`npm org create microsoft365-mcp`) closes a squatting risk and needs no release. The unscoped `microsoft365-mcp-server` is someone else's package.
+- **Publishing:** the owner's plan is to publish `0.1.0` to npm once, for visibility, and not maintain it. The README, `SECURITY.md` and `CONTRIBUTING.md` say so; the release workflow is npm-only; Dependabot opens no version-update PRs. Steps are in [releasing.md](./releasing.md). Until the `@microsoft365-mcp` npm scope is claimed (`npmjs.com/org/create`, no CLI for it), the README's `npx -y @microsoft365-mcp/server` points at a name anyone could register.
 
 ---
 

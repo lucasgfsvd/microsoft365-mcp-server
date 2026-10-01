@@ -1,19 +1,18 @@
 # Security policy
 
-## Supported versions
+## Supported versions and response
 
-We support the latest `0.x` release on the `main` branch.
+**This project is not actively maintained.** There is no supported version in the
+sense of one that receives fixes: `0.1.0` is published as-is. Reports are still
+welcome and will be read when possible, but there is **no commitment** to
+acknowledge them, fix them, or publish a release. If you depend on this server,
+fork it so you can patch it yourself.
 
 ## Reporting a vulnerability
 
-**Please do not file public GitHub issues for security reports.**
-
-Instead:
-
-- Use [GitHub private security advisories](https://github.com/lucasgfsvd/microsoft365-mcp-server/security/advisories/new), or
-- Email the maintainers listed in `package.json` with a reproducible description.
-
-We aim to acknowledge reports within 72 hours and to publish a fix and coordinated disclosure within 30 days for high-severity issues.
+**Please do not file public GitHub issues for security reports.** Use
+[GitHub private security advisories](https://github.com/lucasgfsvd/microsoft365-mcp-server/security/advisories/new)
+with a reproducible description.
 
 ## Scope
 
