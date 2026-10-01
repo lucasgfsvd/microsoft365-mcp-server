@@ -21,8 +21,8 @@ updated = 2026-10-01
 
 # The real next moves, most important first - taken from this repo's docs.
 next_actions = [
-  "Claim the npm scope @microsoft365-mcp (npmjs.com/org/create, free): the README already points npx at it.",
-  "Publish 0.1.0 to npm once (docs/releasing.md), then remove the README's 'Not published yet' banner. No further releases are planned.",
+  "Enable 2FA on the npm account lucasgfsvd (owner of the claimed @microsoft365-mcp scope).",
+  "Publish 0.1.0 to npm once (docs/releasing.md): short-lived granular token as NPM_TOKEN, push v0.1.0, delete the token. Must happen before ~January 2027, when 2FA-bypass tokens lose direct publishing; after that, trusted or staged publishing.",
 ]
 
 blockers = [

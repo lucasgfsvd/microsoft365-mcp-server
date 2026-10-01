@@ -17,32 +17,38 @@ Pushing a tag `vX.Y.Z` runs [`.github/workflows/release.yml`](../.github/workflo
 
 ## Publishing 0.1.0
 
-Steps 1 to 3 need the owner's npm account; step 1 matters even if nothing is
-ever published.
+1. ~~**Claim the scope.**~~ Done: the npm organisation `microsoft365-mcp` exists,
+   owned by `lucasgfsvd`, so no one else can publish `@microsoft365-mcp/server`.
+   (The unscoped `microsoft365-mcp-server` belongs to an unrelated package:
+   never point anyone at it.)
+2. **Turn on two-factor authentication** on the npm account (Account → Two-Factor
+   Authentication), then *Enable 2FA Enforcement* on the organisation.
+3. **Give the workflow a way to publish, once.** npm is retiring tokens that
+   bypass 2FA: they lost sensitive account operations in August 2026 and lose
+   direct publishing around **January 2027**
+   ([GitHub changelog](https://github.blog/changelog/2026-07-08-npm-install-time-security-and-gat-bypass2fa-deprecation/)).
+   For a single release before then, a short-lived token is simplest, and
+   publishing from CI is what earns the provenance badge (proof the package was
+   built from this repository):
+   - On npmjs.com, Access Tokens → Generate New Token → *Granular*: publish
+     access to the `@microsoft365-mcp` scope only, expiry 7 days, *bypass 2FA*
+     allowed (CI cannot type a code).
+   - Add it as the repository secret `NPM_TOKEN`.
+   - **Delete the token and the secret** as soon as the release is out.
 
-1. **Claim the scope.** The README already shows `npx -y @microsoft365-mcp/server`.
-   Until someone owns `@microsoft365-mcp`, anyone could register it and publish
-   a package under that exact name, which people following the README would
-   then run. Sign in at npmjs.com and create the organisation `microsoft365-mcp`
-   on the free plan at <https://www.npmjs.com/org/create>; there is no CLI
-   command for this. The unscoped name `microsoft365-mcp-server` belongs to an
-   unrelated package: never point anyone at it.
-2. **Give the workflow a way to publish.** Either:
-   - *Trusted publishing (preferred, no stored secret):* in the package settings
-     on npmjs.com, add this repository and `release.yml` as a trusted publisher.
-     It needs npm 11.5.1 or later in the workflow: move `setup-node` to Node 24
-     (or add `npm install -g npm@latest`) and drop `NODE_AUTH_TOKEN`. On a
-     brand-new package this may only be possible after the first publish, in
-     which case use a token once.
-   - *Token:* create a granular access token that can publish to the
-     `@microsoft365-mcp` scope, add it as the repository secret `NPM_TOKEN`, and
-     delete the token after the release.
-3. **Run the live tests** against a real tenant (see
+   After January 2027 this route is gone: use *trusted publishing* (OIDC; set up
+   in the package's settings once it exists, needs npm 11.5.1+ in the workflow,
+   so Node 24 or `npm install -g npm@latest`, and no `NODE_AUTH_TOKEN`), or
+   *staged publishing*, where CI stages and a person approves with 2FA. A
+   one-off `npm publish --access public` from your own machine also works,
+   without provenance.
+4. **Run the live tests** against a real tenant (see
    [`scripts/live/`](../scripts/live/README.md); the sandbox ids are in the
    handover), then tag and push: `git tag v0.1.0 && git push origin v0.1.0`.
    If `verify` fails, nothing was published: fix it, delete the tag, tag again.
-4. **Afterwards:** remove the "Not published yet" banner from the README's `npx`
-   quickstart, and check the package page shows the provenance badge.
+5. **Afterwards:** remove the "Not published yet" banner from the README's `npx`
+   quickstart, check the package page shows the provenance badge, and delete the
+   token (step 3).
 
 ## When it should stop being used
 
