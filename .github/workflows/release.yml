@@ -4,9 +4,9 @@ on:
   push:
     tags: ["v*.*.*"]
 
-# npm only: the project is published once and not maintained, so no container
-# image is pushed (an unmaintained image accumulates base-image CVEs). The
-# Dockerfile stays, and CI builds and starts it.
+# npm, then the official MCP Registry and a GitHub Release. No container image:
+# the project is published once and not maintained, and an unmaintained image
+# accumulates base-image CVEs. The Dockerfile stays; CI builds and starts it.
 permissions:
   contents: read
   id-token: write
@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - id: version
         name: Tag must match package.json
@@ -50,7 +50,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           registry-url: https://registry.npmjs.org
           cache: npm
       - run: npm ci
@@ -58,3 +58,48 @@ jobs:
       - run: npm publish --provenance --access public --tag ${{ needs.verify.outputs.prerelease == 'true' && 'next' || 'latest' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # The registry checks ownership against mcpName in the package just published,
+  # and authenticates this repository's owner through GitHub OIDC: no secret.
+  registry:
+    needs: [verify, npm]
+    if: needs.verify.outputs.prerelease != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      PUBLISHER_VERSION: v1.8.1
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install mcp-publisher (pinned, checksum-verified)
+        run: |
+          base="https://github.com/modelcontextprotocol/registry/releases/download/${PUBLISHER_VERSION}"
+          curl -fsSLO "$base/mcp-publisher_linux_amd64.tar.gz"
+          curl -fsSL "$base/registry_${PUBLISHER_VERSION#v}_checksums.txt" -o checksums.txt
+          grep " mcp-publisher_linux_amd64.tar.gz$" checksums.txt | sha256sum -c -
+          tar xzf mcp-publisher_linux_amd64.tar.gz mcp-publisher
+      - name: server.json must describe this release
+        run: |
+          v="$(node -p "require('./package.json').version")"
+          test "$(node -p "require('./server.json').version")" = "$v"
+          test "$(node -p "require('./server.json').packages[0].version")" = "$v"
+          test "$(node -p "require('./server.json').name")" = "$(node -p "require('./package.json').mcpName")"
+      - run: ./mcp-publisher login github-oidc
+      - run: ./mcp-publisher publish
+
+  github-release:
+    needs: [verify, npm]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Release notes from CHANGELOG.md
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          awk -v h="## [$v]" 'index($0, h) == 1 {on = 1; next} on && /^## / {exit} on' CHANGELOG.md > notes.md
+          test -s notes.md || { echo "::error::No CHANGELOG.md entry for $v"; exit 1; }
+      - run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag ${{ needs.verify.outputs.prerelease == 'true' && '--prerelease' || '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}

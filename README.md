@@ -54,15 +54,15 @@ This is an **early alpha**. Please calibrate expectations before depending on it
 
 - **Exercised against a real Microsoft 365 business tenant: all 97 tools.** Each call's result was checked, not just accepted, and Word, PowerPoint and Excel files edited in place were also opened with independent parsers (python-docx, python-pptx, openpyxl). The live scripts are in [`scripts/live/`](./scripts/live/). Teams channel posts and Planner tasks were tested in a private sandbox team with no other members.
 - **Unit tested:** 182 tests, including the SDK's real retry middleware under nock. CI runs lint, typecheck, tests with coverage, a production `npm audit`, a secret scan, and builds *and starts* the Docker image.
-- **Publishing:** `0.1.0` is to be published to npm once; no Docker image is published (build it from the `Dockerfile`). Until the npm package appears, install by cloning and building (see the Quickstart below).
+- **Published** to npm as [`@microsoft365-mcp/server`](https://www.npmjs.com/package/@microsoft365-mcp/server) `0.1.0`, the only planned release, built in CI with npm provenance. No Docker image is published; build it from the `Dockerfile`.
 
 No further releases are planned (see [Maintenance status](#maintenance-status)). Documents with layouts the tests did not cover can still trip the OOXML editing; if a file comes out wrong, the cause is usually visible by unzipping it and reading the XML the tool wrote.
 
 ---
 
-## Quickstart — from a local build (the only working path today)
+## Quickstart — from a local build
 
-Until the npm package is published, install by cloning and building. It takes about 90 seconds.
+To run from source or change it, clone and build; it takes about 90 seconds. To just use it, the [`npx` quickstart](#quickstart--via-npx) below needs neither.
 
 ```bash
 git clone https://github.com/lucasgfsvd/microsoft365-mcp-server
@@ -113,16 +113,16 @@ Tokens are cached under `~/.microsoft365-mcp/` (OS keychain where available, `ch
 
 ---
 
-## Quickstart — via `npx` (coming once we publish)
+## Quickstart — via `npx`
 
-> 🚧 **Not published yet.** `@microsoft365-mcp/server` will be published to npm once, as `0.1.0`, and not updated after that (see [Maintenance status](#maintenance-status)). Until it appears on npm, use the local build above.
+No clone, no build. The version is pinned on purpose: `0.1.0` is the only release and will not be updated (see [Maintenance status](#maintenance-status)), so this runs exactly what was tested.
 
 ```json
 {
   "mcpServers": {
     "microsoft365": {
       "command": "npx",
-      "args": ["-y", "@microsoft365-mcp/server"],
+      "args": ["-y", "@microsoft365-mcp/server@0.1.0"],
       "env": {
         "MCP_AUTH_MODE": "device-code"
       }
@@ -253,7 +253,7 @@ Set `MCP_CLIENT_ID` (and for tenant use, `MCP_TENANT_ID` + `MCP_CLIENT_SECRET`) 
   "mcpServers": {
     "microsoft365": {
       "command": "npx",
-      "args": ["-y", "@microsoft365-mcp/server"],
+      "args": ["-y", "@microsoft365-mcp/server@0.1.0"],
       "env": {
         "MCP_AUTH_MODE": "device-code",
         "MCP_CLIENT_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
@@ -295,7 +295,7 @@ That's it — no per-user Entra config, no IDs to collect, no IT ticket per pers
   "mcpServers": {
     "microsoft365": {
       "command": "npx",
-      "args": ["-y", "@microsoft365-mcp/server"],
+      "args": ["-y", "@microsoft365-mcp/server@0.1.0"],
       "env": {
         "MCP_AUTH_MODE": "device-code",
         "MCP_TENANT_ID": "<company-tenant-guid>",
@@ -498,6 +498,25 @@ A resource type is offered only while its read tool (`mail_get_message`, `files_
 ## Tool reference
 
 <details>
+<summary><strong>🔐 Auth</strong> — 2 tools</summary>
+
+| Tool | Scopes | Writes |
+|---|---|:---:|
+| `auth_status` | — | |
+| `auth_sign_in` | — | |
+</details>
+
+<details>
+<summary><strong>⚡ Graph (cross-surface)</strong> — 3 tools</summary>
+
+| Tool | Scopes | Writes |
+|---|---|:---:|
+| `graph_search` | Mail.Read, Files.Read.All, Sites.Read.All | |
+| `graph_batch_get` | whatever the sub-requests need | |
+| `graph_delta` | Mail.Read, Calendars.Read, Files.Read, Contacts.Read, Tasks.Read (per resource) | |
+</details>
+
+<details>
 <summary><strong>📧 Mail</strong> — 9 tools</summary>
 
 | Tool | Scopes | Writes |
@@ -542,7 +561,7 @@ A resource type is offered only while its read tool (`mail_get_message`, `files_
 </details>
 
 <details>
-<summary><strong>📁 Files (OneDrive + SharePoint)</strong> — 10 tools</summary>
+<summary><strong>📁 Files (OneDrive + SharePoint)</strong> — 11 tools</summary>
 
 | Tool | Scopes | Writes |
 |---|---|:---:|

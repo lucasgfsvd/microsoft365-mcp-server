@@ -4,6 +4,8 @@ about: Propose a new tool, surface, or enhancement
 labels: enhancement
 ---
 
+> This project is not actively maintained (see the README's *Maintenance status*), so this may not get a response. Forking is the dependable route.
+
 **What are you trying to do?**
 A real-world prompt or workflow this would enable.
 

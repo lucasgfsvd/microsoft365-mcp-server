@@ -4,6 +4,8 @@ about: Report a reproducible problem
 labels: bug
 ---
 
+> This project is not actively maintained (see the README's *Maintenance status*), so this may not get a response. Forking is the dependable route.
+
 **What happened?**
 
 **What did you expect?**

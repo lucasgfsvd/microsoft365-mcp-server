@@ -12,6 +12,15 @@ Pushing a tag `vX.Y.Z` runs [`.github/workflows/release.yml`](../.github/workflo
    `npm pack --dry-run`. Nothing is published if any of these fail.
 2. **npm**: `npm publish --provenance --access public`, under the dist-tag
    `latest`, or `next` for a pre-release (a tag with a hyphen, like `v0.2.0-rc.1`).
+3. **registry** (full releases only): publishes `server.json` to the official
+   MCP Registry, authenticated as the repository owner through GitHub OIDC (no
+   secret). The registry checks `mcpName` in the published `package.json`, so
+   `server.json`'s name and versions must match it; the job checks that first.
+4. **github-release**: a GitHub Release whose notes are the version's
+   `CHANGELOG.md` entry. A version with no entry fails here, after npm.
+
+The README ships inside the package and is what npmjs.com shows, so it must be
+final in the tagged commit: no "not published yet" wording.
 
 ---
 
@@ -42,13 +51,15 @@ Pushing a tag `vX.Y.Z` runs [`.github/workflows/release.yml`](../.github/workflo
    *staged publishing*, where CI stages and a person approves with 2FA. A
    one-off `npm publish --access public` from your own machine also works,
    without provenance.
-4. **Run the live tests** against a real tenant (see
+4. **Bump everything that names the version** if it is not `0.1.0`:
+   `package.json`, both versions in `server.json`, the `npx` pins in the README,
+   and a `CHANGELOG.md` entry. Then **run the live tests** against a real tenant (see
    [`scripts/live/`](../scripts/live/README.md); the sandbox ids are in the
    handover), then tag and push: `git tag v0.1.0 && git push origin v0.1.0`.
    If `verify` fails, nothing was published: fix it, delete the tag, tag again.
-5. **Afterwards:** remove the "Not published yet" banner from the README's `npx`
-   quickstart, check the package page shows the provenance badge, and delete the
-   token (step 3).
+5. **Afterwards:** check the npm page (provenance badge, README), the registry
+   entry (`https://registry.modelcontextprotocol.io/v0/servers?search=microsoft365`)
+   and the GitHub Release, then delete the token and the `NPM_TOKEN` secret.
 
 ## When it should stop being used
 

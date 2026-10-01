@@ -11,11 +11,15 @@ permissions:
 jobs:
   lint-typecheck-test:
     runs-on: ubuntu-latest
+    # package.json promises node >=20: test that, plus the current LTS releases.
+    strategy:
+      matrix:
+        node: [20, 22, 24]
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci
       - run: npm run lint

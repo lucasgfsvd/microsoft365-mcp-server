@@ -1,0 +1,43 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.lucasgfsvd/microsoft365-mcp-server",
+  "title": "Microsoft 365",
+  "description": "Microsoft 365 via Graph: mail, calendar, files, Teams, tasks, OneNote, Office. Unmaintained, as-is.",
+  "repository": {
+    "url": "https://github.com/lucasgfsvd/microsoft365-mcp-server",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@microsoft365-mcp/server",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "MCP_AUTH_MODE",
+          "description": "device-code (default), interactive, or client-credentials.",
+          "isRequired": false
+        },
+        {
+          "name": "MCP_CLIENT_ID",
+          "description": "Your Entra app registration's client id. Defaults to a public Microsoft client, fine for trying it out.",
+          "isRequired": false
+        },
+        {
+          "name": "MCP_TENANT_ID",
+          "description": "Tenant id or 'common' (default).",
+          "isRequired": false
+        },
+        {
+          "name": "MCP_ENABLE_WRITES",
+          "description": "Set to true to enable tools that send, create, update or delete. Off by default.",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}
