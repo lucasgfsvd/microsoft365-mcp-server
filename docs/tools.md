@@ -2,6 +2,15 @@
 
 The full catalogue of tools exposed by the server, grouped by Microsoft 365 surface. Tools marked ✏️ are mutating and are hidden from `tools/list` until writes are enabled (see [permissions.md](./permissions.md) and the README's "Configuration" section).
 
+Every tool also carries the standard MCP annotations, which clients use to decide what to ask before running it:
+
+- `readOnlyHint`: true for every tool without ✏️.
+- `destructiveHint`: true when a write can change or remove what exists: deletes, updates, replacing text, and creating a file at a path, which replaces one already there. False for writes that only add (a draft, a task, a slide).
+- `idempotentHint`: true when repeating the call changes nothing more. False for sends and creates, and for deleting a paragraph or slide by position.
+- `openWorldHint`: true when other people see or receive the result: sending and replying to mail, Teams posts, calendar changes (attendees are notified), Planner tasks (plan members see them) and sharing links.
+
+They are derived from each tool's verb in `src/tools/annotations.ts`, with the exceptions listed there; a test fails if a new write tool fits none. Annotations guide clients, they enforce nothing: the write guard does that.
+
 Every tool name is stable across releases — the catalogue grows additively. If a name needs to change we'll keep the old name as an alias for one minor version with a deprecation log.
 
 ---

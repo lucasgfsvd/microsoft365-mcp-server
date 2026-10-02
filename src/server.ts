@@ -21,6 +21,7 @@ import { serializeResult } from "./util/redact.js";
 import { registerPrompts } from "./prompts/index.js";
 import { graphForTool } from "./graph/retry.js";
 import { registerResources } from "./resources/index.js";
+import { annotationsFor } from "./tools/annotations.js";
 
 const SIGN_IN_HINT =
   "Not signed in to Microsoft 365. Call auth_sign_in to get a device code, enter it " +
@@ -77,8 +78,10 @@ export async function startServer(config: ServerConfig): Promise<void> {
     const visible = registry.list(config);
     const tools: McpTool[] = visible.map((t) => ({
       name: t.name,
+      // The suffix is for the model, which may never see the annotations.
       description: t.description + (t.mutating ? " [MUTATING]" : ""),
       inputSchema: z.toJSONSchema(t.inputSchema, { target: "draft-7" }) as McpTool["inputSchema"],
+      annotations: annotationsFor(t),
     }));
     return { tools };
   });
@@ -99,10 +102,7 @@ export async function startServer(config: ServerConfig): Promise<void> {
       }
 
       const result = await tool.handler(args, { graph: graphForTool(graph, tool), credential, config, auth });
-      return {
-        content: [{ type: "text", text: serializeResult(result) }],
-        ...(tool.mutating ? { _meta: { requires_confirmation: true } } : {}),
-      };
+      return { content: [{ type: "text", text: serializeResult(result) }] };
     } catch (err) {
       if (isAuthenticationRequired(err)) {
         return { isError: true, content: [{ type: "text", text: SIGN_IN_HINT }] };

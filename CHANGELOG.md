@@ -11,8 +11,9 @@ maintained: see *Maintenance status* in the README.
 - **102 tools across 12 surfaces**: Mail, Calendar, Contacts and People,
   OneDrive and SharePoint files, Teams, To Do and Planner, OneNote, Excel,
   Word and PowerPoint, plus sign-in and cross-cutting Graph tools.
-- **Writes are off by default.** Enable them all, or per surface; sends and
-  creates are marked so clients can ask for confirmation.
+- **Writes are off by default.** Enable them all, or per surface. Every tool
+  carries the standard MCP annotations (read-only, destructive, idempotent,
+  reaches other people), so a client can decide what to confirm.
 - **Word, PowerPoint and Excel editing in place**: create documents, decks and
   workbooks, or edit existing ones (replace text, add and delete paragraphs
   and slides, ranges, tables, formulas).
