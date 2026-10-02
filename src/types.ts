@@ -80,7 +80,7 @@ export interface ToolDefinition<I extends ZodObj = ZodObj> {
   /** Retry tuning; mutating POSTs are only ever retried on 429 regardless. */
   retry?: RetryPolicy;
   /**
-   * Needs a permission only an admin can grant (rooms, transcripts, others'
+   * Needs a permission only an admin can grant (rooms, others'
    * full profiles). Hidden unless MCP_ENABLE_ADMIN_SCOPES, since asking for such
    * a scope at sign-in fails outright where no admin has approved it.
    */

@@ -97,7 +97,7 @@ describe("rooms, behind the admin-consent flag", () => {
       delete process.env.MCP_ENABLE_ADMIN_SCOPES;
       expect(loadConfig(["node", "idx"]).scopes).not.toContain("Place.Read.All");
       process.env.MCP_ENABLE_ADMIN_SCOPES = "true";
-      expect(loadConfig(["node", "idx"]).scopes).toEqual(expect.arrayContaining(["Place.Read.All", "OnlineMeetingTranscript.Read.All"]));
+      expect(loadConfig(["node", "idx"]).scopes).toEqual(expect.arrayContaining(["Place.Read.All", "User.Read.All"]));
     } finally {
       if (saved === undefined) delete process.env.MCP_ENABLE_ADMIN_SCOPES;
       else process.env.MCP_ENABLE_ADMIN_SCOPES = saved;

@@ -21,6 +21,9 @@ export const DELEGATED_ONLY = new Set([
   "teams_post_channel_message",
   "teams_reply_channel_message",
   "teams_post_chat_message",
+  "teams_send_direct_message",
+  "teams_update_chat_message",
+  "teams_delete_chat_message",
   "graph_search",
 ]);
 

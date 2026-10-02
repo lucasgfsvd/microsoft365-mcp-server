@@ -52,6 +52,7 @@ const WRITE_SCOPES = [
   "Sites.ReadWrite.All",
   "ChannelMessage.Send",
   "ChatMessage.Send",
+  "Chat.ReadWrite",
   "Tasks.ReadWrite",
   "Notes.ReadWrite",
 ];
@@ -63,7 +64,7 @@ const SHARED_WRITE_SCOPES = ["Mail.ReadWrite.Shared", "Mail.Send.Shared", "Calen
 
 // Only an admin can grant these: requesting one unapproved fails the whole
 // sign-in, so they are opt-in (MCP_ENABLE_ADMIN_SCOPES).
-const ADMIN_SCOPES = ["Place.Read.All", "User.Read.All", "OnlineMeetings.Read", "OnlineMeetingTranscript.Read.All"];
+const ADMIN_SCOPES = ["Place.Read.All", "User.Read.All"];
 
 /** Microsoft's "Microsoft Graph Command Line Tools" public client.
  *  Convenient for trying the server out; override MCP_CLIENT_ID for production

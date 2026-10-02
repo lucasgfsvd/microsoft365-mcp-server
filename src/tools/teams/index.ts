@@ -2,6 +2,8 @@ import { z } from "zod";
 import type { ToolDefinition } from "../../types.js";
 import { fetchPage } from "../../graph/pagination.js";
 import { PaginationInput } from "../../util/schema.js";
+import { MessageBody, messageBody } from "./mentions.js";
+import { chatTools } from "./chats.js";
 
 export const teamsTools: ToolDefinition[] = [
   {
@@ -65,52 +67,33 @@ export const teamsTools: ToolDefinition[] = [
   {
     name: "teams_post_channel_message",
     surface: "teams",
-    description: "Post a message to a channel.",
+    description: "Post a message to a channel, optionally @mentioning people.",
     mutating: true,
-    requiredScopes: ["ChannelMessage.Send"],
-    inputSchema: z.object({
-      teamId: z.string(),
-      channelId: z.string(),
-      body: z.string(),
-      contentType: z.enum(["text", "html"]).default("text"),
-    }),
+    requiredScopes: ["ChannelMessage.Send", "User.ReadBasic.All"],
+    inputSchema: z.object({ teamId: z.string(), channelId: z.string(), ...MessageBody }),
     handler: async (input, ctx) =>
-      ctx.graph
-        .api(`/teams/${input.teamId}/channels/${input.channelId}/messages`)
-        .post({ body: { contentType: input.contentType, content: input.body } }),
+      ctx.graph.api(`/teams/${input.teamId}/channels/${input.channelId}/messages`).post(await messageBody(ctx.graph, input)),
   },
   {
     name: "teams_reply_channel_message",
     surface: "teams",
-    description: "Reply to a channel message.",
+    description: "Reply to a channel message, optionally @mentioning people.",
     mutating: true,
-    requiredScopes: ["ChannelMessage.Send"],
-    inputSchema: z.object({
-      teamId: z.string(),
-      channelId: z.string(),
-      messageId: z.string(),
-      body: z.string(),
-      contentType: z.enum(["text", "html"]).default("text"),
-    }),
+    requiredScopes: ["ChannelMessage.Send", "User.ReadBasic.All"],
+    inputSchema: z.object({ teamId: z.string(), channelId: z.string(), messageId: z.string(), ...MessageBody }),
     handler: async (input, ctx) =>
       ctx.graph
         .api(`/teams/${input.teamId}/channels/${input.channelId}/messages/${input.messageId}/replies`)
-        .post({ body: { contentType: input.contentType, content: input.body } }),
+        .post(await messageBody(ctx.graph, input)),
   },
   {
     name: "teams_post_chat_message",
     surface: "teams",
-    description: "Send a message to a chat.",
+    description: "Send a message to an existing chat, optionally @mentioning people. To message someone directly, use teams_send_direct_message.",
     mutating: true,
-    requiredScopes: ["ChatMessage.Send"],
-    inputSchema: z.object({
-      chatId: z.string(),
-      body: z.string(),
-      contentType: z.enum(["text", "html"]).default("text"),
-    }),
-    handler: async (input, ctx) =>
-      ctx.graph
-        .api(`/chats/${input.chatId}/messages`)
-        .post({ body: { contentType: input.contentType, content: input.body } }),
+    requiredScopes: ["ChatMessage.Send", "User.ReadBasic.All"],
+    inputSchema: z.object({ chatId: z.string(), ...MessageBody }),
+    handler: async (input, ctx) => ctx.graph.api(`/chats/${input.chatId}/messages`).post(await messageBody(ctx.graph, input)),
   },
+  ...chatTools,
 ];
