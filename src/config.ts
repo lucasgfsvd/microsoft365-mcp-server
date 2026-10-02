@@ -25,6 +25,7 @@ const READ_SCOPES = [
   "offline_access",
   "User.Read",
   "Mail.Read",
+  "MailboxSettings.Read",
   "Calendars.Read",
   "Calendars.Read.Shared",
   "Contacts.Read",
@@ -42,6 +43,7 @@ const READ_SCOPES = [
 const WRITE_SCOPES = [
   "Mail.Send",
   "Mail.ReadWrite",
+  "MailboxSettings.ReadWrite",
   "Calendars.ReadWrite",
   "Contacts.ReadWrite",
   "Files.ReadWrite.All",

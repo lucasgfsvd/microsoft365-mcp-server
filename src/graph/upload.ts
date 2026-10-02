@@ -90,14 +90,15 @@ function retryable(status: number): boolean {
 }
 
 /**
- * PUT the content to a session's upload URL in chunks.
+ * PUT the content to a session's upload URL in chunks: a drive upload session, or
+ * an Outlook attachment session, which speaks the same protocol.
  *
  * The URL is pre-authorised and lives on a SharePoint host, so it is called with
  * plain fetch: the Graph client would attach the bearer token, which Microsoft
  * says must not be sent there. A failed chunk is retried after asking the session
  * where it actually stands, since a chunk can land even when its response is lost.
  */
-async function sendChunks(uploadUrl: string, source: ContentSource, opts: UploadOptions): Promise<unknown> {
+export async function sendChunks(uploadUrl: string, source: ContentSource, opts: UploadOptions): Promise<unknown> {
   const doFetch = opts.fetch ?? fetch;
   const sleep = opts.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)));
   const chunkSize = opts.chunkSize ?? DEFAULT_CHUNK_SIZE;
@@ -129,7 +130,9 @@ async function sendChunks(uploadUrl: string, source: ContentSource, opts: Upload
       }
 
       if (res && (res.status === 200 || res.status === 201)) {
-        const item = await res.json();
+        // Drive sessions answer with the new item; Outlook attachment sessions with nothing.
+        const body = await res.text();
+        const item = body ? JSON.parse(body) : { location: res.headers.get("Location") ?? undefined };
         opts.onProgress?.(total, total);
         return item;
       }

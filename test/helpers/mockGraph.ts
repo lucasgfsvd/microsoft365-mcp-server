@@ -1,3 +1,4 @@
+import { Readable } from "node:stream";
 import type { Client as GraphClient } from "@microsoft/microsoft-graph-client";
 import type { TokenCredential } from "@azure/identity";
 import type { ServerConfig, ToolContext, ToolDefinition } from "../../src/types.js";
@@ -98,7 +99,17 @@ export function makeMockGraph(): MockGraph {
         query.select = s;
         return builder;
       },
-      getStream: () => Promise.reject(new Error("getStream not mocked")),
+      expand: (s: string) => {
+        query.expand = s;
+        return builder;
+      },
+      // Content downloads: answers with a stream of the Buffer set by on(), if any.
+      getStream: () => {
+        const call: GraphCall = { path, method: "GET", query: { ...query }, headers: { ...headers } };
+        calls.push(call);
+        const body = pickResponse(path, undefined, call);
+        return Buffer.isBuffer(body) ? Promise.resolve(Readable.from([body])) : Promise.reject(new Error("getStream not mocked"));
+      },
     };
     return builder;
   }

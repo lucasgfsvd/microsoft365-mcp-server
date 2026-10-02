@@ -5,6 +5,9 @@ import { PaginationInput } from "../../util/schema.js";
 import { tidyText } from "../../util/text.js";
 import { replyDraftTools } from "./replyDraft.js";
 import { composeTools } from "./compose.js";
+import { organizeTools } from "./organize.js";
+import { attachmentTools } from "./attachments.js";
+import { mailSettingsTools } from "./settings.js";
 
 /** An instant to filter on: a full ISO date-time with offset, or a date (midnight UTC). */
 const Instant = z.union([z.iso.datetime({ offset: true }), z.iso.date()]);
@@ -107,4 +110,7 @@ export const mailTools: ToolDefinition[] = [
   },
   ...composeTools,
   ...replyDraftTools,
+  ...organizeTools,
+  ...attachmentTools,
+  ...mailSettingsTools,
 ];

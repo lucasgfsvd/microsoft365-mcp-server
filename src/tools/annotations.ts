@@ -22,7 +22,9 @@ const BY_VERB: Array<[RegExp, WriteKind]> = [
   [/^(delete|update|set|clear|rename|replace|complete)$/, { destructiveHint: true, idempotentHint: true }],
   // Writes a file at a path, replacing one already there.
   [/^(upload|copy)$/, { destructiveHint: true, idempotentHint: true }],
-  [/^(create|add|append|insert|post|reply|send)$/, { destructiveHint: false, idempotentHint: false }],
+  [/^(create|add|append|insert|post|reply|send|forward)$/, { destructiveHint: false, idempotentHint: false }],
+  // Files a message elsewhere; doing it again leaves it where it is.
+  [/^move$/, { destructiveHint: false, idempotentHint: true }],
   // A sharing link of a given type is returned again, not duplicated.
   [/^share$/, { destructiveHint: false, idempotentHint: true }],
   [/^run$/, { destructiveHint: false, idempotentHint: true }],
@@ -45,7 +47,7 @@ const EXCEPTIONS: Record<string, WriteKind> = {
 };
 
 /** Writes other people see or receive. */
-const OPEN_WORLD = /^(mail_(send|reply)_|teams_(post|reply)_|calendar_(create|update|delete)_|planner_(create|complete|delete)_|files_share$)/;
+const OPEN_WORLD = /^(mail_(send|reply|forward)_|mail_set_automatic_replies$|teams_(post|reply)_|calendar_(create|update|delete)_|planner_(create|complete|delete)_|files_share$)/;
 
 export function writeKind(name: string): WriteKind | undefined {
   if (EXCEPTIONS[name]) return EXCEPTIONS[name];
