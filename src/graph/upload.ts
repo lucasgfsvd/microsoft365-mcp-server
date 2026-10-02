@@ -18,6 +18,10 @@ export interface UploadOptions {
   fetch?: typeof fetch;
   /** Injectable for tests; defaults to a real delay. */
   sleep?: (ms: number) => Promise<void>;
+  /** Stops the upload between or during chunks, and cancels its session. */
+  signal?: AbortSignal;
+  /** Bytes the session has accepted so far, of the total. */
+  onProgress?: (sent: number, total: number) => void;
 }
 
 /** Graph address of the target, without the trailing `/content` or action. */
@@ -55,10 +59,13 @@ export async function uploadContent(
   opts: UploadOptions = {},
 ): Promise<unknown> {
   const source = Buffer.isBuffer(content) ? bufferSource(content) : content;
+  opts.signal?.throwIfAborted();
   if (source.size <= SIMPLE_UPLOAD_LIMIT) {
     const bytes = await source.read(0, source.size);
     if (bytes.byteLength !== source.size) throw new Error("The file changed during the upload.");
-    return graph.api(`${address(base, target)}/content`).put(bytes);
+    const item = await graph.api(`${address(base, target)}/content`).put(bytes);
+    opts.onProgress?.(source.size, source.size);
+    return item;
   }
   // Replace, matching what the simple PUT does to an existing file of that name.
   const body = "itemId" in target ? {} : { item: { "@microsoft.graph.conflictBehavior": "replace" } };
@@ -101,6 +108,7 @@ async function sendChunks(uploadUrl: string, source: ContentSource, opts: Upload
   let attempt = 0;
   try {
     for (;;) {
+      opts.signal?.throwIfAborted();
       const end = Math.min(offset + chunkSize, total) - 1;
       // Outside the network try: a failed read is not worth retrying.
       const chunk = await source.read(offset, end + 1 - offset);
@@ -113,16 +121,23 @@ async function sendChunks(uploadUrl: string, source: ContentSource, opts: Upload
           method: "PUT",
           headers: { "Content-Range": `bytes ${offset}-${end}/${total}` },
           body: chunk,
+          signal: opts.signal,
         });
-      } catch {
+      } catch (err) {
+        if (opts.signal?.aborted) throw err;
         res = undefined; // network failure: treated like a retryable status
       }
 
-      if (res && (res.status === 200 || res.status === 201)) return await res.json();
+      if (res && (res.status === 200 || res.status === 201)) {
+        const item = await res.json();
+        opts.onProgress?.(total, total);
+        return item;
+      }
       if (res && res.status === 202) {
         const status = (await res.json()) as SessionStatus;
         offset = nextOffset(status) ?? end + 1;
         attempt = 0;
+        opts.onProgress?.(offset, total);
         continue;
       }
       if (res && !retryable(res.status) && res.status !== 416) {
@@ -134,12 +149,13 @@ async function sendChunks(uploadUrl: string, source: ContentSource, opts: Upload
       }
       const retryAfter = Number(res?.headers.get("Retry-After"));
       await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2 ** attempt * 500);
+      opts.signal?.throwIfAborted();
       // Re-sync with the session before resending (416 means our range was already taken).
       const probe = await doFetch(uploadUrl, { method: "GET" }).catch(() => undefined);
       if (probe?.ok) offset = nextOffset((await probe.json()) as SessionStatus) ?? offset;
     }
   } catch (err) {
-    // Best-effort cancel, so a failed upload does not linger as a session.
+    // Best-effort cancel, so a failed or cancelled upload does not linger as a session.
     await doFetch(uploadUrl, { method: "DELETE" }).catch(() => undefined);
     throw err;
   }

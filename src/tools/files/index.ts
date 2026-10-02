@@ -5,6 +5,7 @@ import { fetchPage } from "../../graph/pagination.js";
 import { DrivePath, Filename, PaginationInput } from "../../util/schema.js";
 import { uploadContent } from "../../graph/upload.js";
 import { uploadLocalFile } from "../../graph/localUpload.js";
+import { uploadOptions } from "./transfer.js";
 import { drivePrefix, itemByPath, ScopeInput } from "./scope.js";
 import { filesDownloadTools } from "./download.js";
 
@@ -102,10 +103,11 @@ export const filesTools: ToolDefinition[] = [
         }
         const filename = Filename.parse(input.filename ?? path.basename(input.localPath));
         const target = { parentPath: input.parentPath, filename };
-        return uploadLocalFile(ctx.graph, drivePrefix(input), target, ctx.config.uploadDir, input.localPath);
+        return uploadLocalFile(ctx.graph, drivePrefix(input), target, ctx.config.uploadDir, input.localPath, uploadOptions(ctx, filename));
       }
       const buf = Buffer.from(input.contentBase64 ?? "", "base64");
-      return uploadContent(ctx.graph, drivePrefix(input), { parentPath: input.parentPath, filename: input.filename! }, buf);
+      const target = { parentPath: input.parentPath, filename: input.filename! };
+      return uploadContent(ctx.graph, drivePrefix(input), target, buf, uploadOptions(ctx, target.filename));
     },
   },
   {
@@ -164,9 +166,13 @@ export const filesTools: ToolDefinition[] = [
         : `${itemByPath(base, input.path)}/content`;
       const stream: NodeJS.ReadableStream = await ctx.graph.api(sourceUrl).getStream();
       const chunks: Buffer[] = [];
-      for await (const c of stream) chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c));
+      for await (const c of stream) {
+        ctx.signal?.throwIfAborted();
+        chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c));
+      }
       const buf = Buffer.concat(chunks);
-      return uploadContent(ctx.graph, base, { parentPath: input.destinationParentPath, filename: input.destinationName }, buf);
+      const target = { parentPath: input.destinationParentPath, filename: input.destinationName };
+      return uploadContent(ctx.graph, base, target, buf, uploadOptions(ctx, target.filename));
     },
   },
   {

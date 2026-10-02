@@ -112,7 +112,9 @@ Graph combines entity types only within the SharePoint/OneDrive family (`driveIt
 
 `files_download` returns up to 5 MB inline, as text for text files and base64 otherwise, since the result lands in the conversation. With `saveToDisk: true` it streams any size into `MCP_DOWNLOAD_DIR` and returns only the path, size and SHA-256; it never overwrites a file there, and refuses if the folder is not configured.
 
-`files_upload` and `files_copy` use a Graph upload session above 4 MB, sent in 10 MiB chunks with retry and resume. `files_upload` takes the file one of two ways. With `localPath` it streams a file from `MCP_UPLOAD_DIR` at any size, read a chunk at a time; the path must lead to a file inside that folder (checked on the real path, so a link cannot lead out), and the upload is named after the file unless `filename` is given. With `contentBase64` the bytes arrive in the tool call, bounded by `MCP_MAX_MESSAGE_MB`: about 47 MB at the default of 64. `files_copy` downloads and re-uploads, so it holds the file in memory.
+`files_upload` and `files_copy` use a Graph upload session above 4 MB, sent in 10 MiB chunks with retry and resume. `files_upload` takes the file one of two ways. With `localPath` it streams a file from `MCP_UPLOAD_DIR` at any size, read a chunk at a time; the path must lead to a file inside that folder (checked on the real path, so a link cannot lead out), and the upload is named after the file unless `filename` is given. With `contentBase64` the bytes arrive in the tool call, bounded by `MCP_MAX_MESSAGE_MB`: about 47 MB at the default of 64.
+
+Large transfers report progress and can be cancelled. When the client sends a `progressToken`, `files_upload`, `files_copy` and `files_download` with `saveToDisk` send MCP progress notifications in bytes (at most four a second, the last at the total). Cancelling the call stops the transfer: an upload sends no further chunks and cancels its session, so no file appears; a download removes its partial file. `files_copy` downloads and re-uploads, so it holds the file in memory.
 
 ## 💬 Teams — 9 tools
 

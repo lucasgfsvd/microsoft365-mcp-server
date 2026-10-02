@@ -92,6 +92,13 @@ export interface SavedFile {
   sha256: string;
 }
 
+export interface DownloadOptions {
+  /** Stops the transfer; the partial file is removed. */
+  signal?: AbortSignal;
+  /** Bytes written so far. */
+  onProgress?: (written: number) => void;
+}
+
 /**
  * Stream a file to disk without holding it in memory.
  *
@@ -104,7 +111,9 @@ export async function downloadToDir(
   contentUrl: string,
   dir: string,
   itemName: string,
+  opts: DownloadOptions = {},
 ): Promise<SavedFile> {
+  opts.signal?.throwIfAborted();
   await fs.mkdir(dir, { recursive: true });
   const root = path.resolve(dir);
   const base = safeFileName(itemName);
@@ -128,13 +137,14 @@ export async function downloadToDir(
     transform(chunk: Buffer, _enc, done) {
       hash.update(chunk);
       byteLength += chunk.length;
+      opts.onProgress?.(byteLength);
       done(null, chunk);
     },
   });
 
   try {
     const source = toReadable(await graph.api(contentUrl).getStream());
-    await pipeline(source, tap, handle.createWriteStream());
+    await pipeline(source, tap, handle.createWriteStream(), { signal: opts.signal });
   } catch (err) {
     await handle.close().catch(() => undefined);
     await fs.unlink(target).catch(() => undefined);

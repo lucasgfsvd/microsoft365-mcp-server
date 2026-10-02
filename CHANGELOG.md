@@ -31,7 +31,8 @@ maintained: see *Maintenance status* in the README.
 - **Large files**: uploads over 4 MB use Graph upload sessions, and a file in
   a folder you configure (`MCP_UPLOAD_DIR`) uploads straight from disk at any
   size; large downloads stream to another (`MCP_DOWNLOAD_DIR`). Either way the
-  bytes stay out of the conversation.
+  bytes stay out of the conversation, the client sees progress, and the
+  transfer can be cancelled.
 
 ### Safety
 

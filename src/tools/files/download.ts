@@ -2,8 +2,8 @@ import { z } from "zod";
 import type { ToolDefinition } from "../../types.js";
 import { downloadInline, downloadToDir, getItemMeta, INLINE_LIMIT, toInline } from "../../graph/download.js";
 import { drivePrefix, ScopeInput } from "./scope.js";
-
-const MB = (n: number) => `${(n / 1024 / 1024).toFixed(1)} MB`;
+import { downloadOptions } from "./transfer.js";
+import { MB } from "../../util/progress.js";
 
 export const filesDownloadTools: ToolDefinition[] = [
   {
@@ -37,7 +37,7 @@ export const filesDownloadTools: ToolDefinition[] = [
             "Saving to disk is off: set MCP_DOWNLOAD_DIR to the folder the server may write downloads into.",
           );
         }
-        const saved = await downloadToDir(ctx.graph, `${itemUrl}/content`, dir, meta.name);
+        const saved = await downloadToDir(ctx.graph, `${itemUrl}/content`, dir, meta.name, downloadOptions(ctx, meta.name, meta.size));
         return { name: meta.name, mimeType: meta.file?.mimeType, ...saved };
       }
 

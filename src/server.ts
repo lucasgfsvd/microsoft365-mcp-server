@@ -22,6 +22,7 @@ import { registerPrompts } from "./prompts/index.js";
 import { graphForTool } from "./graph/retry.js";
 import { registerResources } from "./resources/index.js";
 import { annotationsFor } from "./tools/annotations.js";
+import { progressReporter } from "./util/progress.js";
 
 const SIGN_IN_HINT =
   "Not signed in to Microsoft 365. Call auth_sign_in to get a device code, enter it " +
@@ -86,7 +87,7 @@ export async function startServer(config: ServerConfig): Promise<void> {
     return { tools };
   });
 
-  server.setRequestHandler(CallToolRequestSchema, async (req) => {
+  server.setRequestHandler(CallToolRequestSchema, async (req, extra) => {
     const tool = registry.get(req.params.name);
     if (!tool) {
       return { isError: true, content: [{ type: "text", text: `Unknown tool: ${req.params.name}` }] };
@@ -101,7 +102,15 @@ export async function startServer(config: ServerConfig): Promise<void> {
         return { isError: true, content: [{ type: "text", text: SIGN_IN_HINT }] };
       }
 
-      const result = await tool.handler(args, { graph: graphForTool(graph, tool), credential, config, auth });
+      const progress = progressReporter(req.params._meta?.progressToken, (n) => extra.sendNotification(n));
+      const result = await tool.handler(args, {
+        graph: graphForTool(graph, tool),
+        credential,
+        config,
+        auth,
+        progress,
+        signal: extra.signal,
+      });
       return { content: [{ type: "text", text: serializeResult(result) }] };
     } catch (err) {
       if (isAuthenticationRequired(err)) {

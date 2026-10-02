@@ -15,6 +15,7 @@ export function startServer(dist, env = {}, [command, args] = [process.execPath,
   srv.stdout.setEncoding("utf8");
   let buf = "", id = 0;
   const waiting = new Map();
+  const notifications = [];
   srv.stdout.on("data", (d) => {
     buf += d;
     let i;
@@ -24,20 +25,35 @@ export function startServer(dist, env = {}, [command, args] = [process.execPath,
       if (!line.trim()) continue;
       const m = JSON.parse(line);
       if (m.id && waiting.has(m.id)) { waiting.get(m.id)(m); waiting.delete(m.id); }
+      else if (m.method) notifications.push(m);
     }
   });
-  const send = (method, params) =>
-    new Promise((res) => { const n = ++id; waiting.set(n, res); srv.stdin.write(JSON.stringify({ jsonrpc: "2.0", id: n, method, params }) + "\n"); });
-
-  /** Call a tool; returns { ok, value, text }. Never throws. */
-  const call = async (name, args = {}) => {
-    const r = await send("tools/call", { name, arguments: args });
+  /** A request; the promise carries its JSON-RPC id, for cancelling it. */
+  const send = (method, params) => {
+    const n = ++id;
+    const p = new Promise((res) => waiting.set(n, res));
+    srv.stdin.write(JSON.stringify({ jsonrpc: "2.0", id: n, method, params }) + "\n");
+    return Object.assign(p, { id: n });
+  };
+  const notify = (method, params) => srv.stdin.write(JSON.stringify({ jsonrpc: "2.0", method, params }) + "\n");
+  const toResult = (r) => {
     if (r.error) return { ok: false, text: `protocol error: ${r.error.message}` };
     const text = r.result?.content?.[0]?.text ?? "";
     if (r.result?.isError) return { ok: false, text };
     let value; try { value = JSON.parse(text); } catch { value = text; }
     return { ok: true, value, text };
   };
+
+  /** Call a tool; returns { ok, value, text }. Never throws. */
+  const call = async (name, args = {}) => toResult(await send("tools/call", { name, arguments: args }));
+  /** Start a tool call asking for progress under `token`; `.id` cancels it, `.result` awaits it. */
+  const startCall = (name, args, token) => {
+    const p = send("tools/call", { name, arguments: args, _meta: { progressToken: token } });
+    return { id: p.id, result: p.then(toResult) };
+  };
+  const cancel = (requestId) => notify("notifications/cancelled", { requestId, reason: "live test" });
+  const progressFor = (token) =>
+    notifications.filter((n) => n.method === "notifications/progress" && n.params.progressToken === token).map((n) => n.params);
   const init = async () => {
     await send("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "live", version: "1" } });
     srv.stdin.write(JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) + "\n");
@@ -48,7 +64,7 @@ export function startServer(dist, env = {}, [command, args] = [process.execPath,
     if (r.error) { console.log(`resource read failed: ${r.error.message}`); return undefined; }
     return r.result;
   };
-  return { call, init, readResource, kill: () => srv.kill(), stderr: () => stderr };
+  return { call, init, readResource, startCall, cancel, progressFor, kill: () => srv.kill(), stderr: () => stderr };
 }
 
 export function makeRun(label) {

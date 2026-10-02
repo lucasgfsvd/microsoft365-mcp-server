@@ -3,6 +3,7 @@ import type { TokenCredential } from "@azure/identity";
 import type { z } from "zod";
 import type { AuthSession } from "./auth/session.js";
 import type { RetryPolicy } from "./graph/retry.js";
+import type { ProgressReporter } from "./util/progress.js";
 
 export type AuthMode = "device-code" | "client-credentials" | "interactive";
 
@@ -40,6 +41,10 @@ export interface ToolContext {
   credential: TokenCredential;
   config: ServerConfig;
   auth: AuthSession;
+  /** Set when the client asked for progress; long transfers report through it. */
+  progress?: ProgressReporter;
+  /** Aborted when the client cancels the call. */
+  signal?: AbortSignal;
 }
 
 /**
