@@ -19,7 +19,7 @@ type WriteKind = Required<Pick<ToolAnnotations, "destructiveHint" | "idempotentH
 
 /** How a write behaves, by the verb in its name (surface_verb_object). */
 const BY_VERB: Array<[RegExp, WriteKind]> = [
-  [/^(delete|update|set|clear|rename|replace|complete|cancel|remove)$/, { destructiveHint: true, idempotentHint: true }],
+  [/^(delete|update|set|clear|rename|replace|complete|cancel|remove|format)$/, { destructiveHint: true, idempotentHint: true }],
   // Writes a PDF next to the original, replacing an older export.
   [/^export$/, { destructiveHint: true, idempotentHint: true }],
   // Answering an invitation replaces the previous answer.

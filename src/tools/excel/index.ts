@@ -4,6 +4,7 @@ import { excelWorksheetTools } from "./worksheets.js";
 import { excelRangeTools } from "./ranges.js";
 import { excelTableTools } from "./tables.js";
 import { excelWorkbookTools } from "./workbook.js";
+import { excelPresentationTools } from "./presentation.js";
 
 /** Every Excel tool, composed from the per-concern modules beside this file. */
 export const excelTools: ToolDefinition[] = [
@@ -12,4 +13,5 @@ export const excelTools: ToolDefinition[] = [
   ...excelRangeTools,
   ...excelTableTools,
   ...excelWorkbookTools,
+  ...excelPresentationTools,
 ];

@@ -100,6 +100,25 @@ export const onenoteTools: ToolDefinition[] = [
     },
   },
   {
+    name: "onenote_append_to_page",
+    surface: "onenote",
+    description:
+      "Add content to the end of an existing OneNote page, such as notes from a meeting. Give text (each " +
+      "line becomes a paragraph) or html.",
+    mutating: true,
+    requiredScopes: ["Notes.ReadWrite"],
+    inputSchema: z
+      .object({ pageId: z.string(), text: z.string().optional(), html: z.string().optional() })
+      .refine((p) => (p.text === undefined) !== (p.html === undefined), { message: "Give text or html" }),
+    handler: async (input, ctx) => {
+      const content = input.html ?? input.text!.split(/\r?\n/).map((line: string) => `<p>${escapeHtml(line)}</p>`).join("");
+      await ctx.graph
+        .api(`/me/onenote/pages/${input.pageId}/content`)
+        .patch([{ target: "body", action: "append", content }]);
+      return { ok: true };
+    },
+  },
+  {
     name: "onenote_delete_page",
     surface: "onenote",
     description: "Delete a OneNote page.",
