@@ -53,7 +53,7 @@ const EXCEPTIONS: Record<string, WriteKind> = {
 };
 
 /** Writes other people see or receive. */
-const OPEN_WORLD = /^(mail_(send|reply|forward)_|mail_set_automatic_replies$|teams_(post|reply|send)_|calendar_(create|update|delete|cancel|respond)_|planner_(create|complete|delete)_|files_(share|invite)$)/;
+const OPEN_WORLD = /^(mail_(send|reply|forward)_|mail_set_automatic_replies$|teams_(post|reply|send)_|calendar_(create|update|delete|cancel|respond)_|planner_(create|complete|delete|update)_|files_(share|invite)$)/;
 
 export function writeKind(name: string): WriteKind | undefined {
   if (EXCEPTIONS[name]) return EXCEPTIONS[name];
