@@ -18,6 +18,7 @@ import { normalizeGraphError } from "./graph/errors.js";
 import { logger } from "./util/logger.js";
 import { DEFAULT_PUBLIC_CLIENT_ID, readPackageVersion } from "./config.js";
 import { serializeResult } from "./util/redact.js";
+import { ToolOutput } from "./util/toolOutput.js";
 import { registerPrompts } from "./prompts/index.js";
 import { graphForTool } from "./graph/retry.js";
 import { registerResources } from "./resources/index.js";
@@ -121,6 +122,14 @@ export async function startServer(config: ServerConfig): Promise<void> {
         progress,
         signal: extra.signal,
       });
+      if (result instanceof ToolOutput) {
+        return {
+          content: [
+            { type: "text", text: serializeResult(result.data) },
+            ...result.images.map((i) => ({ type: "image" as const, data: i.data, mimeType: i.mimeType })),
+          ],
+        };
+      }
       return { content: [{ type: "text", text: serializeResult(result) }] };
     } catch (err) {
       if (isAuthenticationRequired(err)) {

@@ -263,6 +263,7 @@ Each entry below is the property of its respective copyright holder, used here u
 | `type-is` | 2.1.0 | MIT | jshttp/type-is |
 | `undici-types` | 6.21.0 | MIT | https://undici.nodejs.org |
 | `undici-types` | 7.24.6 | MIT | https://undici.nodejs.org |
+| `unpdf` | 1.8.1 | MIT | https://github.com/unjs/unpdf#readme |
 | `unpipe` | 1.0.0 | MIT | stream-utils/unpipe |
 | `unzipper` | 0.10.14 | MIT | https://github.com/ZJONSSON/node-unzipper |
 | `util-deprecate` | 1.0.2 | MIT | https://github.com/TooTallNate/util-deprecate |
@@ -278,8 +279,14 @@ Each entry below is the property of its respective copyright holder, used here u
 | `zod` | 4.6.5 | MIT | https://zod.dev |
 | `zod-to-json-schema` | 3.25.2 | ISC | https://github.com/StefanTerdell/zod-to-json-schema |
 
+## Bundled inside other packages
+
+| Software | Bundled in | License | Source |
+| --- | --- | --- | --- |
+| pdf.js (pdfjs-dist) | `unpdf` | Apache-2.0 | https://github.com/mozilla/pdf.js |
+
 ---
 
-Total: 265 packages.
+Total: 266 packages, plus 1 bundled.
 
 Microsoft, Microsoft 365, Outlook, OneDrive, SharePoint, Teams, OneNote, Excel, Word, and PowerPoint are trademarks of Microsoft Corporation. This is an independent open-source project; it is not affiliated with, endorsed by, or sponsored by Microsoft.

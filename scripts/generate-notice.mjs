@@ -76,16 +76,28 @@ const rows = sorted
   )
   .join("\n");
 
+// Code shipped inside another package's build, which the lockfile cannot see.
+const BUNDLED = [
+  { name: "pdf.js (pdfjs-dist)", in: "unpdf", license: "Apache-2.0", source: "https://github.com/mozilla/pdf.js" },
+];
+const bundled = `
+
+## Bundled inside other packages
+
+| Software | Bundled in | License | Source |
+| --- | --- | --- | --- |
+${BUNDLED.map((b) => `| ${b.name} | \`${b.in}\` | ${b.license} | ${b.source} |`).join("\n")}`;
+
 const footer = `
 
 ---
 
-Total: ${sorted.length} package${sorted.length === 1 ? "" : "s"}.
+Total: ${sorted.length} package${sorted.length === 1 ? "" : "s"}, plus ${BUNDLED.length} bundled.
 
 Microsoft, Microsoft 365, Outlook, OneDrive, SharePoint, Teams, OneNote, Excel, Word, and PowerPoint are trademarks of Microsoft Corporation. This is an independent open-source project; it is not affiliated with, endorsed by, or sponsored by Microsoft.
 `;
 
-await writeFile(resolve(root, "NOTICE.md"), header + tableHeader + rows + footer);
+await writeFile(resolve(root, "NOTICE.md"), header + tableHeader + rows + bundled + footer);
 process.stdout.write(`Wrote NOTICE.md (${sorted.length} packages)\n`);
 
 function licenseFromPkg(p) {

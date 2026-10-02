@@ -8,6 +8,7 @@ import type { Client as GraphClient } from "@microsoft/microsoft-graph-client";
 import { downloadToDir, safeFileName, toInline, INLINE_LIMIT } from "../src/graph/download.js";
 import { filesDownloadTools } from "../src/tools/files/download.js";
 import type { ToolContext } from "../src/types.js";
+import type { ToolOutput } from "../src/util/toolOutput.js";
 
 /** Graph stub: metadata from `meta`, content streamed in chunks, optionally failing midway. */
 function graphWith(content: Buffer, opts: { meta?: object; failAfter?: number } = {}) {
@@ -106,6 +107,13 @@ describe("files_download", () => {
 
   it("returns small text files inline as text", async () => {
     const graph = graphWith(Buffer.from("hello"), { meta: { name: "a.txt", size: 5, file: { mimeType: "text/plain" } } });
-    expect(await tool.handler({ itemId: "i" }, ctx(graph))).toMatchObject({ name: "a.txt", encoding: "utf8", text: "hello" });
+    const out = (await tool.handler({ itemId: "i" }, ctx(graph))) as ToolOutput;
+    expect(out.data).toMatchObject({ name: "a.txt", mimeType: "text/plain", text: "hello" });
+    expect(out.images).toEqual([]);
+  });
+
+  it("returns the exact bytes when asked for raw", async () => {
+    const graph = graphWith(Buffer.from("hello"), { meta: { name: "a.txt", size: 5, file: { mimeType: "text/plain" } } });
+    expect(await tool.handler({ itemId: "i", raw: true }, ctx(graph))).toMatchObject({ name: "a.txt", encoding: "utf8", text: "hello" });
   });
 });
