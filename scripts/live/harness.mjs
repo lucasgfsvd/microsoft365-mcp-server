@@ -64,7 +64,9 @@ export function startServer(dist, env = {}, [command, args] = [process.execPath,
     if (r.error) { console.log(`resource read failed: ${r.error.message}`); return undefined; }
     return r.result;
   };
-  return { call, init, readResource, startCall, cancel, progressFor, kill: () => srv.kill(), stderr: () => stderr };
+  const listTools = async () => (await send("tools/list", {})).result?.tools ?? [];
+  const listResources = async () => (await send("resources/list", {})).result?.resources ?? [];
+  return { call, init, readResource, listTools, listResources, startCall, cancel, progressFor, kill: () => srv.kill(), stderr: () => stderr };
 }
 
 export function makeRun(label) {

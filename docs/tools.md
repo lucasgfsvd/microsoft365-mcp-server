@@ -9,6 +9,8 @@ Every tool also carries the standard MCP annotations, which clients use to decid
 - `idempotentHint`: true when repeating the call changes nothing more. False for sends and creates, and for deleting a paragraph or slide by position.
 - `openWorldHint`: true when other people see or receive the result: sending and replying to mail, Teams posts, calendar changes (attendees are notified), Planner tasks (plan members see them) and sharing links.
 
+In app-only mode (`client-credentials`), every tool works for `MCP_USER`, and the tools Graph refuses without a signed-in user are hidden: OneNote, posting to Teams, `graph_search`. With `MCP_ENABLE_SHARED_MAILBOXES`, every mail and calendar tool also takes `mailbox`, the address of a shared mailbox or of a calendar the user is a delegate of; see [permissions.md](./permissions.md).
+
 They are derived from each tool's verb in `src/tools/annotations.ts`, with the exceptions listed there; a test fails if a new write tool fits none. Annotations guide clients, they enforce nothing: the write guard does that.
 
 Every tool name is stable across releases — the catalogue grows additively. If a name needs to change we'll keep the old name as an alias for one minor version with a deprecation log.

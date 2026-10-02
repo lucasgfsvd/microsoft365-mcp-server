@@ -5,7 +5,7 @@ This server supports three auth flows. Pick the one that matches your situation.
 | Flow | Audience | Requires | Interactivity |
 |---|---|---|---|
 | `device-code` (default) | Individuals, dev loops | Public client id | Once (device code in a browser) |
-| `client-credentials` | Tenant-wide automation | Tenant id + app id + secret + admin consent | None |
+| `client-credentials` | Unattended work for one user or shared mailbox | Tenant id + app id + certificate (or secret) + admin consent + `MCP_USER` | None |
 | `interactive` | Desktop users preferring a browser | Public client id, reachable localhost redirect | Once (browser popup) |
 
 ---
@@ -65,9 +65,14 @@ No client secret is needed for device-code flow.
    MCP_AUTH_MODE=client-credentials \
    MCP_TENANT_ID=<tenant-guid> \
    MCP_CLIENT_ID=<app-id> \
-   MCP_CLIENT_SECRET=<secret> \
+   MCP_CLIENT_CERTIFICATE_PATH=/secure/app.pem \
+   MCP_USER=assistant@contoso.com \
    npx -y @microsoft365-mcp/server
    ```
+
+   A certificate is preferred; `MCP_CLIENT_SECRET=<secret>` works in its place where the tenant allows secrets. `MCP_USER` is required: an app-only token has no signed-in user, so `/me` in every tool stands for this user (or shared mailbox). The tenant must be named, not `common`.
+
+   Graph allows some tools only for a signed-in user; in this mode they are hidden: OneNote (Microsoft ended app-only access to it), posting to Teams, and `graph_search`.
 
 **Important:** application permissions grant tenant-wide access. Scope the app to specific mailboxes with [application access policies](https://learn.microsoft.com/graph/auth-limit-mailbox-access) if you don't want full-tenant reach.
 
@@ -85,4 +90,4 @@ No client secret is needed for device-code flow.
 ## Revoking access
 
 - Individual device-code / interactive: go to [myapps.microsoft.com](https://myapps.microsoft.com) → **Manage your apps** → remove the app. Then delete `~/.microsoft365-mcp/tokencache.json`.
-- Tenant client-credentials: rotate/delete the client secret in Entra ID, or remove API permissions.
+- Tenant client-credentials: remove the certificate or secret in Entra ID, or remove API permissions.

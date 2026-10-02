@@ -12,6 +12,16 @@ export interface ServerConfig {
   tenantId: string;
   clientId: string;
   clientSecret?: string;
+  /** PEM file holding the certificate and its private key (client-credentials). */
+  clientCertificatePath?: string;
+  clientCertificatePassword?: string;
+  /**
+   * The user app-only mode works for: whose mail, calendar and files `/me`
+   * stands for. Required with client-credentials, which has no signed-in user.
+   */
+  user?: string;
+  /** Offer a `mailbox` argument on mail and calendar tools (shared mailboxes, delegates). */
+  sharedMailboxes: boolean;
   redirectUri?: string;
   tokenCachePath: string;
   /**

@@ -176,13 +176,15 @@ docker build -t microsoft365-mcp-server .
         "-e", "MCP_TENANT_ID",
         "-e", "MCP_CLIENT_ID",
         "-e", "MCP_CLIENT_SECRET",
+        "-e", "MCP_USER",
         "-e", "MCP_ENABLE_WRITES=true",
         "microsoft365-mcp-server"
       ],
       "env": {
         "MCP_TENANT_ID": "<your-tenant-guid>",
         "MCP_CLIENT_ID": "<your-app-id>",
-        "MCP_CLIENT_SECRET": "<your-secret>"
+        "MCP_CLIENT_SECRET": "<your-secret>",
+        "MCP_USER": "<the-mailbox-it-works-for@contoso.com>"
       }
     }
   }
@@ -247,10 +249,13 @@ For **individual users**: no admin consent required — each user self-consents 
 
 If you're running unattended with `MCP_AUTH_MODE=client-credentials`:
 
-1. **Certificates & secrets** → **+ New client secret** → copy the value (it's only shown once). That's your `MCP_CLIENT_SECRET`.
+1. **Certificates & secrets** → **Certificates** → upload the public half of a certificate, and point `MCP_CLIENT_CERTIFICATE_PATH` at a PEM file holding the certificate and its private key (`MCP_CLIENT_CERTIFICATE_PASSWORD` if the key is encrypted). Many tenants forbid client secrets for unattended apps; if yours allows them, **+ New client secret** gives a value for `MCP_CLIENT_SECRET` instead (shown once).
 2. **API permissions** → add the same permissions as step 5 but pick **Application permissions** instead of Delegated.
 3. Click **Grant admin consent for \<tenant\>**. A Global Administrator must approve.
 4. Copy the **Directory (tenant) ID** from the Overview page — that's your `MCP_TENANT_ID`.
+5. Set `MCP_USER` to the user (or shared mailbox) the server works for. An app-only token has no signed-in user, so every "my mail / my calendar / my files" tool acts on this one. Limit the app to that mailbox with an [application access policy](https://learn.microsoft.com/graph/auth-limit-mailbox-access); otherwise application permissions reach every mailbox in the tenant.
+
+In this mode the tools Graph allows only for a signed-in user are hidden: OneNote, posting to Teams, and `graph_search`.
 
 ### 7. Use it
 
@@ -702,7 +707,11 @@ All settings can be passed as CLI flags **or** environment variables.
 | `MCP_AUTH_MODE` | `--auth` | `device-code` | `device-code` \| `client-credentials` \| `interactive` |
 | `MCP_TENANT_ID` | `--tenant` | `common` | Tenant id, or `common` / `organizations` / `consumers` |
 | `MCP_CLIENT_ID` | `--client-id` | Public Graph client | Use your own app for production |
-| `MCP_CLIENT_SECRET` | `--client-secret` | – | Required for `client-credentials` |
+| `MCP_CLIENT_SECRET` | `--client-secret` | – | `client-credentials` without a certificate |
+| `MCP_CLIENT_CERTIFICATE_PATH` | `--client-certificate` | – | `client-credentials`: PEM with the certificate and private key. Preferred over a secret |
+| `MCP_CLIENT_CERTIFICATE_PASSWORD` | – | – | For an encrypted private key |
+| `MCP_USER` | `--user` | – | Required for `client-credentials`: the user or shared mailbox the server works for |
+| `MCP_ENABLE_SHARED_MAILBOXES` | – | `false` | Signed-in modes: add a `mailbox` argument to mail and calendar tools, for shared mailboxes and calendars you are a delegate of. Adds the `.Shared` scopes, so sign in again once |
 | `MCP_REDIRECT_URI` | `--redirect-uri` | `http://localhost:3000` | `interactive` only |
 | `MCP_SCOPES` | `--scopes` | Full set | Comma-separated Graph scopes |
 | `MCP_ENABLE_WRITES` | `--enable-writes` | `false` | Unlock all mutating tools |

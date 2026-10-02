@@ -1,4 +1,5 @@
 import type { Client as GraphClient } from "@microsoft/microsoft-graph-client";
+import { urlRewriter } from "./targetUser.js";
 
 /** Graph rejects a $batch payload carrying more than 20 requests. */
 export const MAX_BATCH_SIZE = 20;
@@ -78,7 +79,9 @@ export async function batchGet(graph: GraphClient, items: BatchItem[]): Promise<
     assertBatchableUrl(it.url);
   }
 
-  const payload = { requests: items.map((it) => ({ id: it.id, method: "GET", url: it.url })) };
+  // Sub-request URLs travel in the body, past the client's own /me rewrite.
+  const rewrite = urlRewriter(graph);
+  const payload = { requests: items.map((it) => ({ id: it.id, method: "GET", url: rewrite(it.url) })) };
   const res = (await graph.api("/$batch").post(payload)) as RawBatchResponse;
 
   const byId = new Map((res.responses ?? []).map((r) => [r.id, r]));

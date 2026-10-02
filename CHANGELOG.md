@@ -23,6 +23,11 @@ maintained: see *Maintenance status* in the README.
 - **Prompt templates**: `daily-brief`, `inbox-triage` and `meeting-prep`.
 - **MCP resources**: attach mail messages, files and OneNote pages as context;
   Word and PowerPoint come back as text, Excel as CSV per sheet.
+- **For companies**: app-only (client-credentials) mode works for a named
+  user (`MCP_USER`) and authenticates with a certificate as well as a secret;
+  tools Graph refuses without a signed-in user are hidden there. Signed-in
+  users can open shared mailboxes and calendars they are delegates of with a
+  `mailbox` argument (`MCP_ENABLE_SHARED_MAILBOXES`).
 - **Mail**: list by date (`receivedAfter` / `receivedBefore`), and draft a
   reply inside its conversation without sending it
   (`mail_create_reply_draft`), which `inbox-triage` now uses.

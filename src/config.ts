@@ -52,6 +52,11 @@ const WRITE_SCOPES = [
   "Notes.ReadWrite",
 ];
 
+// Other people's mailboxes and calendars the user has been given access to.
+// Calendars.Read.Shared is already a read scope (free/busy needs it).
+const SHARED_READ_SCOPES = ["Mail.Read.Shared"];
+const SHARED_WRITE_SCOPES = ["Mail.ReadWrite.Shared", "Mail.Send.Shared", "Calendars.ReadWrite.Shared"];
+
 /** Microsoft's "Microsoft Graph Command Line Tools" public client.
  *  Convenient for trying the server out; override MCP_CLIENT_ID for production
  *  so you get clean audit logs and can scope your own permissions. */
@@ -75,6 +80,8 @@ export function loadConfig(argv: string[]): ServerConfig {
     .option("--tenant <id>", "Azure AD tenant id (or 'common', 'organizations', 'consumers')")
     .option("--client-id <id>", "Azure AD application (client) id")
     .option("--client-secret <secret>", "Client secret (client-credentials only)")
+    .option("--client-certificate <path>", "PEM certificate with private key (client-credentials only)")
+    .option("--user <upn>", "The user app-only mode acts for (client-credentials only)")
     .option("--redirect-uri <url>", "Redirect URI (interactive only)")
     .option("--scopes <csv>", "Comma-separated Graph scopes (overrides default)")
     .option("--enable-writes", "Enable all mutating tools")
@@ -97,6 +104,21 @@ export function loadConfig(argv: string[]): ServerConfig {
   const clientId =
     opts.clientId ?? process.env.MCP_CLIENT_ID ?? DEFAULT_PUBLIC_CLIENT_ID;
   const clientSecret = opts.clientSecret ?? process.env.MCP_CLIENT_SECRET;
+  const clientCertificatePath = opts.clientCertificate ?? process.env.MCP_CLIENT_CERTIFICATE_PATH;
+  const user = opts.user ?? process.env.MCP_USER;
+  if (authMode === "client-credentials") {
+    if (!user) {
+      throw new Error(
+        "client-credentials mode has no signed-in user: set MCP_USER to the user (or shared mailbox) " +
+          "whose mail, calendar and files the server works with.",
+      );
+    }
+    if (["common", "organizations", "consumers"].includes(tenantId)) {
+      throw new Error(`client-credentials mode needs your tenant id or domain in MCP_TENANT_ID, not "${tenantId}".`);
+    }
+  }
+  // Shared mailboxes are reached with the .Shared scopes; opt-in, since new scopes need new consent.
+  const sharedMailboxes = authMode !== "client-credentials" && envBool("MCP_ENABLE_SHARED_MAILBOXES") === true;
   const redirectUri = opts.redirectUri ?? process.env.MCP_REDIRECT_URI;
 
   const enableWrites = Boolean(opts.enableWrites) || envBool("MCP_ENABLE_WRITES") === true;
@@ -109,7 +131,12 @@ export function loadConfig(argv: string[]): ServerConfig {
   }
 
   const wantsWrites = enableWrites || Object.values(perSurfaceWrites).some(Boolean);
-  const defaultScopes = wantsWrites ? [...READ_SCOPES, ...WRITE_SCOPES] : READ_SCOPES;
+  const defaultScopes = [
+    ...READ_SCOPES,
+    ...(wantsWrites ? WRITE_SCOPES : []),
+    ...(sharedMailboxes ? SHARED_READ_SCOPES : []),
+    ...(sharedMailboxes && wantsWrites ? SHARED_WRITE_SCOPES : []),
+  ];
   const scopes = (opts.scopes ?? process.env.MCP_SCOPES ?? defaultScopes.join(","))
     .split(",")
     .map((s: string) => s.trim())
@@ -145,6 +172,10 @@ export function loadConfig(argv: string[]): ServerConfig {
     tenantId,
     clientId,
     clientSecret,
+    clientCertificatePath,
+    clientCertificatePassword: process.env.MCP_CLIENT_CERTIFICATE_PASSWORD || undefined,
+    user,
+    sharedMailboxes,
     redirectUri,
     tokenCachePath: opts.tokenCache ?? process.env.MCP_TOKEN_CACHE_PATH ?? defaultCachePath(),
     tokenCacheKey,

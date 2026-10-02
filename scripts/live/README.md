@@ -13,6 +13,8 @@ node scripts/live/onenote.mjs "$PWD/dist/index.js" /tmp/live <sectionId>        
 node scripts/live/teams-planner.mjs "$PWD/dist/index.js" /tmp/live <teamId> <planId>  # channel posts, Planner tasks
 node scripts/live/signin.mjs "$PWD/dist/index.js" /tmp/live [image]   # encrypted cache, sign-in seen by other servers
 node scripts/live/transfers.mjs "$PWD/dist/index.js" /tmp/live          # progress and cancellation of large transfers
+node scripts/live/shared.mjs "$PWD/dist/index.js" /tmp/live <mailbox>  # another mailbox you can open (MCP_ENABLE_SHARED_MAILBOXES)
+node scripts/live/apponly.mjs "$PWD/dist/index.js" /tmp/live          # app-only mode; needs MCP_TENANT_ID, MCP_CLIENT_ID, MCP_USER and a certificate in the environment
 ```
 
 The last two need a sandbox: a OneNote section, and a private team with a Planner
@@ -47,6 +49,12 @@ Needs a signed-in token cache; runs with writes enabled.
 - `transfers.mjs` uploads 24 MB from `<scratch>/up` and downloads it again, both with
   progress, then cancels a 48 MB upload partway, all inside one new OneDrive folder
   `mcp-live-test-<timestamp>`, deleted at the end.
+- `shared.mjs` needs a person: it signs in (device code, consenting to the `.Shared`
+  scopes) to a throwaway encrypted cache, then lists folders, mail and events in the
+  given mailbox and creates and deletes one draft there.
+- `apponly.mjs` runs as an app registration with application permissions, working
+  for `MCP_USER`: it reads mail and events, creates and deletes a draft, an event, a
+  To Do task and a OneDrive folder with a file and a workbook. It sends nothing.
 - `teams-planner.mjs` posts a message and a reply in the sandbox team's channel, and
   creates, completes and deletes a Planner task. Channel messages cannot be deleted
   through the server, so they stay in the sandbox. Never point it at a team other

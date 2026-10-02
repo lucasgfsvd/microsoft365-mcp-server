@@ -17,9 +17,24 @@ Request only the scopes you actually need — the server degrades gracefully whe
 | Signed-in user | `User.Read` | – |
 | Token refresh | `offline_access` | – |
 
+## Shared mailboxes and delegated calendars
+
+With `MCP_ENABLE_SHARED_MAILBOXES=true`, mail and calendar tools take a `mailbox` argument naming another mailbox the user can open: a shared mailbox, or a calendar they are a delegate of. Exchange enforces the access; the server only addresses the request to `/users/{mailbox}`. The option adds these delegated scopes, so each user consents once more at the next sign-in:
+
+| | Read | Write |
+|---|---|---|
+| Mail | `Mail.Read.Shared` | `Mail.ReadWrite.Shared`, `Mail.Send.Shared` |
+| Calendar | `Calendars.Read.Shared` (already requested) | `Calendars.ReadWrite.Shared` |
+
+Where the option is off, or the tool is not a mail or calendar tool, a `mailbox` argument is refused rather than ignored, so a request can never quietly act on the user's own mailbox instead.
+
 ## Application permissions (client-credentials)
 
-Use the `.All` variants of the same names — e.g. `Mail.Read` → `Mail.Read`, `Files.ReadWrite.All` → `Files.ReadWrite.All`. Scopes sent at runtime always collapse to the single `https://graph.microsoft.com/.default` — the actual permissions are whatever was consented in the app registration.
+Use the application versions of the same names, e.g. `Mail.ReadWrite`, `Calendars.ReadWrite`, `Files.ReadWrite.All`, `Tasks.ReadWrite.All`. Scopes sent at runtime always collapse to the single `https://graph.microsoft.com/.default` — the actual permissions are whatever was consented in the app registration.
+
+Application permissions reach every mailbox and drive in the tenant. The server works for one user, `MCP_USER`, and offers no way to name another, but the token itself is not limited: restrict the app with an [application access policy](https://learn.microsoft.com/graph/auth-limit-mailbox-access) (or Exchange RBAC for applications) to the mailboxes it should touch.
+
+Not available app-only, and hidden in this mode: OneNote, posting to Teams channels and chats, and `graph_search`.
 
 ## Per-surface opt-out
 

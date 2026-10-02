@@ -14,6 +14,10 @@ const ENV_KEYS = [
   "MCP_MAX_MESSAGE_MB",
   "MCP_UPLOAD_DIR",
   "MCP_TOKEN_CACHE_KEY",
+  "MCP_USER",
+  "MCP_CLIENT_CERTIFICATE_PATH",
+  "MCP_CLIENT_CERTIFICATE_PASSWORD",
+  "MCP_ENABLE_SHARED_MAILBOXES",
 ];
 
 describe("loadConfig", () => {
@@ -66,8 +70,43 @@ describe("loadConfig", () => {
 
   it("uses .default scope for client-credentials", () => {
     process.env.MCP_AUTH_MODE = "client-credentials";
+    process.env.MCP_TENANT_ID = "contoso.onmicrosoft.com";
+    process.env.MCP_USER = "alice@contoso.com";
     const c = loadConfig(["node", "idx"]);
     expect(c.scopes).toEqual(["https://graph.microsoft.com/.default"]);
+    expect(c.user).toBe("alice@contoso.com");
+  });
+
+  // App-only has no signed-in user, so /me means nothing without one named.
+  it("refuses client-credentials without a user or with a multi-tenant authority", () => {
+    process.env.MCP_AUTH_MODE = "client-credentials";
+    process.env.MCP_TENANT_ID = "contoso.onmicrosoft.com";
+    expect(() => loadConfig(["node", "idx"])).toThrow(/MCP_USER/);
+    process.env.MCP_USER = "alice@contoso.com";
+    process.env.MCP_TENANT_ID = "common";
+    expect(() => loadConfig(["node", "idx"])).toThrow(/tenant id/);
+  });
+
+  it("takes a certificate for client-credentials, by flag or environment", () => {
+    const base = ["node", "idx", "--auth", "client-credentials", "--tenant", "contoso.com", "--user", "a@contoso.com"];
+    expect(loadConfig([...base, "--client-certificate", "/certs/app.pem"]).clientCertificatePath).toBe("/certs/app.pem");
+    process.env.MCP_CLIENT_CERTIFICATE_PATH = "/certs/env.pem";
+    process.env.MCP_CLIENT_CERTIFICATE_PASSWORD = "pw";
+    const c = loadConfig(base);
+    expect([c.clientCertificatePath, c.clientCertificatePassword]).toEqual(["/certs/env.pem", "pw"]);
+  });
+
+  it("adds the shared-mailbox scopes only when asked, and only with sign-in", () => {
+    expect(loadConfig(["node", "idx"]).sharedMailboxes).toBe(false);
+    process.env.MCP_ENABLE_SHARED_MAILBOXES = "true";
+    const read = loadConfig(["node", "idx"]);
+    expect(read.sharedMailboxes).toBe(true);
+    expect(read.scopes).toContain("Mail.Read.Shared");
+    expect(read.scopes).not.toContain("Mail.Send.Shared");
+    process.env.MCP_ENABLE_WRITES = "true";
+    expect(loadConfig(["node", "idx"]).scopes).toEqual(expect.arrayContaining(["Mail.ReadWrite.Shared", "Mail.Send.Shared", "Calendars.ReadWrite.Shared"]));
+    const appOnly = loadConfig(["node", "idx", "--auth", "client-credentials", "--tenant", "contoso.com", "--user", "a@contoso.com"]);
+    expect(appOnly.sharedMailboxes).toBe(false);
   });
 
   it("parses --disabled-tools CSV", () => {

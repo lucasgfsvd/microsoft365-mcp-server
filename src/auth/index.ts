@@ -1,6 +1,7 @@
 import { EventEmitter } from "node:events";
 import type { AuthenticationRecord } from "@azure/identity";
 import {
+  ClientCertificateCredential,
   ClientSecretCredential,
   DeviceCodeCredential,
   InteractiveBrowserCredential,
@@ -126,13 +127,21 @@ export async function buildCredential(
     }
 
     case "client-credentials":
+      // A certificate is what most tenants want for unattended apps; it wins over a secret.
+      if (config.clientCertificatePath) {
+        logger.info({ tenantId, clientId, user: config.user }, "auth: using client credentials (certificate)");
+        return new ClientCertificateCredential(tenantId, clientId, {
+          certificatePath: config.clientCertificatePath,
+          certificatePassword: config.clientCertificatePassword,
+        });
+      }
       if (!clientSecret) {
         throw new Error(
-          "MCP_CLIENT_SECRET is required for client-credentials auth mode. " +
-            "Set it in the environment or switch to --auth device-code.",
+          "client-credentials mode needs MCP_CLIENT_CERTIFICATE_PATH (preferred) or MCP_CLIENT_SECRET. " +
+            "Set one in the environment, or switch to --auth device-code.",
         );
       }
-      logger.info({ tenantId, clientId }, "auth: using client credentials flow");
+      logger.info({ tenantId, clientId, user: config.user }, "auth: using client credentials (secret)");
       return new ClientSecretCredential(tenantId, clientId, clientSecret);
 
     case "interactive": {
