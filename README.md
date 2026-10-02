@@ -52,7 +52,7 @@ Mail · Calendar · Contacts · OneDrive · SharePoint · Teams · To Do · Plan
 
 This is an **early alpha**. Please calibrate expectations before depending on it:
 
-- **Exercised against a real Microsoft 365 business tenant: all 102 tools of the first round; the newer ones as listed in [`scripts/live/`](./scripts/live/).** Each call's result was checked, not just accepted, and Word, PowerPoint and Excel files edited in place were also opened with independent parsers (python-docx, python-pptx, openpyxl). The live scripts are in [`scripts/live/`](./scripts/live/). Teams channel posts and Planner tasks were tested in a private sandbox team with no other members.
+- **Exercised against a real Microsoft 365 business tenant: all 102 tools of the first round, and most of the newer ones; the roadmap lists the few still pending.** Each call's result was checked, not just accepted, and Word, PowerPoint and Excel files edited in place were also opened with independent parsers (python-docx, python-pptx, openpyxl). The live scripts are in [`scripts/live/`](./scripts/live/). Teams channel posts and Planner tasks were tested in a private sandbox team with no other members.
 - **Unit tested:** 182 tests, including the SDK's real retry middleware under nock. CI runs lint, typecheck, tests with coverage, a production `npm audit`, a secret scan, and builds *and starts* the Docker image.
 - **Not published yet.** `0.1.0` goes to npm as `@microsoft365-mcp/server` once the [roadmap](./docs/roadmap.md)'s remaining features are in; it will be the only planned release, built in CI with npm provenance. No Docker image is published; build it from the `Dockerfile`.
 

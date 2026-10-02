@@ -15,22 +15,22 @@ as done: every live pass so far has found something the unit tests could not.
 
 ## Before 0.1.0: company use and everyday actions
 
-Added after a review of what a user asks for in chat, and what a company deployment needs. Built and unit-tested; each needs its live pass before it counts as done.
+Added after a review of what a user asks for in chat, and what a company deployment needs. All built and unit-tested; ☑ where the live pass is done, otherwise what it still needs. The pending checks need a sign-in with the new scopes (`scripts/live/login.mjs`), an app registration, or another person.
 
 | | Feature | Why | Size |
 |---|---|---|---|
 | ☐ | **App-only mode for a named user** (`MCP_USER`, certificate credentials, delegated-only tools hidden) | Documented for unattended use, but every tool used `/me`, which Graph refuses without a signed-in user. Live test needs an app registration with admin consent (`scripts/live/apponly.mjs`) | M |
-| ☐ | **Shared mailboxes and delegated calendars** (`mailbox`, `MCP_ENABLE_SHARED_MAILBOXES`) | Shared inboxes and assistants managing a calendar | S |
+| ☐ | **Shared mailboxes and delegated calendars** (`mailbox`, `MCP_ENABLE_SHARED_MAILBOXES`) | Shared inboxes and assistants managing a calendar. Live: `shared.mjs` pending | S |
 | ☑ | **Standard tool annotations** | Clients decide what to confirm from them | S |
 | ☑ | **Progress and cancellation** for large transfers | Large uploads and downloads ran silently and could not be stopped | S |
-| ☐ | **Files readable by the model**: PDFs as text, images as images, mail attachments | "Summarise the PDF Alice sent" could not work | M |
-| ☐ | **Mail**: send with attachments, forward, move, mark and flag, send a draft, out-of-office | The commonest mail requests after reading and replying | M |
-| ☐ | **Calendar**: answer invitations, cancel meetings, recurrence, rooms (admin-gated) | | M |
-| ☐ | **People**: manager, reports, profiles, presence | | S |
-| ☐ | **Files**: move and rename, PDF export, permissions, SharePoint lists, recent files | | M |
-| ☐ | **Teams**: direct messages, @mentions, editing your own messages | | S |
-| ☐ | **Tasks**: update To Do and Planner tasks, steps, checklists, buckets | | S |
-| ☐ | **OneNote** append to a page; **Excel** charts and formatting | | S |
+| ☑ | **Files readable by the model**: PDFs as text, images as images, mail attachments | "Summarise the PDF Alice sent" could not work | M |
+| ☑ | **Mail**: send with attachments, forward, move, mark and flag, send a draft, out-of-office | The commonest mail requests after reading and replying. The live pass found large attachments silently dropped (fixed) | M |
+| ☐ | **Calendar**: answer invitations, cancel meetings, recurrence, rooms (admin-gated) | Live: recurrence and cancel pass; answering needs an invitation from someone else; rooms need the admin scopes | M |
+| ☐ | **People**: manager, reports, profiles, presence | Live: all but presence pass; presence needs `Presence.Read.All` consented | S |
+| ☐ | **Files**: move and rename, PDF export, permissions, SharePoint lists, recent files | Live: all pass except sharing with a named person (would reach someone) and list item writes (the sandbox site has no list) | M |
+| ☐ | **Teams**: direct messages, @mentions, editing your own messages | Live: mentions pass; editing needs `Chat.ReadWrite` consented; a direct message would reach someone | S |
+| ☑ | **Tasks**: update To Do and Planner tasks, steps, checklists, buckets | | S |
+| ☑ | **OneNote** append to a page; **Excel** charts and formatting | | S |
 
 Not included: meeting transcripts (left out of this round), and "shared with me" (Microsoft retires the API after November 2026 with no replacement).
 
