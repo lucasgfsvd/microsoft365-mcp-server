@@ -2,6 +2,9 @@ import { z } from "zod";
 import type { ToolDefinition } from "../../types.js";
 import { fetchPage } from "../../graph/pagination.js";
 import { PaginationInput, trimEmpty } from "../../util/schema.js";
+import { RecurrenceInput, toPatternedRecurrence } from "./recurrence.js";
+import { respondTools } from "./respond.js";
+import { roomTools } from "./rooms.js";
 
 const DateTimeTZ = z.object({
   dateTime: z.string().describe("ISO-8601, e.g. 2026-04-20T14:00:00"),
@@ -103,7 +106,9 @@ export const calendarTools: ToolDefinition[] = [
   {
     name: "calendar_create_event",
     surface: "calendar",
-    description: "Create a new calendar event.",
+    description:
+      "Create a calendar event: with attendees (they get an invitation), a Teams link, a meeting room " +
+      "(booked by inviting its mailbox; find one with calendar_list_rooms), and a repeat pattern.",
     mutating: true,
     requiredScopes: ["Calendars.ReadWrite"],
     inputSchema: z.object({
@@ -114,23 +119,28 @@ export const calendarTools: ToolDefinition[] = [
       bodyType: z.enum(["Text", "HTML"]).default("Text"),
       location: z.string().optional(),
       attendees: z.array(Attendee).optional(),
+      room: z.object({ email: z.email(), name: z.string().optional() }).optional().describe("A room mailbox to book."),
       isOnlineMeeting: z.boolean().default(false),
+      recurrence: RecurrenceInput.optional(),
     }),
-    handler: async (input, ctx) =>
-      ctx.graph.api(`/me/events`).post(
+    handler: async (input, ctx) => {
+      const attendees = (input.attendees ?? []).map((a: z.infer<typeof Attendee>) => ({ type: a.type, emailAddress: { address: a.email, name: a.name } }));
+      // A room is booked like a person is invited: as a resource attendee, which its mailbox accepts or declines.
+      if (input.room) attendees.push({ type: "resource", emailAddress: { address: input.room.email, name: input.room.name } });
+      const location = input.room ? { displayName: input.room.name ?? input.room.email, locationEmailAddress: input.room.email } : input.location ? { displayName: input.location } : undefined;
+      return ctx.graph.api(`/me/events`).post(
         trimEmpty({
           subject: input.subject,
           start: input.start,
           end: input.end,
           body: input.body ? { contentType: input.bodyType, content: input.body } : undefined,
-          location: input.location ? { displayName: input.location } : undefined,
-          attendees: input.attendees?.map((a: z.infer<typeof Attendee>) => ({
-            type: a.type,
-            emailAddress: { address: a.email, name: a.name },
-          })),
+          location,
+          attendees: attendees.length ? attendees : undefined,
           isOnlineMeeting: input.isOnlineMeeting,
+          recurrence: input.recurrence ? toPatternedRecurrence(input.recurrence, input.start.dateTime, input.start.timeZone) : undefined,
         }),
-      ),
+      );
+    },
   },
   {
     name: "calendar_update_event",
@@ -159,7 +169,7 @@ export const calendarTools: ToolDefinition[] = [
   {
     name: "calendar_delete_event",
     surface: "calendar",
-    description: "Cancel/delete an event.",
+    description: "Delete an event from the calendar. To call off a meeting you organise and tell the attendees, use calendar_cancel_event.",
     mutating: true,
     requiredScopes: ["Calendars.ReadWrite"],
     inputSchema: z.object({ id: z.string() }),
@@ -168,4 +178,6 @@ export const calendarTools: ToolDefinition[] = [
       return { ok: true };
     },
   },
+  ...respondTools,
+  ...roomTools,
 ];

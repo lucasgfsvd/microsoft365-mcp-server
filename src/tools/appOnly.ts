@@ -27,3 +27,8 @@ export const DELEGATED_ONLY = new Set([
 export function availableInMode(tool: Pick<ToolDefinition, "name">, config: Pick<ServerConfig, "authMode">): boolean {
   return config.authMode !== "client-credentials" || !DELEGATED_ONLY.has(tool.name);
 }
+
+/** A tool needing an admin-granted scope is offered once the user opts in to those scopes. */
+export function adminConsentGiven(tool: Pick<ToolDefinition, "needsAdminConsent">, config: Pick<ServerConfig, "authMode" | "adminScopes">): boolean {
+  return !tool.needsAdminConsent || config.authMode === "client-credentials" || config.adminScopes === true;
+}

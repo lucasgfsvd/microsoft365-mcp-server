@@ -59,6 +59,10 @@ const WRITE_SCOPES = [
 const SHARED_READ_SCOPES = ["Mail.Read.Shared"];
 const SHARED_WRITE_SCOPES = ["Mail.ReadWrite.Shared", "Mail.Send.Shared", "Calendars.ReadWrite.Shared"];
 
+// Only an admin can grant these: requesting one unapproved fails the whole
+// sign-in, so they are opt-in (MCP_ENABLE_ADMIN_SCOPES).
+const ADMIN_SCOPES = ["Place.Read.All", "User.Read.All", "OnlineMeetings.Read", "OnlineMeetingTranscript.Read.All"];
+
 /** Microsoft's "Microsoft Graph Command Line Tools" public client.
  *  Convenient for trying the server out; override MCP_CLIENT_ID for production
  *  so you get clean audit logs and can scope your own permissions. */
@@ -121,6 +125,8 @@ export function loadConfig(argv: string[]): ServerConfig {
   }
   // Shared mailboxes are reached with the .Shared scopes; opt-in, since new scopes need new consent.
   const sharedMailboxes = authMode !== "client-credentials" && envBool("MCP_ENABLE_SHARED_MAILBOXES") === true;
+  // App-only permissions are whatever the admin granted; the flag is for signed-in users.
+  const adminScopes = authMode !== "client-credentials" && envBool("MCP_ENABLE_ADMIN_SCOPES") === true;
   const redirectUri = opts.redirectUri ?? process.env.MCP_REDIRECT_URI;
 
   const enableWrites = Boolean(opts.enableWrites) || envBool("MCP_ENABLE_WRITES") === true;
@@ -138,6 +144,7 @@ export function loadConfig(argv: string[]): ServerConfig {
     ...(wantsWrites ? WRITE_SCOPES : []),
     ...(sharedMailboxes ? SHARED_READ_SCOPES : []),
     ...(sharedMailboxes && wantsWrites ? SHARED_WRITE_SCOPES : []),
+    ...(adminScopes ? ADMIN_SCOPES : []),
   ];
   const scopes = (opts.scopes ?? process.env.MCP_SCOPES ?? defaultScopes.join(","))
     .split(",")
@@ -178,6 +185,7 @@ export function loadConfig(argv: string[]): ServerConfig {
     clientCertificatePassword: process.env.MCP_CLIENT_CERTIFICATE_PASSWORD || undefined,
     user,
     sharedMailboxes,
+    adminScopes,
     redirectUri,
     tokenCachePath: opts.tokenCache ?? process.env.MCP_TOKEN_CACHE_PATH ?? defaultCachePath(),
     tokenCacheKey,

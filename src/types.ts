@@ -22,6 +22,8 @@ export interface ServerConfig {
   user?: string;
   /** Offer a `mailbox` argument on mail and calendar tools (shared mailboxes, delegates). */
   sharedMailboxes: boolean;
+  /** Request the scopes only an admin can grant, and offer the tools that need them. */
+  adminScopes: boolean;
   redirectUri?: string;
   tokenCachePath: string;
   /**
@@ -77,6 +79,12 @@ export interface ToolDefinition<I extends ZodObj = ZodObj> {
   requiredScopes?: string[];
   /** Retry tuning; mutating POSTs are only ever retried on 429 regardless. */
   retry?: RetryPolicy;
+  /**
+   * Needs a permission only an admin can grant (rooms, transcripts, others'
+   * full profiles). Hidden unless MCP_ENABLE_ADMIN_SCOPES, since asking for such
+   * a scope at sign-in fails outright where no admin has approved it.
+   */
+  needsAdminConsent?: boolean;
   handler: (input: z.infer<I>, ctx: ToolContext) => Promise<unknown>;
 }
 
