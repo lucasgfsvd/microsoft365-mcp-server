@@ -3,6 +3,7 @@ import type { ToolDefinition } from "../../types.js";
 import { fetchPage } from "../../graph/pagination.js";
 import { PaginationInput, trimEmpty } from "../../util/schema.js";
 import { tidyText } from "../../util/text.js";
+import { replyDraftTools } from "./replyDraft.js";
 
 const Recipient = z.object({
   address: z.email(),
@@ -28,9 +29,6 @@ export function listFilter(opts: { receivedAfter?: string; receivedBefore?: stri
   if (opts.unreadOnly) parts.push("isRead eq false");
   return parts.length ? parts.join(" and ") : undefined;
 }
-
-/** What a caller needs to find a new draft again; the quoted original stays out of the result. */
-const DRAFT_FIELDS = ["id", "subject", "toRecipients", "ccRecipients", "conversationId", "isDraft", "webLink"] as const;
 
 /**
  * Strip invisible padding from a message's plain-text body. An HTML body is
@@ -183,26 +181,6 @@ export const mailTools: ToolDefinition[] = [
     },
   },
   {
-    name: "mail_create_reply_draft",
-    surface: "mail",
-    description:
-      "Draft a reply inside the message's conversation, without sending it. Outlook fills in the " +
-      'recipients, the "RE:" subject and the quoted original; your text goes above the quote. The ' +
-      "draft waits in Drafts for the user to review and send.",
-    mutating: true,
-    requiredScopes: ["Mail.ReadWrite"],
-    inputSchema: z.object({
-      id: z.string().describe("The message being replied to."),
-      comment: z.string().describe("The reply text, placed above the quoted original."),
-      replyAll: z.boolean().default(false),
-    }),
-    handler: async ({ id, comment, replyAll }, ctx) => {
-      const action = replyAll ? "createReplyAll" : "createReply";
-      const draft = (await ctx.graph.api(`/me/messages/${id}/${action}`).post({ comment })) as Record<string, unknown>;
-      return Object.fromEntries(DRAFT_FIELDS.filter((k) => k in draft).map((k) => [k, draft[k]]));
-    },
-  },
-  {
     name: "mail_delete_message",
     surface: "mail",
     description: "Move a message to Deleted Items.",
@@ -214,4 +192,5 @@ export const mailTools: ToolDefinition[] = [
       return { ok: true };
     },
   },
+  ...replyDraftTools,
 ];
