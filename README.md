@@ -492,7 +492,7 @@ The server exposes mail messages, OneDrive/SharePoint files and OneNote pages as
 | Resource | URI | Comes back as |
 |---|---|---|
 | Mail message | `m365://mail/{messageId}` | Headers and the plain-text body, with invisible padding stripped |
-| File | `m365://drive/{driveId}/{itemId}` | Word and PowerPoint as their text; other text files as text; anything else as a blob. Up to 5 MB, beyond which use `files_download` with `saveToDisk` |
+| File | `m365://drive/{driveId}/{itemId}` | Word and PowerPoint as their text; Excel as CSV, one block per sheet, formulas by their saved value (up to 1,000,000 characters); other text files as text; anything else as a blob. Up to 5 MB, beyond which use `files_download` with `saveToDisk` |
 | OneNote page | `m365://onenote/{pageId}` | The page as plain text |
 
 A resource type is offered only while its read tool (`mail_get_message`, `files_download`, `onenote_get_page_content`) is enabled, so `MCP_DISABLED_TOOLS` covers resources too. Signed out, the list is empty and reading one points you to `auth_sign_in`.

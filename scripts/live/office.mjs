@@ -156,6 +156,10 @@ try {
     if (sessionId) await step(srv, "excel_close_session", { itemId: id, sessionId });
     await saveAndParse("excel (openpyxl parse)", id,
       "import sys, openpyxl; wb = openpyxl.load_workbook(sys.argv[1]); ws = wb['Data']; print(wb.sheetnames, [[c.value for c in r] for r in ws.iter_rows(max_row=6)])");
+    // The resource: the saved workbook as CSV, formulas by their calculated value.
+    const res = await srv.readResource(`m365://drive/${encodeURIComponent(folder.parentReference.driveId)}/${encodeURIComponent(id)}`);
+    const csv = res?.contents?.[0]?.text ?? "";
+    record("resource m365://drive (xlsx as CSV)", csv.startsWith("--- Sheet: Data ---") && csv.includes("plums,5") && csv.includes("figs,6") && !csv.includes("SUM"), JSON.stringify(csv).slice(0, 250));
     await step(srv, "excel_create_from_template", { templateItemId: id, parentPath: root, filename: "from-template.xlsx" }, (v) => !!idOf(v) || `no id in ${JSON.stringify(v).slice(0, 120)}`);
   }
 } catch (e) {

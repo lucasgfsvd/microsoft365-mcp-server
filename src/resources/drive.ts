@@ -1,19 +1,22 @@
 import { downloadInline, getItemMeta, INLINE_LIMIT, toInline } from "../graph/download.js";
 import { extractText as docxText } from "../ooxml/docx.js";
 import { extractAllSlides } from "../ooxml/pptx.js";
+import { workbookText } from "../ooxml/xlsxText.js";
 import { enc, uriFor, values, type ResourceContent, type ResourceKind } from "./types.js";
 
 const DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const PPTX = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+const XLSX = /^application\/(vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet|vnd\.ms-excel\.sheet\.macroEnabled\.12)$/;
 
 /**
- * File content for the conversation. Word and PowerPoint become their text —
- * base64 of a zip is useless as context. Other text files come back as text,
- * anything else as a blob, and nothing over the inline limit, which has to fit
- * the client's message size.
+ * File content for the conversation. Word, PowerPoint and Excel become their
+ * text (a workbook as CSV per sheet): base64 of a zip is useless as context.
+ * Other text files come back as text, anything else as a blob, and nothing over
+ * the inline limit, which has to fit the client's message size.
  */
-export function fileContent(uri: string, bytes: Buffer, mimeType: string | undefined, name: string): ResourceContent {
+export async function fileContent(uri: string, bytes: Buffer, mimeType: string | undefined, name: string): Promise<ResourceContent> {
   if (mimeType === DOCX || /\.docx$/i.test(name)) return { uri, mimeType: "text/plain", text: docxText(bytes) };
+  if ((mimeType && XLSX.test(mimeType)) || /\.xls[xm]$/i.test(name)) return { uri, mimeType: "text/plain", text: await workbookText(bytes) };
   if (mimeType === PPTX || /\.pptx$/i.test(name)) {
     const text = extractAllSlides(bytes).map((s) => `--- Slide ${s.index} ---\n${s.text}`).join("\n\n");
     return { uri, mimeType: "text/plain", text };
@@ -41,7 +44,7 @@ export const driveResource: ResourceKind = {
     uriTemplate: "m365://drive/{driveId}/{itemId}",
     name: "drive-file",
     title: "OneDrive / SharePoint file",
-    description: `A file's content: Word and PowerPoint as text, other text files as text, up to ${INLINE_LIMIT / 1024 / 1024} MB.`,
+    description: `A file's content: Word and PowerPoint as text, Excel as CSV per sheet, other text files as text, up to ${INLINE_LIMIT / 1024 / 1024} MB.`,
   },
   recent: { id: "drive", url: "/me/drive/recent?$top=20" },
   toEntries: (body) =>

@@ -68,14 +68,14 @@ describe("text conversion", () => {
 describe("file content", () => {
   it("returns Word and PowerPoint as their text, not base64 of a zip", async () => {
     const docx = await Packer.toBuffer(new Document({ sections: [{ children: [new Paragraph("Hello doc")] }] }));
-    expect(fileContent("u", docx, undefined, "a.docx")).toMatchObject({ mimeType: "text/plain", text: expect.stringContaining("Hello doc") });
+    expect(await fileContent("u", docx, undefined, "a.docx")).toMatchObject({ mimeType: "text/plain", text: expect.stringContaining("Hello doc") });
     const pptx = await buildDeck([{ title: "Deck title", bullets: ["b"] }]);
-    expect(fileContent("u", pptx, undefined, "a.pptx")).toMatchObject({ text: "--- Slide 1 ---\nDeck title b" });
+    expect(await fileContent("u", pptx, undefined, "a.pptx")).toMatchObject({ text: "--- Slide 1 ---\nDeck title b" });
   });
 
-  it("keeps binaries as blobs and text as text", () => {
-    expect(fileContent("u", Buffer.from("a,b"), "text/csv", "x.csv")).toEqual({ uri: "u", mimeType: "text/csv", text: "a,b" });
-    expect(fileContent("u", Buffer.from([0, 1]), "application/pdf", "x.pdf")).toEqual({ uri: "u", mimeType: "application/pdf", blob: "AAE=" });
+  it("keeps binaries as blobs and text as text", async () => {
+    expect(await fileContent("u", Buffer.from("a,b"), "text/csv", "x.csv")).toEqual({ uri: "u", mimeType: "text/csv", text: "a,b" });
+    expect(await fileContent("u", Buffer.from([0, 1]), "application/pdf", "x.pdf")).toEqual({ uri: "u", mimeType: "application/pdf", blob: "AAE=" });
   });
 
   it("lists files shared from other drives under their own drive, and skips folders", () => {
