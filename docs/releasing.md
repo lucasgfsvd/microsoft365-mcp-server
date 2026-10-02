@@ -1,7 +1,7 @@
 # Releasing
 
-The plan is to **publish `0.1.0` to npm once**, after the "Before 0.1.0" items
-in [roadmap.md](./roadmap.md) are done, and not maintain it after that (see the
+The plan is to **publish `0.1.0` to npm once**, now that the "Before 0.1.0"
+items in [roadmap.md](./roadmap.md) are done, and not maintain it after that (see the
 README's *Maintenance status*). No container image is published: an
 unmaintained image accumulates base-image vulnerabilities, and the `Dockerfile`
 is there for anyone who wants one.
@@ -27,8 +27,8 @@ final in the tagged commit: no "not published yet" wording.
 
 ## Publishing 0.1.0
 
-0. **The roadmap's "Before 0.1.0" items are done**, each with its live test,
-   and listed in the `CHANGELOG.md` entry.
+0. ~~**The roadmap's "Before 0.1.0" items are done**~~, each with its live test,
+   and listed in the `CHANGELOG.md` entry. Done.
 1. ~~**Claim the scope.**~~ Done: the npm organisation `microsoft365-mcp` exists,
    owned by `lucasgfsvd`, so no one else can publish `@microsoft365-mcp/server`.
    (The unscoped `microsoft365-mcp-server` belongs to an unrelated package:

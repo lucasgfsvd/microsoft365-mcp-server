@@ -16,7 +16,7 @@ Mail · Calendar · Contacts · OneDrive · SharePoint · Teams · To Do · Plan
 
 > ### Maintenance status
 >
-> **Being finished, then published once, then left as-is.** A last set of features is being added (see the [roadmap](./docs/roadmap.md)). When they are done, `0.1.0` is published to npm, and after that the project is **not actively maintained**: no planned releases, no support, no promise of security fixes, and issues or pull requests may go unanswered. It holds access to your Microsoft 365 account, so read the code before relying on it, pin the version, and fork freely: it is MIT-licensed.
+> **Published once, then left as-is.** The last planned features are in (see the [roadmap](./docs/roadmap.md)); `0.1.0` is published to npm next, and after that the project is **not actively maintained**: no planned releases, no support, no promise of security fixes, and issues or pull requests may go unanswered. It holds access to your Microsoft 365 account, so read the code before relying on it, pin the version, and fork freely: it is MIT-licensed.
 
 ---
 
@@ -831,12 +831,9 @@ Picking this up cold? [docs/handover.md](./docs/handover.md) has the current sta
 
 ## Roadmap
 
-The full list, with reasons and sizes, is in [docs/roadmap.md](./docs/roadmap.md). In short, **`0.1.0` is published once these are in**:
+The full list, with reasons and sizes, is in [docs/roadmap.md](./docs/roadmap.md). In short, everything planned for `0.1.0` is in, and publishing it is next. Webhooks are designed ([docs/webhooks.md](./docs/webhooks.md)) but wait on a decision.
 
-- Picking up a sign-in made by another server process
-- Device-code sign-in that survives a container restart
-
-Webhooks are designed ([docs/webhooks.md](./docs/webhooks.md)) but wait on a decision. Already done: uploads from a local folder at any size, reply drafts kept in the thread, mail date filters, task deletion, OneNote notebook and section creation, Excel files as CSV in resources, large-file uploads, streaming downloads, MCP resources, prompt templates, the per-tool retry policy, and live tests of every tool.
+Done for `0.1.0`: device-code sign-in that survives restarts without an OS keyring (the Docker image included), a sign-in picked up by servers already running, uploads from a local folder at any size, reply drafts kept in the thread, mail date filters, task deletion, OneNote notebook and section creation, Excel files as CSV in resources, large-file uploads, streaming downloads, MCP resources, prompt templates, the per-tool retry policy, and live tests of every tool.
 
 ---
 

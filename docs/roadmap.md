@@ -1,7 +1,6 @@
 # Roadmap
 
-**`0.1.0` is published to npm once the "Before 0.1.0" items below are done**,
-not before. After that release the project is not actively maintained (see the
+**The "Before 0.1.0" items below are all done; `0.1.0` is next.** After that release the project is not actively maintained (see the
 README's *Maintenance status*), so anything wanted in the published package has
 to land first. The release itself is described in [releasing.md](./releasing.md)
 and is already prepared: npm scope claimed, workflow ready, MCP Registry entry
@@ -24,8 +23,8 @@ as done: every live pass so far has found something the unit tests could not.
 | ☑ | **Delete tools for To Do and Planner tasks** | Tasks can be created but never removed through the server; the live tests leave completed tasks behind for the same reason | S |
 | ☑ | **Create OneNote notebooks and sections** | An account with no notebook cannot use the OneNote tools at all (seen live); pages are the only thing that can be created today | S |
 | ☑ | **Excel as text in resources**: `m365://drive/…` returns `.xlsx` as CSV per sheet | Word and PowerPoint already come back as text; an attached spreadsheet arrives as an unreadable blob | S |
-| ☐ | **Pick up a sign-in made by another process**: re-read `authrecord.json` when a token request finds no account | The one remaining edge from the sign-in investigation (handover): a running server does not notice a sign-in completed by another process until restarted | S |
-| ☐ | **Device-code sign-in that survives a container restart**: a file-based token cache when no keyring is available, encrypted with a key from the environment | The Docker image has no `libsecret`, so device-code users must sign in after every restart; client-credentials users are unaffected | M |
+| ☑ | **Pick up a sign-in made by another process**: re-read `authrecord.json` when a token request finds no account | The one remaining edge from the sign-in investigation (handover): a running server does not notice a sign-in completed by another process until restarted | S |
+| ☑ | **Device-code sign-in that survives a container restart**: a file-based token cache when no keyring is available, encrypted with a key from the environment | The Docker image has no `libsecret`, so device-code users must sign in after every restart; client-credentials users are unaffected | M |
 
 ## Needs a decision first
 

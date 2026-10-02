@@ -21,8 +21,7 @@ updated = 2026-10-02
 
 # The real next moves, most important first - taken from this repo's docs.
 next_actions = [
-  "Finish the roadmap's 'Before 0.1.0' features (docs/roadmap.md): cross-process sign-in pickup, persistent container sign-in.",
-  "Then publish 0.1.0 once (docs/releasing.md): npm, MCP Registry, GitHub Release. Before ~January 2027, when 2FA-bypass tokens stop publishing. Unmaintained after that.",
+  "Publish 0.1.0 once (docs/releasing.md): npm, MCP Registry, GitHub Release. Before ~January 2027, when 2FA-bypass tokens stop publishing. Unmaintained after that.",
 ]
 
 blockers = []

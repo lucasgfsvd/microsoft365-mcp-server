@@ -2,9 +2,8 @@
 
 ## [0.1.0] - unreleased
 
-First and only planned release, published once the "Before 0.1.0" items in
-`docs/roadmap.md` are done (add them below as they land, and date this heading
-when tagging). After it, the project is provided as-is and not actively
+First and only planned release; everything `docs/roadmap.md` planned for it
+is below (date this heading when tagging). After it, the project is provided as-is and not actively
 maintained: see *Maintenance status* in the README.
 
 ### What it does
@@ -53,8 +52,9 @@ maintained: see *Maintenance status* in the README.
 
 All 102 tools exercised against a real Microsoft 365 business tenant
 (`scripts/live/`), with edited Office files also opened by independent
-parsers; 206 unit tests. Teams channel posts and Planner tasks were tested in
-a private team with no other members.
+parsers; 243 unit tests. Teams channel posts and Planner tasks were tested in
+a private team with no other members. Sign-in persistence and pickup were
+tested with a real device-code sign-in, locally and in the Docker image.
 
 ### Known limits
 

@@ -6,7 +6,7 @@ State of play and what to pick up next. Written for whoever continues this work 
 
 ## Where things stand
 
-102 tools across 12 surfaces, three prompt templates, and three resource types. 206 unit tests. CI gates lint, typecheck, coverage thresholds, `npm audit` (blocking, high severity, production deps), a full-history gitleaks scan, and builds *and starts* the Docker image.
+102 tools across 12 surfaces, three prompt templates, and three resource types. 243 unit tests. CI gates lint, typecheck, coverage thresholds, `npm audit` (blocking, high severity, production deps), a full-history gitleaks scan, and builds *and starts* the Docker image.
 
 **Live coverage: all 102 tools pass against a real tenant** (`scripts/live/`), with Word, PowerPoint and Excel output also opened by independent parsers. No open defects are known.
 
@@ -19,7 +19,7 @@ What the server can now do that it could not before, grouped by concern (git has
 - **Workflows.** `daily-brief`, `inbox-triage` and `meeting-prep` prompts, with Graph queries computed server-side and verified live.
 - **Attachable context.** Mail, files and OneNote pages as MCP resources (`src/resources/`): recent items in one `$batch`, any item by `m365://` URI, returned as text (Word and PowerPoint extracted, Excel as CSV per sheet). Gated on the matching read tool, like the prompts.
 
-**Next up: the roadmap, then `0.1.0`.** [roadmap.md](./roadmap.md) lists the features still to land before publishing (cross-process sign-in pickup, persistent container sign-in). Publishing waits for them; the release itself is prepared ([releasing.md](./releasing.md)). After `0.1.0` the project is left unmaintained, by the owner's choice.
+**Next up: publish `0.1.0`.** Every "Before 0.1.0" item in [roadmap.md](./roadmap.md) has landed and passed its live test; the release is prepared and described in [releasing.md](./releasing.md). After `0.1.0` the project is left unmaintained, by the owner's choice.
 
 ---
 
