@@ -129,19 +129,20 @@ export async function sendChunks(uploadUrl: string, source: ContentSource, opts:
         res = undefined; // network failure: treated like a retryable status
       }
 
-      if (res && (res.status === 200 || res.status === 201)) {
-        // Drive sessions answer with the new item; Outlook attachment sessions with nothing.
-        const body = await res.text();
-        const item = body ? JSON.parse(body) : { location: res.headers.get("Location") ?? undefined };
+      if (res && (res.status === 200 || res.status === 201 || res.status === 202)) {
+        const text = await res.text();
+        const body = (text ? JSON.parse(text) : {}) as SessionStatus & Record<string, unknown>;
+        // More wanted: drive sessions say so with 202, Outlook attachment sessions
+        // with 200 (found live: taking that 200 as done abandoned the upload).
+        if (body.nextExpectedRanges?.length) {
+          offset = nextOffset(body) ?? end + 1;
+          attempt = 0;
+          opts.onProgress?.(offset, total);
+          continue;
+        }
+        // Done: drive sessions answer with the new item, Outlook ones with no body.
         opts.onProgress?.(total, total);
-        return item;
-      }
-      if (res && res.status === 202) {
-        const status = (await res.json()) as SessionStatus;
-        offset = nextOffset(status) ?? end + 1;
-        attempt = 0;
-        opts.onProgress?.(offset, total);
-        continue;
+        return text ? body : { location: res.headers.get("Location") ?? undefined };
       }
       if (res && !retryable(res.status) && res.status !== 416) {
         throw new Error(`Upload chunk ${offset}-${end} failed: HTTP ${res.status} ${await res.text()}`);

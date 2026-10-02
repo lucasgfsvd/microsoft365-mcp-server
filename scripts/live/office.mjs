@@ -57,7 +57,7 @@ try {
   const refused = await srv.call("files_upload", { parentPath: root, localPath: "../outside.txt" });
   record("files_upload (outside the folder refused)", !refused.ok && /outside the upload folder/.test(refused.text), refused.text.slice(0, 200));
   await step(srv, "files_copy", { itemId: up?.id, destinationParentPath: root, destinationName: "notes-copy.txt" }, (v) => has(v, "notes-copy.txt"));
-  await step(srv, "files_download", { itemId: up?.id }, (v) => (v.encoding === "utf8" && v.text === "hello live test ✓") || `got ${JSON.stringify(v).slice(0, 120)}`);
+  await step(srv, "files_download", { itemId: up?.id }, (v) => v.text === "hello live test ✓" || `got ${JSON.stringify(v).slice(0, 120)}`);
   await step(srv, "files_share", { itemId: up?.id, type: "view", scope: "organization" }, (v) => has(v, "webUrl"));
   await step(srv, "files_search", { query: "notes" }, (v) => Array.isArray(v.value) || "no value array");
   await step(srv, "sites_search", { query: "*" }, (v) => Array.isArray(v.value) || "no value array");

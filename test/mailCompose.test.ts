@@ -34,14 +34,17 @@ describe("mail_send_message", () => {
   it("sends a large file from disk through an attachment upload session", async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), "m365-attach-"));
     try {
-      const big = Buffer.alloc(SIMPLE_ATTACHMENT_LIMIT + 100, 7);
+      const big = Buffer.alloc(SIMPLE_ATTACHMENT_LIMIT + 2 * 1024 * 1024, 7); // two chunks
       await fs.writeFile(path.join(dir, "deck.pdf"), big);
       const puts: number[] = [];
       vi.stubGlobal("fetch", async (_u: string, init: RequestInit) => {
         puts.push((init.body as Buffer).length);
         const sent = puts.reduce((a, b) => a + b, 0);
-        // Outlook ends an attachment session with 201 and no body.
-        return sent === big.length ? new Response(null, { status: 201, headers: { Location: "att" } }) : new Response(JSON.stringify({ nextExpectedRanges: [`${sent}-`] }), { status: 202 });
+        // As Outlook answers (found live): 200 with the next range while more is
+        // wanted, then 201 with no body. Taking that 200 as done lost the attachment.
+        return sent === big.length
+          ? new Response(null, { status: 201, headers: { Location: "att" } })
+          : new Response(JSON.stringify({ nextExpectedRanges: [String(sent)] }), { status: 200 });
       });
       const ctx = makeContext({ uploadDir: dir });
       ctx.mock.on("/me/messages", { id: "m1" });
