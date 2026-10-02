@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { ToolDefinition } from "../../types.js";
 import { fetchPage } from "../../graph/pagination.js";
 import { PaginationInput } from "../../util/schema.js";
+import { peopleTools } from "./people.js";
 
 const EmailAddr = z.object({ address: z.email(), name: z.string().optional() });
 
@@ -86,4 +87,5 @@ export const contactsTools: ToolDefinition[] = [
       return { ok: true };
     },
   },
+  ...peopleTools,
 ];

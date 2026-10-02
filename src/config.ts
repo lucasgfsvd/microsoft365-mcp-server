@@ -30,6 +30,8 @@ const READ_SCOPES = [
   "Calendars.Read.Shared",
   "Contacts.Read",
   "People.Read",
+  "User.ReadBasic.All",
+  "Presence.Read.All",
   "Files.Read.All",
   "Sites.Read.All",
   "Team.ReadBasic.All",
