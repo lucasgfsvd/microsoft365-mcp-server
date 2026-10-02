@@ -110,7 +110,9 @@ describe("buildServerCredential", () => {
     try {
       const tokenCachePath = path.join(dir, "tokencache.json");
       await writeAuthRecord(tokenCachePath, record("from-disk"));
-      const cred = await buildServerCredential({ ...base, authMode: "device-code", tokenCachePath } as ServerConfig);
+      // A cache key keeps the OS keyring plugin out of it: on a CI runner without libsecret,
+      // loading it raised an unhandled error under Node 20.
+      const cred = await buildServerCredential({ ...base, authMode: "device-code", tokenCachePath, tokenCacheKey: "a key for the test only" } as ServerConfig);
       expect(cred).toBeInstanceOf(ReloadingCredential);
       expect((cred as unknown as { record: AuthenticationRecord }).record).toEqual(record("from-disk"));
     } finally {
