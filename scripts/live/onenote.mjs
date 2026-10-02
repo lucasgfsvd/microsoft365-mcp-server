@@ -51,8 +51,8 @@ try {
     });
     const sec = await step(srv, "onenote_create_section", { notebookId: nb.id, displayName: "tests" }, (v) => (!!v.id && v.displayName === "tests") || "no id");
     if (sec?.id) {
-      await step(srv, "onenote_list_sections (new notebook)", { notebookId: nb.id }, (v) => JSON.stringify(v).includes(sec.id) || "new section not listed");
-      await step(srv, "onenote_create_page (new section)", { sectionId: sec.id, title: `${TAG} first page`, html: "<p>in a new notebook</p>" }, (v) => !!v.id || "no id");
+      await step(srv, "onenote_list_sections", { notebookId: nb.id }, (v) => JSON.stringify(v).includes(sec.id) || "new section not listed", "onenote_list_sections (new notebook)");
+      await step(srv, "onenote_create_page", { sectionId: sec.id, title: `${TAG} first page`, html: "<p>in a new notebook</p>" }, (v) => !!v.id || "no id", "onenote_create_page (new section)");
     }
   }
 } catch (e) {

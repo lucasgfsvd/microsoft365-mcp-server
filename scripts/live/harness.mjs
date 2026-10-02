@@ -57,13 +57,13 @@ export function makeRun(label) {
     results.push({ tool, pass, note });
     console.log(`${pass ? "PASS" : "FAIL"}  ${tool.padEnd(32)} ${note}`.slice(0, 300));
   };
-  /** Run a tool, check the result with `verify` (return true or a failure string). */
-  const step = async (srv, tool, args, verify = () => true) => {
+  /** Run a tool, check the result with `verify` (return true or a failure string). `label` names a variant. */
+  const step = async (srv, tool, args, verify = () => true, label = tool) => {
     const r = await srv.call(tool, args);
-    if (!r.ok) { record(tool, false, r.text.slice(0, 250)); return undefined; }
+    if (!r.ok) { record(label, false, r.text.slice(0, 250)); return undefined; }
     let v;
     try { v = verify(r.value); } catch (e) { v = `verify threw: ${e.message}`; }
-    record(tool, v === true, v === true ? "" : String(v));
+    record(label, v === true, v === true ? "" : String(v));
     return r.value;
   };
   const onCleanup = (desc, fn) => cleanups.push({ desc, fn });

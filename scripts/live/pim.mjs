@@ -58,20 +58,23 @@ try {
     // Date filters: a window around the arrival holds it, one ending before it does not.
     const at = Date.parse(received.receivedDateTime);
     const iso = (ms) => new Date(ms).toISOString();
-    await step(srv, "mail_list_messages (receivedAfter/Before)", { receivedAfter: iso(at - 60_000), receivedBefore: iso(at + 60_000), top: 50 },
-      (v) => (arr(v).some((m) => m.id === received.id) && arr(v).every((m) => Math.abs(Date.parse(m.receivedDateTime) - at) <= 60_000)) || `window: ${arr(v).map((m) => m.receivedDateTime).join(", ")}`);
-    await step(srv, "mail_list_messages (window excludes)", { receivedBefore: iso(at - 1000), unreadOnly: true, top: 50 },
-      (v) => !arr(v).some((m) => m.id === received.id) || "message listed before it arrived");
+    await step(srv, "mail_list_messages", { receivedAfter: iso(at - 60_000), receivedBefore: iso(at + 60_000), top: 50 },
+      (v) => (arr(v).some((m) => m.id === received.id) && arr(v).every((m) => Math.abs(Date.parse(m.receivedDateTime) - at) <= 60_000)) || `window: ${arr(v).map((m) => m.receivedDateTime).join(", ")}`,
+      "mail_list_messages (received window)");
+    await step(srv, "mail_list_messages", { receivedBefore: iso(at - 1000), unreadOnly: true, top: 50 },
+      (v) => !arr(v).some((m) => m.id === received.id) || "message listed before it arrived", "mail_list_messages (window excludes)");
 
-    // A reply draft lands in the same conversation, unsent, with the original quoted.
+    // A reply draft lands in the same conversation, unsent, with the original quoted
+    // and the text as written: line breaks kept, markup shown as typed.
     const original = await srv.call("mail_get_message", { id: received.id, bodyFormat: "text" });
-    const rd = await step(srv, "mail_create_reply_draft", { id: received.id, comment: "Draft line one.\nDraft line two." },
+    const rd = await step(srv, "mail_create_reply_draft", { id: received.id, comment: "Draft line one.\nDraft <line> two & more." },
       (v) => (v.isDraft === true && v.conversationId === original.value?.conversationId && /^RE:/i.test(v.subject) && !("body" in v)) || JSON.stringify(v).slice(0, 200));
     if (rd?.id) {
       onCleanup("delete reply draft", async () => { await srv.call("mail_delete_message", { id: rd.id }); });
       const body = await srv.call("mail_get_message", { id: rd.id, bodyFormat: "text" });
       const text = body.value?.body?.content ?? "";
-      record("mail_create_reply_draft (body)", text.includes("Draft line one.") && text.includes("sent to self by the live test"), text.slice(0, 200));
+      const ok = /Draft line one\.\r?\n\s*Draft <line> two & more\./.test(text) && text.includes("sent to self by the live test");
+      record("mail_create_reply_draft (body)", ok, ok ? "" : JSON.stringify(text.slice(0, 200)));
     }
 
     await step(srv, "mail_reply_message", { id: received.id, comment: "reply from the live test", replyAll: false });
@@ -130,7 +133,8 @@ try {
       await step(srv, "todo_complete_task", { listId: list.id, taskId: t.id }, (v) => (v.status ?? "completed") === "completed" || `status ${v.status}`);
       await step(srv, "todo_delete_task", { listId: list.id, taskId: t.id });
       const after = await srv.call("todo_list_tasks", { listId: list.id, top: 100 });
-      record("todo_delete_task (is gone)", after.ok && !arr(after.value).some((x) => x.id === t.id), after.ok ? "task still listed" : after.text.slice(0, 200));
+      const gone = after.ok && !arr(after.value).some((x) => x.id === t.id);
+      record("todo_delete_task (is gone)", gone, gone ? "" : after.ok ? "task still listed" : after.text.slice(0, 200));
     }
   }
   const plans = await step(srv, "planner_list_plans", {}, (v) => Array.isArray(arr(v)) || "no list");
