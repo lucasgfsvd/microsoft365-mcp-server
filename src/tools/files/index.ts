@@ -1,8 +1,10 @@
+import path from "node:path";
 import { z } from "zod";
 import type { ToolDefinition } from "../../types.js";
 import { fetchPage } from "../../graph/pagination.js";
 import { DrivePath, Filename, PaginationInput } from "../../util/schema.js";
 import { uploadContent } from "../../graph/upload.js";
+import { uploadLocalFile } from "../../graph/localUpload.js";
 import { drivePrefix, itemByPath, ScopeInput } from "./scope.js";
 import { filesDownloadTools } from "./download.js";
 
@@ -73,20 +75,37 @@ export const filesTools: ToolDefinition[] = [
     name: "files_upload",
     surface: "files",
     description:
-      "Upload (or overwrite) a file. Any size: files over 4 MB are sent through an upload session " +
-      "automatically. Content travels base64-encoded inside the tool call, which caps a file at " +
-      "roughly 47 MB under the default MCP_MAX_MESSAGE_MB of 64; very large files are better " +
-      "synced by the OneDrive client.",
+      "Upload (or overwrite) a file, from one of two places:\n\n" +
+      "- `localPath`: a file in the server's upload folder (MCP_UPLOAD_DIR), streamed from disk at " +
+      "any size. Only files inside that folder can be read. Prefer this for anything large or binary.\n" +
+      "- `contentBase64`: the bytes inside the tool call, which caps a file at roughly 47 MB under the " +
+      "default MCP_MAX_MESSAGE_MB of 64, and puts them in the conversation.\n\n" +
+      "Files over 4 MB go through an upload session automatically.",
     mutating: true,
     requiredScopes: ["Files.ReadWrite.All", "Sites.ReadWrite.All"],
     inputSchema: ScopeInput.extend({
       parentPath: DrivePath.describe("Parent folder path, e.g. '/Reports'"),
-      filename: Filename,
-      contentBase64: z.string().describe("File bytes, base64-encoded."),
-    }),
+      filename: Filename.optional().describe("Name in the drive. Required with contentBase64; defaults to the local file's name."),
+      localPath: z.string().min(1).optional().describe("A file in MCP_UPLOAD_DIR, relative to it, e.g. 'exports/q3.pdf'."),
+      contentBase64: z.string().optional().describe("File bytes, base64-encoded."),
+    })
+      .refine((d) => (d.localPath === undefined) !== (d.contentBase64 === undefined), {
+        message: "Provide exactly one of localPath or contentBase64",
+      })
+      .refine((d) => d.filename !== undefined || d.localPath !== undefined, {
+        message: "filename is required with contentBase64",
+      }),
     handler: async (input, ctx) => {
-      const buf = Buffer.from(input.contentBase64, "base64");
-      return uploadContent(ctx.graph, drivePrefix(input), input, buf);
+      if (input.localPath !== undefined) {
+        if (!ctx.config.uploadDir) {
+          throw new Error("Uploading from disk is off: set MCP_UPLOAD_DIR to the one folder the server may read uploads from.");
+        }
+        const filename = Filename.parse(input.filename ?? path.basename(input.localPath));
+        const target = { parentPath: input.parentPath, filename };
+        return uploadLocalFile(ctx.graph, drivePrefix(input), target, ctx.config.uploadDir, input.localPath);
+      }
+      const buf = Buffer.from(input.contentBase64 ?? "", "base64");
+      return uploadContent(ctx.graph, drivePrefix(input), { parentPath: input.parentPath, filename: input.filename! }, buf);
     },
   },
   {

@@ -1,12 +1,15 @@
 // Live run: files, Word, PowerPoint, Excel — all inside one throwaway OneDrive folder.
 import { execFileSync } from "node:child_process";
-import { mkdirSync } from "node:fs";
+import { createHash, randomBytes } from "node:crypto";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { startServer, makeRun } from "./harness.mjs";
 
 const [dist, dir] = process.argv.slice(2);
 const dl = `${dir}/dl`;
+const upDir = `${dir}/up`;
 mkdirSync(dl, { recursive: true });
-const srv = startServer(dist, { MCP_DOWNLOAD_DIR: dl });
+mkdirSync(upDir, { recursive: true });
+const srv = startServer(dist, { MCP_DOWNLOAD_DIR: dl, MCP_UPLOAD_DIR: upDir });
 const run = makeRun("office");
 const { step, record, onCleanup } = run;
 const idOf = (v) => v?.id ?? v?.driveItem?.id;
@@ -39,6 +42,20 @@ try {
   await step(srv, "files_get_item", { path: root }, (v) => v.id === folder.id || "id mismatch");
   const up = await step(srv, "files_upload", { parentPath: root, filename: "notes.txt", contentBase64: Buffer.from("hello live test ✓").toString("base64") }, (v) => v.size > 0 || "no size");
   await step(srv, "files_list_children", { path: root }, (v) => has(v, "notes.txt"));
+
+  // From disk: a file in MCP_UPLOAD_DIR streams up at any size; nothing outside it is read.
+  const big = randomBytes(12 * 1024 * 1024 + 12345);
+  writeFileSync(`${upDir}/big.bin`, big);
+  writeFileSync(`${dir}/outside.txt`, "outside the upload folder");
+  const bigUp = await step(srv, "files_upload", { parentPath: root, localPath: "big.bin" },
+    (v) => (v.name === "big.bin" && v.size === big.length) || `got ${v.name}, ${v.size} bytes`, "files_upload (localPath, 12 MB)");
+  if (bigUp?.id) {
+    const d = await srv.call("files_download", { itemId: bigUp.id, saveToDisk: true });
+    const same = d.ok && d.value.sha256 === createHash("sha256").update(big).digest("hex");
+    record("files_upload (localPath, same bytes back)", same, same ? "" : d.text.slice(0, 200));
+  }
+  const refused = await srv.call("files_upload", { parentPath: root, localPath: "../outside.txt" });
+  record("files_upload (outside the folder refused)", !refused.ok && /outside the upload folder/.test(refused.text), refused.text.slice(0, 200));
   await step(srv, "files_copy", { itemId: up?.id, destinationParentPath: root, destinationName: "notes-copy.txt" }, (v) => has(v, "notes-copy.txt"));
   await step(srv, "files_download", { itemId: up?.id }, (v) => (v.encoding === "utf8" && v.text === "hello live test ✓") || `got ${JSON.stringify(v).slice(0, 120)}`);
   await step(srv, "files_share", { itemId: up?.id, type: "view", scope: "organization" }, (v) => has(v, "webUrl"));

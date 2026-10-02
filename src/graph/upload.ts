@@ -27,6 +27,20 @@ function address(base: string, target: UploadTarget): string {
 }
 
 /**
+ * Bytes to upload, read a range at a time, so a file on disk never has to be
+ * held in memory whole.
+ */
+export interface ContentSource {
+  size: number;
+  /** Exactly `length` bytes starting at `offset` (fewer only at the end). */
+  read(offset: number, length: number): Promise<Buffer>;
+}
+
+export function bufferSource(buf: Buffer): ContentSource {
+  return { size: buf.byteLength, read: async (offset, length) => buf.subarray(offset, offset + length) };
+}
+
+/**
  * Write file content to OneDrive/SharePoint, whatever its size.
  *
  * Small files take the single-request PUT every tool used before. Larger ones
@@ -37,18 +51,21 @@ export async function uploadContent(
   graph: GraphClient,
   base: string,
   target: UploadTarget,
-  content: Buffer,
+  content: Buffer | ContentSource,
   opts: UploadOptions = {},
 ): Promise<unknown> {
-  if (content.byteLength <= SIMPLE_UPLOAD_LIMIT) {
-    return graph.api(`${address(base, target)}/content`).put(content);
+  const source = Buffer.isBuffer(content) ? bufferSource(content) : content;
+  if (source.size <= SIMPLE_UPLOAD_LIMIT) {
+    const bytes = await source.read(0, source.size);
+    if (bytes.byteLength !== source.size) throw new Error("The file changed during the upload.");
+    return graph.api(`${address(base, target)}/content`).put(bytes);
   }
   // Replace, matching what the simple PUT does to an existing file of that name.
   const body = "itemId" in target ? {} : { item: { "@microsoft.graph.conflictBehavior": "replace" } };
   const session = (await graph.api(`${address(base, target)}/createUploadSession`).post(body)) as {
     uploadUrl: string;
   };
-  return sendChunks(session.uploadUrl, content, opts);
+  return sendChunks(session.uploadUrl, source, opts);
 }
 
 interface SessionStatus {
@@ -73,24 +90,29 @@ function retryable(status: number): boolean {
  * says must not be sent there. A failed chunk is retried after asking the session
  * where it actually stands, since a chunk can land even when its response is lost.
  */
-async function sendChunks(uploadUrl: string, content: Buffer, opts: UploadOptions): Promise<unknown> {
+async function sendChunks(uploadUrl: string, source: ContentSource, opts: UploadOptions): Promise<unknown> {
   const doFetch = opts.fetch ?? fetch;
   const sleep = opts.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)));
   const chunkSize = opts.chunkSize ?? DEFAULT_CHUNK_SIZE;
   if (chunkSize % CHUNK_UNIT !== 0) throw new Error(`chunkSize must be a multiple of ${CHUNK_UNIT} bytes.`);
 
-  const total = content.byteLength;
+  const total = source.size;
   let offset = 0;
   let attempt = 0;
   try {
     for (;;) {
       const end = Math.min(offset + chunkSize, total) - 1;
+      // Outside the network try: a failed read is not worth retrying.
+      const chunk = await source.read(offset, end + 1 - offset);
+      if (chunk.byteLength !== end + 1 - offset) {
+        throw new Error(`Read ${chunk.byteLength} of ${end + 1 - offset} bytes at ${offset}: the file changed during the upload.`);
+      }
       let res: Response | undefined;
       try {
         res = await doFetch(uploadUrl, {
           method: "PUT",
           headers: { "Content-Range": `bytes ${offset}-${end}/${total}` },
-          body: content.subarray(offset, end + 1),
+          body: chunk,
         });
       } catch {
         res = undefined; // network failure: treated like a retryable status

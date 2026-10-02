@@ -23,7 +23,8 @@ Needs a signed-in token cache; runs with writes enabled.
 **What they touch, and clean up:**
 
 - `office.mjs` works inside one new OneDrive folder, `mcp-live-test-<timestamp>`,
-  deleted at the end (to the recycle bin). It creates an organization-only
+  deleted at the end (to the recycle bin), including a 12 MB file uploaded from
+  `<scratch>/up` with `localPath`. It creates an organization-only
   sharing link on a file in it. Edited documents are downloaded and opened with
   python-docx, python-pptx and openpyxl (`pip install python-docx python-pptx openpyxl`).
 - `pim.mjs` sends one mail **to the signed-in user only** and replies to it, creates

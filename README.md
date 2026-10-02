@@ -705,7 +705,8 @@ All settings can be passed as CLI flags **or** environment variables.
 | `MCP_TOKEN_CACHE_PATH` | `--token-cache` | `~/.microsoft365-mcp/tokencache.json` | Its directory holds `authrecord.json`; a non-default path also gets its own token store |
 | `MCP_LOG_LEVEL` | – | `info` | Pino log level (stderr) |
 | `MCP_DOWNLOAD_DIR` | – | *(unset)* | Folder `files_download` may stream files into with `saveToDisk: true`. Unset, saving to disk is refused. The server never overwrites a file there |
-| `MCP_MAX_MESSAGE_MB` | – | `64` | Largest MCP message accepted, in MiB. Caps `files_upload` at roughly ¾ of this, since content arrives base64-encoded |
+| `MCP_UPLOAD_DIR` | – | *(unset)* | The one folder `files_upload` may read a `localPath` from, streamed to OneDrive at any size. Unset, uploading from disk is refused. Paths, and links, leading outside it are refused |
+| `MCP_MAX_MESSAGE_MB` | – | `64` | Largest MCP message accepted, in MiB. Caps a `contentBase64` upload at roughly ¾ of this, since content arrives base64-encoded |
 
 ---
 
@@ -754,7 +755,7 @@ Most "this doesn't work" reports on business tenants aren't bugs in this server 
 
 These are real gaps in *this* server, tracked in [Roadmap](#roadmap):
 
-- **Upload size.** Anything over 4 MB goes through a Graph upload session automatically, including Office files the server generates and `files_copy`. `files_upload` receives content base64-encoded inside the tool call, so it is bounded by `MCP_MAX_MESSAGE_MB` (default 64 MiB, so files up to about 47 MB). For bigger files, let the OneDrive client sync them.
+- **Upload size.** Anything over 4 MB goes through a Graph upload session automatically, including Office files the server generates and `files_copy`. `files_upload` with `contentBase64` carries the file inside the tool call, so it is bounded by `MCP_MAX_MESSAGE_MB` (default 64 MiB, so files up to about 47 MB). For bigger files, set `MCP_UPLOAD_DIR`, put the file there and pass `localPath`: it streams from disk at any size, and the bytes never enter the conversation.
 - **Downloads.** Whatever `files_download` returns inline lands in the conversation, so it returns text files as text, anything else as base64, and nothing over 5 MB. For larger or binary files, set `MCP_DOWNLOAD_DIR` and pass `saveToDisk: true`: the file is streamed to that folder in constant memory and the result is only its path, size and SHA-256. Existing files are never overwritten.
 - **No webhook / change-notification tools.** Use `graph_delta` to ask what changed since last time, deletions included. Why real-time notifications are not built, and what it would take, is in [docs/webhooks.md](./docs/webhooks.md).
 - **Retry is bounded, and never repeats a send.** The Graph SDK retries 429/503/504 up to 3 times with a 3-second base delay, honouring `Retry-After`. The exception is a `POST` from a tool that sends or creates something (`mail_send_message`, `mail_reply_message`, `teams_post_*`, the `*_create_*` tools): those are retried only on 429. Graph turns a throttled request away before acting on it, whereas a 503 or 504 can arrive after the mail was already sent, and retrying would send it twice. If a request still fails, the error reaches the caller. For a failed send, check Sent Items before trying again.
@@ -824,11 +825,10 @@ Picking this up cold? [docs/handover.md](./docs/handover.md) has the current sta
 
 The full list, with reasons and sizes, is in [docs/roadmap.md](./docs/roadmap.md). In short, **`0.1.0` is published once these are in**:
 
-- Upload from a local file (`localPath` in a configured folder), lifting the ~47 MB upload cap
 - Picking up a sign-in made by another server process
 - Device-code sign-in that survives a container restart
 
-Webhooks are designed ([docs/webhooks.md](./docs/webhooks.md)) but wait on a decision. Already done: reply drafts kept in the thread, mail date filters, task deletion, OneNote notebook and section creation, Excel files as CSV in resources, large-file uploads, streaming downloads, MCP resources, prompt templates, the per-tool retry policy, and live tests of every tool.
+Webhooks are designed ([docs/webhooks.md](./docs/webhooks.md)) but wait on a decision. Already done: uploads from a local folder at any size, reply drafts kept in the thread, mail date filters, task deletion, OneNote notebook and section creation, Excel files as CSV in resources, large-file uploads, streaming downloads, MCP resources, prompt templates, the per-tool retry policy, and live tests of every tool.
 
 ---
 

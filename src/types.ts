@@ -26,6 +26,8 @@ export interface ServerConfig {
   maxMessageBytes: number;
   /** Where files_download may write with saveToDisk. Unset disables writing to disk. */
   downloadDir?: string;
+  /** The only folder files_upload may read a localPath from. Unset disables local uploads. */
+  uploadDir?: string;
 }
 
 export interface ToolContext {

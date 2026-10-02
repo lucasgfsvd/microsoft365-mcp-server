@@ -13,13 +13,13 @@ State of play and what to pick up next. Written for whoever continues this work 
 What the server can now do that it could not before, grouped by concern (git has the history):
 
 - **Sync.** `graph_delta` gives incremental changes, deletions included, for mail, calendar, drive, contacts and To Do; the caller keeps the `deltaLink`. `graph_search` and `graph_batch_get` cover cross-surface search and parallel reads.
-- **Large files.** Uploads over 4 MB use Graph upload sessions (all seven write paths, Office tools included). Downloads over 5 MB stream to `MCP_DOWNLOAD_DIR` in constant memory instead of entering the conversation. `MCP_MAX_MESSAGE_MB` (default 64) bounds a single MCP message.
+- **Large files.** Uploads over 4 MB use Graph upload sessions (all seven write paths, Office tools included); `files_upload` with `localPath` streams a file from `MCP_UPLOAD_DIR` a chunk at a time (verified live at 12 MB), confined to that folder by its real path. Downloads over 5 MB stream to `MCP_DOWNLOAD_DIR` in constant memory instead of entering the conversation. `MCP_MAX_MESSAGE_MB` (default 64) bounds a single MCP message.
 - **Safety.** A `POST` from a mutating tool is retried only on 429, so a send is never repeated. Pre-authenticated `downloadUrl` links are stripped from every result. `--logout` removes this app's tokens from the store, leaving other apps' alone. Sign-in is lazy and explicit.
 - **Portability.** The token-cache plugin loads lazily, so the server runs where `libsecret` is missing (headless Linux, the distroless image) with an in-memory cache. `MCP_TOKEN_CACHE_PATH` gets its own token store on Windows and with the Linux file fallback.
 - **Workflows.** `daily-brief`, `inbox-triage` and `meeting-prep` prompts, with Graph queries computed server-side and verified live.
 - **Attachable context.** Mail, files and OneNote pages as MCP resources (`src/resources/`): recent items in one `$batch`, any item by `m365://` URI, returned as text (Word and PowerPoint extracted, Excel as CSV per sheet). Gated on the matching read tool, like the prompts.
 
-**Next up: the roadmap, then `0.1.0`.** [roadmap.md](./roadmap.md) lists the features still to land before publishing (local-file uploads, cross-process sign-in pickup, persistent container sign-in). Publishing waits for them; the release itself is prepared ([releasing.md](./releasing.md)). After `0.1.0` the project is left unmaintained, by the owner's choice.
+**Next up: the roadmap, then `0.1.0`.** [roadmap.md](./roadmap.md) lists the features still to land before publishing (cross-process sign-in pickup, persistent container sign-in). Publishing waits for them; the release itself is prepared ([releasing.md](./releasing.md)). After `0.1.0` the project is left unmaintained, by the owner's choice.
 
 ---
 

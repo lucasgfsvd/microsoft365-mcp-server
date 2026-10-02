@@ -145,5 +145,6 @@ export function loadConfig(argv: string[]): ServerConfig {
     logout: Boolean(opts.logout),
     maxMessageBytes: maxMessageMb * 1024 * 1024,
     downloadDir: process.env.MCP_DOWNLOAD_DIR ? path.resolve(process.env.MCP_DOWNLOAD_DIR) : undefined,
+    uploadDir: process.env.MCP_UPLOAD_DIR ? path.resolve(process.env.MCP_UPLOAD_DIR) : undefined,
   };
 }

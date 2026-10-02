@@ -18,7 +18,7 @@ as done: every live pass so far has found something the unit tests could not.
 
 | | Feature | Why | Size |
 |---|---|---|---|
-| ☐ | **Upload from a local file**: `files_upload` takes a `localPath` inside a configured `MCP_UPLOAD_DIR`, streamed from disk through an upload session | The mirror of `saveToDisk` downloads. Lifts the ~47 MB cap that base64 in the tool call imposes, and keeps file bytes out of the conversation. Confined to one folder so a prompt cannot make the server upload arbitrary local files | M |
+| ☑ | **Upload from a local file**: `files_upload` takes a `localPath` inside a configured `MCP_UPLOAD_DIR`, streamed from disk through an upload session | The mirror of `saveToDisk` downloads. Lifts the ~47 MB cap that base64 in the tool call imposes, and keeps file bytes out of the conversation. Confined to one folder so a prompt cannot make the server upload arbitrary local files | M |
 | ☑ | **Reply drafts in the thread**: a `mail_create_reply_draft` tool (Graph `createReply` / `createReplyAll`) | `inbox-triage` currently drafts replies as new "Re:" messages outside the conversation, because the only reply tool sends immediately | S |
 | ☑ | **Date filters on `mail_list_messages`**: `receivedAfter` / `receivedBefore` | The prompts work around their absence with raw batch queries; a model using the tool directly cannot ask for "this week's mail" | S |
 | ☑ | **Delete tools for To Do and Planner tasks** | Tasks can be created but never removed through the server; the live tests leave completed tasks behind for the same reason | S |

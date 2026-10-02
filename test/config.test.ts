@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import path from "node:path";
 import { loadConfig } from "../src/config.js";
 
 const ENV_KEYS = [
@@ -11,6 +12,7 @@ const ENV_KEYS = [
   "MCP_DISABLED_TOOLS",
   "MCP_SCOPES",
   "MCP_MAX_MESSAGE_MB",
+  "MCP_UPLOAD_DIR",
 ];
 
 describe("loadConfig", () => {
@@ -33,6 +35,12 @@ describe("loadConfig", () => {
     expect(c.authMode).toBe("device-code");
     expect(c.enableWrites).toBe(false);
     expect(c.tenantId).toBe("common");
+  });
+
+  it("leaves local uploads off unless MCP_UPLOAD_DIR names a folder, resolved to an absolute path", () => {
+    expect(loadConfig(["node", "idx"]).uploadDir).toBeUndefined();
+    process.env.MCP_UPLOAD_DIR = "uploads";
+    expect(loadConfig(["node", "idx"]).uploadDir).toBe(path.resolve("uploads"));
   });
 
   it("respects MCP_ENABLE_WRITES=true", () => {

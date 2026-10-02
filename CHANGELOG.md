@@ -28,9 +28,10 @@ maintained: see *Maintenance status* in the README.
   (`mail_create_reply_draft`), which `inbox-triage` now uses.
 - **Tasks and OneNote**: delete To Do and Planner tasks; create OneNote
   notebooks and sections, so an account with no notebook can start one.
-- **Large files**: uploads over 4 MB use Graph upload sessions; large
-  downloads stream to a folder you configure (`MCP_DOWNLOAD_DIR`) instead of
-  entering the conversation.
+- **Large files**: uploads over 4 MB use Graph upload sessions, and a file in
+  a folder you configure (`MCP_UPLOAD_DIR`) uploads straight from disk at any
+  size; large downloads stream to another (`MCP_DOWNLOAD_DIR`). Either way the
+  bytes stay out of the conversation.
 
 ### Safety
 
@@ -53,9 +54,8 @@ a private team with no other members.
 
 ### Known limits
 
-- `files_upload` takes files up to about 47 MB with the default
-  `MCP_MAX_MESSAGE_MB` of 64, since content travels base64-encoded in the
-  tool call.
+- `files_upload` with `contentBase64` takes files up to about 47 MB with the
+  default `MCP_MAX_MESSAGE_MB` of 64; use `localPath` for anything larger.
 - No change notifications (webhooks); use `graph_delta`. See `docs/webhooks.md`.
 - In the Docker image, device-code sign-in does not survive a restart (no OS
   keyring); client-credentials mode is unaffected.
