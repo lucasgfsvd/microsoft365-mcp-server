@@ -73,6 +73,16 @@ describe("EncryptedFile", () => {
 });
 
 describe("encryptedCachePlugin", () => {
+  // Found in review: the default cache folder does not exist before the first sign-in.
+  it("works where the cache folder does not exist yet", async () => {
+    const store = new EncryptedFile(path.join(dir, "fresh", "tokencache.json"), KEY);
+    const plugin = encryptedCachePlugin(store);
+    const { ctx } = context(true);
+    await plugin.beforeCacheAccess(ctx);
+    await plugin.afterCacheAccess(ctx);
+    expect(await store.read()).toBe(SECRET_CACHE);
+  });
+
   it("loads the cache before an access and saves it after one that changed it", async () => {
     const store = new EncryptedFile(file, KEY);
     const plugin = encryptedCachePlugin(store);
@@ -119,6 +129,13 @@ describe("encryptedCachePlugin", () => {
 });
 
 describe("acquireLock", () => {
+  it("creates the folder on first use", async () => {
+    const lock = path.join(dir, "not", "yet", "tokencache.json.lock");
+    const held = await acquireLock(lock);
+    expect(held.locked).toBe(true);
+    await held.release();
+  });
+
   it("breaks a lock left behind by a dead process", async () => {
     const lock = path.join(dir, "x.lock");
     await fs.writeFile(lock, "12345");

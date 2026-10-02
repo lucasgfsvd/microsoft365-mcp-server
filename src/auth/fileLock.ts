@@ -1,4 +1,5 @@
 import { promises as fs } from "node:fs";
+import path from "node:path";
 
 export interface LockOptions {
   /** How often to try again while another holder has the lock. */
@@ -21,13 +22,21 @@ export async function acquireLock(
   { delayMs = 50, timeoutMs = 5_000, staleMs = 10_000 }: LockOptions = {},
 ): Promise<{ release: () => Promise<void>; locked: boolean }> {
   const deadline = Date.now() + timeoutMs;
+  let madeDir = false;
   for (;;) {
     try {
       const handle = await fs.open(lockPath, "wx");
       await handle.writeFile(String(process.pid)).finally(() => handle.close());
       return { locked: true, release: () => fs.unlink(lockPath).catch(() => undefined) };
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code !== "EEXIST") throw err;
+      const code = (err as NodeJS.ErrnoException).code;
+      // First use: the folder the cache will live in may not exist yet.
+      if (code === "ENOENT" && !madeDir) {
+        await fs.mkdir(path.dirname(lockPath), { recursive: true });
+        madeDir = true;
+        continue;
+      }
+      if (code !== "EEXIST") throw err;
     }
     const age = await fs.stat(lockPath).then(
       (s) => Date.now() - s.mtimeMs,
