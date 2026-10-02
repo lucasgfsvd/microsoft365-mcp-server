@@ -4,6 +4,16 @@ import { fetchPage } from "../../graph/pagination.js";
 import { PaginationInput } from "../../util/schema.js";
 import { getPageHtml } from "../../graph/onenote.js";
 
+/** OneNote refuses these in notebook and section names. */
+const FORBIDDEN = /[?*\\/:<>|&#'%~"]/;
+const OneNoteName = (max: number) =>
+  z
+    .string()
+    .trim()
+    .min(1)
+    .max(max)
+    .refine((n) => !FORBIDDEN.test(n), { message: `Name cannot contain any of ? * \\ / : < > | & # ' % ~ "` });
+
 export const onenoteTools: ToolDefinition[] = [
   {
     name: "onenote_list_notebooks",
@@ -48,6 +58,27 @@ export const onenoteTools: ToolDefinition[] = [
     handler: async ({ pageId }, ctx) => {
       return { html: await getPageHtml(ctx.graph, pageId) };
     },
+  },
+  {
+    name: "onenote_create_notebook",
+    surface: "onenote",
+    description:
+      "Create a OneNote notebook in the user's OneDrive. Notebook names must be unique; add a section " +
+      "with onenote_create_section before creating pages.",
+    mutating: true,
+    requiredScopes: ["Notes.ReadWrite"],
+    inputSchema: z.object({ displayName: OneNoteName(128) }),
+    handler: async ({ displayName }, ctx) => ctx.graph.api(`/me/onenote/notebooks`).post({ displayName }),
+  },
+  {
+    name: "onenote_create_section",
+    surface: "onenote",
+    description: "Create a section in a OneNote notebook; pages are created inside sections.",
+    mutating: true,
+    requiredScopes: ["Notes.ReadWrite"],
+    inputSchema: z.object({ notebookId: z.string(), displayName: OneNoteName(50) }),
+    handler: async ({ notebookId, displayName }, ctx) =>
+      ctx.graph.api(`/me/onenote/notebooks/${notebookId}/sections`).post({ displayName }),
   },
   {
     name: "onenote_create_page",

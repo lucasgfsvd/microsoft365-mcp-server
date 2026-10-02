@@ -615,7 +615,7 @@ A resource type is offered only while its read tool (`mail_get_message`, `files_
 </details>
 
 <details>
-<summary><strong>📓 OneNote</strong> — 6 tools</summary>
+<summary><strong>📓 OneNote</strong> — 8 tools</summary>
 
 | Tool | Scopes | Writes |
 |---|---|:---:|
@@ -623,6 +623,8 @@ A resource type is offered only while its read tool (`mail_get_message`, `files_
 | `onenote_list_sections` | Notes.Read | |
 | `onenote_list_pages` | Notes.Read | |
 | `onenote_get_page_content` | Notes.Read | |
+| `onenote_create_notebook` | Notes.ReadWrite | ✏️ |
+| `onenote_create_section` | Notes.ReadWrite | ✏️ |
 | `onenote_create_page` | Notes.ReadWrite | ✏️ |
 | `onenote_delete_page` | Notes.ReadWrite | ✏️ |
 </details>

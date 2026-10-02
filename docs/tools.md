@@ -134,7 +134,7 @@ Graph combines entity types only within the SharePoint/OneDrive family (`driveIt
 | `planner_complete_task` | `Tasks.ReadWrite` | ✏️ |
 | `planner_delete_task` | `Tasks.ReadWrite` | ✏️ |
 
-## 📓 OneNote — 6 tools
+## 📓 OneNote — 8 tools
 
 | Tool | Scopes | Mutating |
 |---|---|:---:|
@@ -142,6 +142,8 @@ Graph combines entity types only within the SharePoint/OneDrive family (`driveIt
 | `onenote_list_sections` | `Notes.Read` | |
 | `onenote_list_pages` | `Notes.Read` | |
 | `onenote_get_page_content` | `Notes.Read` | |
+| `onenote_create_notebook` | `Notes.ReadWrite` | ✏️ |
+| `onenote_create_section` | `Notes.ReadWrite` | ✏️ |
 | `onenote_create_page` | `Notes.ReadWrite` | ✏️ |
 | `onenote_delete_page` | `Notes.ReadWrite` | ✏️ |
 

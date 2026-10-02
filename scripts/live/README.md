@@ -31,7 +31,10 @@ Needs a signed-in token cache; runs with writes enabled.
   and a To Do task, deleting each afterwards. It posts one message to the user's own
   Teams notes chat (`48:notes`), which only they can see. Everything carries an
   `[mcp-live-test …]` tag.
-- `onenote.mjs` creates and deletes one page in the given section.
+- `onenote.mjs` creates and deletes one page in the given section, then creates a
+  notebook `mcp-live-test-<timestamp>` with a section and a page, and deletes the
+  notebook's folder (`/Notebooks/…` in OneDrive) to the recycle bin; Graph has no
+  way to delete a notebook itself.
 - `teams-planner.mjs` posts a message and a reply in the sandbox team's channel, and
   creates, completes and deletes a Planner task. Channel messages cannot be deleted
   through the server, so they stay in the sandbox. Never point it at a team other

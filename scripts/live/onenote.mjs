@@ -1,5 +1,6 @@
 // Live run: OneNote page tools and the OneNote resource, in a notebook set aside
-// for testing. Usage: node scripts/live/onenote.mjs <dist> <scratch> <sectionId>
+// for testing, then a new notebook and section, deleted afterwards.
+// Usage: node scripts/live/onenote.mjs <dist> <scratch> <sectionId>
 import { startServer, makeRun } from "./harness.mjs";
 
 const [dist, dir, sectionId] = process.argv.slice(2);
@@ -36,6 +37,24 @@ try {
   record("resource m365://onenote/{id}", text.includes("Heading") && text.includes("- item one\n- item two") && !text.includes("<"), JSON.stringify(text).slice(0, 200));
 
   deleted = !!(await step(srv, "onenote_delete_page", { pageId: page.id }));
+
+  // A new notebook and section, removed afterwards through OneDrive: Graph cannot
+  // delete notebooks, but each one is a folder under /Notebooks in the user's drive.
+  const nbName = `mcp-live-test-${Date.now()}`;
+  const nb = await step(srv, "onenote_create_notebook", { displayName: nbName }, (v) => (!!v.id && v.displayName === nbName) || "no id");
+  if (nb?.id) {
+    onCleanup("delete test notebook (to the OneDrive recycle bin)", async () => {
+      const item = await srv.call("files_get_item", { path: `/Notebooks/${nbName}` });
+      if (!item.ok || item.value?.package?.type !== "oneNote" || item.value.name !== nbName) throw new Error(`notebook folder not found: ${item.text.slice(0, 120)}`);
+      const del = await srv.call("files_delete", { itemId: item.value.id });
+      if (!del.ok) throw new Error(del.text.slice(0, 120));
+    });
+    const sec = await step(srv, "onenote_create_section", { notebookId: nb.id, displayName: "tests" }, (v) => (!!v.id && v.displayName === "tests") || "no id");
+    if (sec?.id) {
+      await step(srv, "onenote_list_sections (new notebook)", { notebookId: nb.id }, (v) => JSON.stringify(v).includes(sec.id) || "new section not listed");
+      await step(srv, "onenote_create_page (new section)", { sectionId: sec.id, title: `${TAG} first page`, html: "<p>in a new notebook</p>" }, (v) => !!v.id || "no id");
+    }
+  }
 } catch (e) {
   console.log("ABORTED:", e.message);
 } finally {
