@@ -54,7 +54,7 @@ Graph combines entity types only within the SharePoint/OneDrive family (`driveIt
 - **Large first syncs are cut at `maxItems`** (default 500) with `complete: false` and a `nextLink` to continue. Treat the sync as done only once a `deltaLink` arrives. Drive pages can overshoot the cap slightly, and drive may repeat an item within one sync; the last occurrence wins.
 - **Cursors must be Graph delta URLs.** The Graph client attaches your token to whatever URL it is given, so anything else is refused before a request is made.
 
-## 📧 Mail (Outlook) — 10 tools
+## 📧 Mail (Outlook) — 17 tools
 
 | Tool | Scopes | Mutating |
 |---|---|:---:|
@@ -65,14 +65,26 @@ Graph combines entity types only within the SharePoint/OneDrive family (`driveIt
 | `mail_list_attachments` | `Mail.Read` | |
 | `mail_send_message` | `Mail.Send` | ✏️ |
 | `mail_create_draft` | `Mail.ReadWrite` | ✏️ |
+| `mail_send_draft` | `Mail.Send` | ✏️ |
 | `mail_reply_message` | `Mail.Send` | ✏️ |
-| `mail_create_reply_draft` | `Mail.ReadWrite` | ✏️ |
+| `mail_forward_message` | `Mail.Send` | ✏️ |
 | `mail_delete_message` | `Mail.ReadWrite` | ✏️ |
+| `mail_create_reply_draft` | `Mail.ReadWrite` | ✏️ |
+| `mail_move_message` | `Mail.ReadWrite` | ✏️ |
+| `mail_update_message` | `Mail.ReadWrite` | ✏️ |
+| `mail_get_attachment` | `Mail.Read` | |
+| `mail_get_automatic_replies` | `MailboxSettings.Read` | |
+| `mail_set_automatic_replies` | `MailboxSettings.ReadWrite` | ✏️ |
 
 - `mail_list_messages` takes `receivedAfter` (inclusive) and `receivedBefore` (exclusive): an ISO date, read as midnight UTC, or a date-time with an offset.
-- `mail_reply_message` sends at once. `mail_create_reply_draft` writes the same reply into Drafts instead, inside the conversation, with Outlook's recipients, `RE:` subject and quoted original; the prompt templates use it.
+- `mail_reply_message` sends at once. `mail_create_reply_draft` writes the same reply into Drafts instead, inside the conversation, with Outlook's recipients, `RE:` subject and quoted original; the prompt templates use it. Either way your text is kept as written, line breaks included (Graph's own `comment` would read it as HTML).
+- `mail_get_attachment` reads an attachment the way `files_download` reads a file: documents and PDFs as text, images as images, an attached email as its text; `saveToDisk` for large ones.
+- `mail_send_message` and `mail_create_draft` take `attachments`: files from `MCP_UPLOAD_DIR`, OneDrive/SharePoint or inline, up to 150 MB each (over 3 MB through an upload session). A failed attachment removes the half-made draft.
+- `mail_forward_message` forwards with your text above the original (`draft: true` leaves it for review); `mail_send_draft` sends any draft.
+- `mail_move_message` files a message (`archive`, `junkemail`, a folder id); it gets a new id there. `mail_update_message` marks read or unread, flags, and sets categories or importance.
+- `mail_get_automatic_replies` / `mail_set_automatic_replies`: out-of-office, on, off or scheduled; messages are plain text.
 
-## 📅 Calendar — 8 tools
+## 📅 Calendar — 11 tools
 
 | Tool | Scopes | Mutating |
 |---|---|:---:|
@@ -84,8 +96,16 @@ Graph combines entity types only within the SharePoint/OneDrive family (`driveIt
 | `calendar_create_event` | `Calendars.ReadWrite` | ✏️ |
 | `calendar_update_event` | `Calendars.ReadWrite` | ✏️ |
 | `calendar_delete_event` | `Calendars.ReadWrite` | ✏️ |
+| `calendar_respond_to_event` | `Calendars.ReadWrite` | ✏️ |
+| `calendar_cancel_event` | `Calendars.ReadWrite` | ✏️ |
+| `calendar_list_rooms` | `Place.Read.All` | |
 
-## 👥 Contacts & People — 6 tools
+- `calendar_respond_to_event` accepts, tentatively accepts or declines, with a note, and can propose a new time where the organiser allows it.
+- `calendar_cancel_event` calls off a meeting you organise and tells the attendees; `calendar_delete_event` only removes it from your calendar.
+- `calendar_create_event` takes `recurrence` in plain terms (`weekly`, every 2 weeks until a date, `relativeMonthly` with `weekIndex: "first"`, n occurrences), filled in from the start date, and `room`, booked by inviting the room's mailbox.
+- `calendar_list_rooms` needs `Place.Read.All`, which only an admin can grant: it is offered only with `MCP_ENABLE_ADMIN_SCOPES` (see [permissions.md](./permissions.md)).
+
+## 👥 Contacts & People — 10 tools
 
 | Tool | Scopes | Mutating |
 |---|---|:---:|
@@ -95,22 +115,44 @@ Graph combines entity types only within the SharePoint/OneDrive family (`driveIt
 | `contacts_create` | `Contacts.ReadWrite` | ✏️ |
 | `contacts_update` | `Contacts.ReadWrite` | ✏️ |
 | `contacts_delete` | `Contacts.ReadWrite` | ✏️ |
+| `people_get_manager` | `User.Read` | |
+| `people_list_direct_reports` | `User.ReadBasic.All` | |
+| `people_get_profile` | `User.ReadBasic.All` | |
+| `people_get_presence` | `Presence.Read.All`, `User.ReadBasic.All` | |
 
-## 📁 Files (OneDrive + SharePoint) — 11 tools
+- `people_get_manager`, `people_list_direct_reports`, `people_get_profile` and `people_get_presence` take a colleague's email (or your own data by default). A colleague's job title, department and phone need `User.Read.All` (admin consent); without it the profile has name and address only.
+- `people_get_presence` looks up several people in one batch and returns Teams availability and activity.
+
+## 📁 Files (OneDrive + SharePoint) — 21 tools
 
 | Tool | Scopes | Mutating |
 |---|---|:---:|
 | `files_list_children` | `Files.Read.All`, `Sites.Read.All` | |
 | `files_get_item` | `Files.Read.All`, `Sites.Read.All` | |
 | `files_search` | `Files.Read.All`, `Sites.Read.All` | |
-| `files_download` | `Files.Read.All`, `Sites.Read.All` | |
-| `files_list_drives` | `Files.Read.All` | |
 | `sites_search` | `Sites.Read.All` | |
+| `files_list_drives` | `Files.Read.All` | |
 | `files_upload` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
 | `files_create_folder` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
 | `files_delete` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
 | `files_copy` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
 | `files_share` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
+| `files_download` | `Files.Read.All`, `Sites.Read.All` | |
+| `files_move` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
+| `files_export_pdf` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
+| `files_list_permissions` | `Files.Read.All`, `Sites.Read.All` | |
+| `files_invite` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
+| `files_remove_permission` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
+| `files_list_recent` | `Files.Read.All`, `Sites.Read.All` | |
+| `sites_list_lists` | `Sites.Read.All` | |
+| `sites_get_list_items` | `Sites.Read.All` | |
+| `sites_create_list_item` | `Sites.ReadWrite.All` | ✏️ |
+| `sites_update_list_item` | `Sites.ReadWrite.All` | ✏️ |
+
+- `files_move` moves and renames, refusing to replace an item of the same name. `files_export_pdf` saves a PDF of a Word, PowerPoint, Excel or other Office file next to it (or to disk), ready to attach.
+- `files_list_permissions` says who can open an item; `files_invite` shares with named people; `files_remove_permission` takes access away or disables a link.
+- `files_list_recent` lists recently changed documents through Microsoft Search. Microsoft retires `/me/drive/recent`, `sharedWithMe` and the file insights after November 2026, with no replacement for "shared with me".
+- `sites_*_list*` tools read and write SharePoint list items by column name.
 
 `files_download` returns up to 5 MB inline, as text for text files and base64 otherwise, since the result lands in the conversation. With `saveToDisk: true` it streams any size into `MCP_DOWNLOAD_DIR` and returns only the path, size and SHA-256; it never overwrites a file there, and refuses if the folder is not configured.
 
@@ -118,7 +160,7 @@ Graph combines entity types only within the SharePoint/OneDrive family (`driveIt
 
 Large transfers report progress and can be cancelled. When the client sends a `progressToken`, `files_upload`, `files_copy` and `files_download` with `saveToDisk` send MCP progress notifications in bytes (at most four a second, the last at the total). Cancelling the call stops the transfer: an upload sends no further chunks and cancels its session, so no file appears; a download removes its partial file. `files_copy` downloads and re-uploads, so it holds the file in memory.
 
-## 💬 Teams — 9 tools
+## 💬 Teams — 12 tools
 
 | Tool | Scopes | Mutating |
 |---|---|:---:|
@@ -128,11 +170,17 @@ Large transfers report progress and can be cancelled. When the client sends a `p
 | `teams_get_message_replies` | `ChannelMessage.Read.All` | |
 | `teams_list_chats` | `Chat.Read` | |
 | `teams_list_chat_messages` | `Chat.Read` | |
-| `teams_post_channel_message` | `ChannelMessage.Send` | ✏️ |
-| `teams_reply_channel_message` | `ChannelMessage.Send` | ✏️ |
-| `teams_post_chat_message` | `ChatMessage.Send` | ✏️ |
+| `teams_post_channel_message` | `ChannelMessage.Send`, `User.ReadBasic.All` | ✏️ |
+| `teams_reply_channel_message` | `ChannelMessage.Send`, `User.ReadBasic.All` | ✏️ |
+| `teams_post_chat_message` | `ChatMessage.Send`, `User.ReadBasic.All` | ✏️ |
+| `teams_send_direct_message` | `Chat.ReadWrite`, `ChatMessage.Send` | ✏️ |
+| `teams_update_chat_message` | `Chat.ReadWrite` | ✏️ |
+| `teams_delete_chat_message` | `Chat.ReadWrite` | ✏️ |
 
-## ✅ Tasks (To Do + Planner) — 10 tools
+- Posting tools take `mentions` (emails): `@Their Name` in the text becomes a mention that notifies them. Nothing is posted if someone cannot be found.
+- `teams_send_direct_message` messages one person, opening your one-to-one chat with them if needed. `teams_update_chat_message` and `teams_delete_chat_message` change your own chat messages.
+
+## ✅ Tasks (To Do + Planner) — 17 tools
 
 | Tool | Scopes | Mutating |
 |---|---|:---:|
@@ -140,14 +188,24 @@ Large transfers report progress and can be cancelled. When the client sends a `p
 | `todo_list_tasks` | `Tasks.Read` | |
 | `todo_create_task` | `Tasks.ReadWrite` | ✏️ |
 | `todo_complete_task` | `Tasks.ReadWrite` | ✏️ |
+| `todo_update_task` | `Tasks.ReadWrite` | ✏️ |
+| `todo_add_checklist_item` | `Tasks.ReadWrite` | ✏️ |
 | `todo_delete_task` | `Tasks.ReadWrite` | ✏️ |
 | `planner_list_plans` | `Tasks.Read` | |
 | `planner_list_tasks` | `Tasks.Read` | |
 | `planner_create_task` | `Tasks.ReadWrite` | ✏️ |
 | `planner_complete_task` | `Tasks.ReadWrite` | ✏️ |
 | `planner_delete_task` | `Tasks.ReadWrite` | ✏️ |
+| `planner_update_task` | `Tasks.ReadWrite`, `User.ReadBasic.All` | ✏️ |
+| `planner_list_buckets` | `Tasks.Read` | |
+| `planner_create_bucket` | `Tasks.ReadWrite` | ✏️ |
+| `planner_get_task_details` | `Tasks.Read` | |
+| `planner_update_task_details` | `Tasks.ReadWrite` | ✏️ |
 
-## 📓 OneNote — 8 tools
+- `todo_update_task` and `planner_update_task` change tasks; Planner assignees can be given by email. Planner changes carry the task's etag, fetched when you do not pass one.
+- `planner_get_task_details` / `planner_update_task_details` read and change notes and checklists; `planner_list_buckets` / `planner_create_bucket` for the board's columns.
+
+## 📓 OneNote — 9 tools
 
 | Tool | Scopes | Mutating |
 |---|---|:---:|
@@ -158,29 +216,36 @@ Large transfers report progress and can be cancelled. When the client sends a `p
 | `onenote_create_notebook` | `Notes.ReadWrite` | ✏️ |
 | `onenote_create_section` | `Notes.ReadWrite` | ✏️ |
 | `onenote_create_page` | `Notes.ReadWrite` | ✏️ |
+| `onenote_append_to_page` | `Notes.ReadWrite` | ✏️ |
 | `onenote_delete_page` | `Notes.ReadWrite` | ✏️ |
 
-## 📊 Excel — 17 tools
+- `onenote_append_to_page` adds text (a paragraph per line) or HTML to the end of a page.
+
+## 📊 Excel — 19 tools
 
 | Tool | Scopes | Mutating |
 |---|---|:---:|
 | `excel_create_session` | `Files.ReadWrite.All` | |
 | `excel_close_session` | `Files.ReadWrite.All` | |
-| `excel_list_worksheets` | `Files.Read.All` | |
-| `excel_get_range` | `Files.Read.All` | |
-| `excel_list_tables` | `Files.Read.All` | |
-| `excel_get_table_rows` | `Files.Read.All` | |
-| `excel_update_range` | `Files.ReadWrite.All` | ✏️ |
-| `excel_add_table_rows` | `Files.ReadWrite.All` | ✏️ |
 | `excel_run_workbook_calculation` | `Files.ReadWrite.All` | ✏️ |
-| `excel_create_workbook` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
-| `excel_create_from_template` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
+| `excel_list_worksheets` | `Files.Read.All` | |
 | `excel_add_worksheet` | `Files.ReadWrite.All` | ✏️ |
 | `excel_delete_worksheet` | `Files.ReadWrite.All` | ✏️ |
 | `excel_rename_worksheet` | `Files.ReadWrite.All` | ✏️ |
-| `excel_create_table` | `Files.ReadWrite.All` | ✏️ |
+| `excel_get_range` | `Files.Read.All` | |
+| `excel_update_range` | `Files.ReadWrite.All` | ✏️ |
 | `excel_set_formula` | `Files.ReadWrite.All` | ✏️ |
 | `excel_clear_range` | `Files.ReadWrite.All` | ✏️ |
+| `excel_list_tables` | `Files.Read.All` | |
+| `excel_get_table_rows` | `Files.Read.All` | |
+| `excel_add_table_rows` | `Files.ReadWrite.All` | ✏️ |
+| `excel_create_table` | `Files.ReadWrite.All` | ✏️ |
+| `excel_create_workbook` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
+| `excel_create_from_template` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
+| `excel_add_chart` | `Files.ReadWrite.All` | ✏️ |
+| `excel_format_range` | `Files.ReadWrite.All` | ✏️ |
+
+- `excel_add_chart` charts a range; `excel_format_range` sets fonts, fill, number formats and column widths. Like every workbook-API tool, both need a signed-in user.
 
 For multi-step edits, call `excel_create_session` first and pass the returned session id to subsequent tools — Graph requires this for write operations.
 
@@ -190,10 +255,10 @@ For multi-step edits, call `excel_create_session` first and pass the returned se
 |---|---|:---:|
 | `word_read_text` | `Files.Read.All`, `Sites.Read.All` | |
 | `word_list_paragraphs` | `Files.Read.All`, `Sites.Read.All` | |
-| `word_create_document` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
-| `word_create_from_template` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
 | `word_replace_text` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
 | `word_append_paragraph` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
+| `word_create_document` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
+| `word_create_from_template` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
 | `word_append_heading` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
 | `word_append_bullets` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
 | `word_insert_paragraph_at` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
@@ -208,10 +273,10 @@ For multi-step edits, call `excel_create_session` first and pass the returned se
 | `powerpoint_list_slides` | `Files.Read.All`, `Sites.Read.All` | |
 | `powerpoint_get_slide_text` | `Files.Read.All`, `Sites.Read.All` | |
 | `powerpoint_extract_all_text` | `Files.Read.All`, `Sites.Read.All` | |
-| `powerpoint_create_deck` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
-| `powerpoint_create_from_template` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
 | `powerpoint_replace_text` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
+| `powerpoint_create_deck` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
 | `powerpoint_add_slide` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
+| `powerpoint_create_from_template` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
 | `powerpoint_delete_slide` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` | ✏️ |
 
 `powerpoint_add_slide` builds a minimal title-and-body slide independent of the deck's master — visual style may differ from existing slides. For richer templating, use `powerpoint_create_from_template` or `powerpoint_create_deck` followed by `powerpoint_replace_text`.

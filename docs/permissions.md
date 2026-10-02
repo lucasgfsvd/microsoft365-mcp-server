@@ -6,16 +6,22 @@ Request only the scopes you actually need — the server degrades gracefully whe
 
 | Surface | Read | Write |
 |---|---|---|
-| Mail | `Mail.Read` | `Mail.Send`, `Mail.ReadWrite` |
+| Mail | `Mail.Read`, `MailboxSettings.Read` | `Mail.Send`, `Mail.ReadWrite`, `MailboxSettings.ReadWrite` |
 | Calendar | `Calendars.Read`, `Calendars.Read.Shared` | `Calendars.ReadWrite` |
-| Contacts / People | `Contacts.Read`, `People.Read` | `Contacts.ReadWrite` |
+| Contacts / People | `Contacts.Read`, `People.Read`, `User.ReadBasic.All`, `Presence.Read.All` | `Contacts.ReadWrite` |
 | Files / OneDrive / SharePoint | `Files.Read.All`, `Sites.Read.All` | `Files.ReadWrite.All`, `Sites.ReadWrite.All` |
 | Teams (channels) | `Team.ReadBasic.All`, `Channel.ReadBasic.All`, `ChannelMessage.Read.All` | `ChannelMessage.Send` |
-| Teams (chats) | `Chat.Read` | `ChatMessage.Send` |
+| Teams (chats) | `Chat.Read` | `ChatMessage.Send`, `Chat.ReadWrite` |
 | Tasks (To Do + Planner) | `Tasks.Read` | `Tasks.ReadWrite` |
 | OneNote | `Notes.Read` | `Notes.ReadWrite` |
 | Signed-in user | `User.Read` | – |
 | Token refresh | `offline_access` | – |
+
+Every scope above can be consented to by users themselves. Adding one means each user consents once more at their next sign-in.
+
+## Scopes only an admin can grant
+
+`Place.Read.All` (meeting rooms) and `User.Read.All` (a colleague's job title, department and phone) need an admin's approval. Asking for an unapproved scope fails the whole sign-in, so they are not requested by default: set `MCP_ENABLE_ADMIN_SCOPES=true` once an admin has consented, and `calendar_list_rooms` appears. In app-only mode the app's own permissions decide instead.
 
 ## Shared mailboxes and delegated calendars
 

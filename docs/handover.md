@@ -19,7 +19,11 @@ What the server can now do that it could not before, grouped by concern (git has
 - **Workflows.** `daily-brief`, `inbox-triage` and `meeting-prep` prompts, with Graph queries computed server-side and verified live.
 - **Attachable context.** Mail, files and OneNote pages as MCP resources (`src/resources/`): recent items in one `$batch`, any item by `m365://` URI, returned as text (Word and PowerPoint extracted, Excel as CSV per sheet). Gated on the matching read tool, like the prompts.
 
-**Next up: publish `0.1.0`.** Every "Before 0.1.0" item in [roadmap.md](./roadmap.md) has landed and passed its live test; the release is prepared and described in [releasing.md](./releasing.md). After `0.1.0` the project is left unmaintained, by the owner's choice.
+**Next up: the second "Before 0.1.0" round in [roadmap.md](./roadmap.md).** A review of what users ask for in chat and what companies need added 37 tools (139 in all), standard annotations, progress and cancellation, app-only mode for a named user, shared mailboxes, and files the model can read (PDFs as text, images as images). Their live tests are `scripts/live/features-*.mjs`, `shared.mjs` and `apponly.mjs`; the last needs an app registration with admin consent. Publishing waits for the owner; the release is prepared ([releasing.md](./releasing.md)). After `0.1.0` the project is left unmaintained, by the owner's choice.
+
+**Scopes that need an admin are opt-in.** Asking for a scope no admin has approved fails the whole sign-in, so `Place.Read.All` and `User.Read.All` are requested only with `MCP_ENABLE_ADMIN_SCOPES`, and the tools needing them (`needsAdminConsent`) are hidden otherwise. Keep the default scope set user-consentable. Adding any scope to it makes every existing user consent again at their next sign-in.
+
+**`/me` is rewritten in one place** (`src/graph/targetUser.ts`): to `/users/{MCP_USER}` in app-only mode and to `/users/{mailbox}` for a `mailbox` argument, for direct requests and `$batch` sub-requests alike. New tools should keep addressing `/me`; tools Graph refuses app-only belong in `DELEGATED_ONLY` (`src/tools/appOnly.ts`).
 
 ---
 

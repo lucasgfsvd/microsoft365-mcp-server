@@ -33,18 +33,18 @@ Mail · Calendar · Contacts · OneDrive · SharePoint · Teams · To Do · Plan
 
 | Surface | Read | Write | Highlights |
 |---|:---:|:---:|---|
-| 📧 **Mail** (Outlook) | ✅ | ✅ | List, search (KQL), threaded replies, drafts, attachments |
-| 📅 **Calendar** | ✅ | ✅ | `findMeetingTimes`, free/busy across attendees, online meetings |
-| 👥 **Contacts & People** | ✅ | ✅ | Personal contacts + directory search (People API) |
-| 📁 **Files** (OneDrive + SharePoint) | ✅ | ✅ | Drive & site navigation, search, up/download, sharing links |
-| 💬 **Teams** | ✅ | ✅ | Channels, chats, post messages & replies |
-| ✅ **Tasks** (To Do + Planner) | ✅ | ✅ | Lists, tasks, completions, assignments |
-| 📓 **OneNote** | ✅ | ✅ | Notebooks, sections, HTML page CRUD |
+| 📧 **Mail** (Outlook) | ✅ | ✅ | List and search, read attachments (documents and PDFs as text, images as images), send with attachments, reply, forward, drafts, file and flag, out-of-office |
+| 📅 **Calendar** | ✅ | ✅ | Accept/decline invitations, cancel meetings, recurring events, rooms, `findMeetingTimes`, free/busy, online meetings |
+| 👥 **Contacts & People** | ✅ | ✅ | Personal contacts, directory search, managers and reports, profiles, presence |
+| 📁 **Files** (OneDrive + SharePoint) | ✅ | ✅ | Navigation, search, recent files, up/download, move/rename, PDF export, sharing and access, SharePoint lists |
+| 💬 **Teams** | ✅ | ✅ | Channels, chats, posts and replies with @mentions, direct messages, editing your messages |
+| ✅ **Tasks** (To Do + Planner) | ✅ | ✅ | Tasks, updates, steps and checklists, buckets, assignments by email |
+| 📓 **OneNote** | ✅ | ✅ | Notebooks, sections, pages, appending to a page |
 | 📊 **Excel** | ✅ | ✅ | Create workbooks (from scratch or **from templates**), add/rename/delete sheets, tables, ranges, formulas, recalculation |
 | 📝 **Word** | ✅ | ✅ | Create documents (from scratch or **from templates** with placeholder fill-in), append headings/bullets/paragraphs, insert at index, find-and-replace |
 | 🎞️ **PowerPoint** | ✅ | ✅ | Create decks (from scratch or **from templates** with placeholder fill-in + extra slides), append/delete slides, find-and-replace across slides |
 
-102 tools total. The full reference is in [docs/tools.md](./docs/tools.md).
+139 tools total. The full reference is in [docs/tools.md](./docs/tools.md).
 
 ---
 
@@ -52,7 +52,7 @@ Mail · Calendar · Contacts · OneDrive · SharePoint · Teams · To Do · Plan
 
 This is an **early alpha**. Please calibrate expectations before depending on it:
 
-- **Exercised against a real Microsoft 365 business tenant: all 102 tools.** Each call's result was checked, not just accepted, and Word, PowerPoint and Excel files edited in place were also opened with independent parsers (python-docx, python-pptx, openpyxl). The live scripts are in [`scripts/live/`](./scripts/live/). Teams channel posts and Planner tasks were tested in a private sandbox team with no other members.
+- **Exercised against a real Microsoft 365 business tenant: all 102 tools of the first round; the newer ones as listed in [`scripts/live/`](./scripts/live/).** Each call's result was checked, not just accepted, and Word, PowerPoint and Excel files edited in place were also opened with independent parsers (python-docx, python-pptx, openpyxl). The live scripts are in [`scripts/live/`](./scripts/live/). Teams channel posts and Planner tasks were tested in a private sandbox team with no other members.
 - **Unit tested:** 182 tests, including the SDK's real retry middleware under nock. CI runs lint, typecheck, tests with coverage, a production `npm audit`, a secret scan, and builds *and starts* the Docker image.
 - **Not published yet.** `0.1.0` goes to npm as `@microsoft365-mcp/server` once the [roadmap](./docs/roadmap.md)'s remaining features are in; it will be the only planned release, built in CI with npm provenance. No Docker image is published; build it from the `Dockerfile`.
 
@@ -530,7 +530,7 @@ A resource type is offered only while its read tool (`mail_get_message`, `files_
 </details>
 
 <details>
-<summary><strong>📧 Mail</strong> — 10 tools</summary>
+<summary><strong>📧 Mail</strong> — 17 tools</summary>
 
 | Tool | Scopes | Writes |
 |---|---|:---:|
@@ -541,28 +541,38 @@ A resource type is offered only while its read tool (`mail_get_message`, `files_
 | `mail_list_attachments` | Mail.Read | |
 | `mail_send_message` | Mail.Send | ✏️ |
 | `mail_create_draft` | Mail.ReadWrite | ✏️ |
+| `mail_send_draft` | Mail.Send | ✏️ |
 | `mail_reply_message` | Mail.Send | ✏️ |
-| `mail_create_reply_draft` | Mail.ReadWrite | ✏️ |
+| `mail_forward_message` | Mail.Send | ✏️ |
 | `mail_delete_message` | Mail.ReadWrite | ✏️ |
+| `mail_create_reply_draft` | Mail.ReadWrite | ✏️ |
+| `mail_move_message` | Mail.ReadWrite | ✏️ |
+| `mail_update_message` | Mail.ReadWrite | ✏️ |
+| `mail_get_attachment` | Mail.Read | |
+| `mail_get_automatic_replies` | MailboxSettings.Read | |
+| `mail_set_automatic_replies` | MailboxSettings.ReadWrite | ✏️ |
 </details>
 
 <details>
-<summary><strong>📅 Calendar</strong> — 8 tools</summary>
+<summary><strong>📅 Calendar</strong> — 11 tools</summary>
 
 | Tool | Scopes | Writes |
 |---|---|:---:|
 | `calendar_list_events` | Calendars.Read | |
 | `calendar_get_event` | Calendars.Read | |
 | `calendar_list_calendars` | Calendars.Read | |
-| `calendar_find_meeting_times` | Calendars.Read.Shared | |
+| `calendar_find_meeting_times` | Calendars.Read.Shared, Calendars.Read | |
 | `calendar_get_free_busy` | Calendars.Read.Shared | |
 | `calendar_create_event` | Calendars.ReadWrite | ✏️ |
 | `calendar_update_event` | Calendars.ReadWrite | ✏️ |
 | `calendar_delete_event` | Calendars.ReadWrite | ✏️ |
+| `calendar_respond_to_event` | Calendars.ReadWrite | ✏️ |
+| `calendar_cancel_event` | Calendars.ReadWrite | ✏️ |
+| `calendar_list_rooms` | Place.Read.All | |
 </details>
 
 <details>
-<summary><strong>👥 Contacts & People</strong> — 6 tools</summary>
+<summary><strong>👥 Contacts & People</strong> — 10 tools</summary>
 
 | Tool | Scopes | Writes |
 |---|---|:---:|
@@ -572,28 +582,42 @@ A resource type is offered only while its read tool (`mail_get_message`, `files_
 | `contacts_create` | Contacts.ReadWrite | ✏️ |
 | `contacts_update` | Contacts.ReadWrite | ✏️ |
 | `contacts_delete` | Contacts.ReadWrite | ✏️ |
+| `people_get_manager` | User.Read | |
+| `people_list_direct_reports` | User.ReadBasic.All | |
+| `people_get_profile` | User.ReadBasic.All | |
+| `people_get_presence` | Presence.Read.All, User.ReadBasic.All | |
 </details>
 
 <details>
-<summary><strong>📁 Files (OneDrive + SharePoint)</strong> — 11 tools</summary>
+<summary><strong>📁 Files (OneDrive + SharePoint)</strong> — 21 tools</summary>
 
 | Tool | Scopes | Writes |
 |---|---|:---:|
 | `files_list_children` | Files.Read.All, Sites.Read.All | |
-| `files_get_item` | Files.Read.All | |
-| `files_search` | Files.Read.All | |
-| `files_download` | Files.Read.All | |
-| `files_list_drives` | Files.Read.All | |
+| `files_get_item` | Files.Read.All, Sites.Read.All | |
+| `files_search` | Files.Read.All, Sites.Read.All | |
 | `sites_search` | Sites.Read.All | |
-| `files_upload` | Files.ReadWrite.All | ✏️ |
-| `files_create_folder` | Files.ReadWrite.All | ✏️ |
-| `files_delete` | Files.ReadWrite.All | ✏️ |
-| `files_copy` | Files.ReadWrite.All | ✏️ |
-| `files_share` | Files.ReadWrite.All | ✏️ |
+| `files_list_drives` | Files.Read.All | |
+| `files_upload` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
+| `files_create_folder` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
+| `files_delete` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
+| `files_copy` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
+| `files_share` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
+| `files_download` | Files.Read.All, Sites.Read.All | |
+| `files_move` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
+| `files_export_pdf` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
+| `files_list_permissions` | Files.Read.All, Sites.Read.All | |
+| `files_invite` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
+| `files_remove_permission` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
+| `files_list_recent` | Files.Read.All, Sites.Read.All | |
+| `sites_list_lists` | Sites.Read.All | |
+| `sites_get_list_items` | Sites.Read.All | |
+| `sites_create_list_item` | Sites.ReadWrite.All | ✏️ |
+| `sites_update_list_item` | Sites.ReadWrite.All | ✏️ |
 </details>
 
 <details>
-<summary><strong>💬 Teams</strong> — 9 tools</summary>
+<summary><strong>💬 Teams</strong> — 12 tools</summary>
 
 | Tool | Scopes | Writes |
 |---|---|:---:|
@@ -603,13 +627,16 @@ A resource type is offered only while its read tool (`mail_get_message`, `files_
 | `teams_get_message_replies` | ChannelMessage.Read.All | |
 | `teams_list_chats` | Chat.Read | |
 | `teams_list_chat_messages` | Chat.Read | |
-| `teams_post_channel_message` | ChannelMessage.Send | ✏️ |
-| `teams_reply_channel_message` | ChannelMessage.Send | ✏️ |
-| `teams_post_chat_message` | ChatMessage.Send | ✏️ |
+| `teams_post_channel_message` | ChannelMessage.Send, User.ReadBasic.All | ✏️ |
+| `teams_reply_channel_message` | ChannelMessage.Send, User.ReadBasic.All | ✏️ |
+| `teams_post_chat_message` | ChatMessage.Send, User.ReadBasic.All | ✏️ |
+| `teams_send_direct_message` | Chat.ReadWrite, ChatMessage.Send | ✏️ |
+| `teams_update_chat_message` | Chat.ReadWrite | ✏️ |
+| `teams_delete_chat_message` | Chat.ReadWrite | ✏️ |
 </details>
 
 <details>
-<summary><strong>✅ Tasks (To Do + Planner)</strong> — 10 tools</summary>
+<summary><strong>✅ Tasks (To Do + Planner)</strong> — 17 tools</summary>
 
 | Tool | Scopes | Writes |
 |---|---|:---:|
@@ -617,16 +644,23 @@ A resource type is offered only while its read tool (`mail_get_message`, `files_
 | `todo_list_tasks` | Tasks.Read | |
 | `todo_create_task` | Tasks.ReadWrite | ✏️ |
 | `todo_complete_task` | Tasks.ReadWrite | ✏️ |
+| `todo_update_task` | Tasks.ReadWrite | ✏️ |
+| `todo_add_checklist_item` | Tasks.ReadWrite | ✏️ |
 | `todo_delete_task` | Tasks.ReadWrite | ✏️ |
 | `planner_list_plans` | Tasks.Read | |
 | `planner_list_tasks` | Tasks.Read | |
 | `planner_create_task` | Tasks.ReadWrite | ✏️ |
 | `planner_complete_task` | Tasks.ReadWrite | ✏️ |
 | `planner_delete_task` | Tasks.ReadWrite | ✏️ |
+| `planner_update_task` | Tasks.ReadWrite, User.ReadBasic.All | ✏️ |
+| `planner_list_buckets` | Tasks.Read | |
+| `planner_create_bucket` | Tasks.ReadWrite | ✏️ |
+| `planner_get_task_details` | Tasks.Read | |
+| `planner_update_task_details` | Tasks.ReadWrite | ✏️ |
 </details>
 
 <details>
-<summary><strong>📓 OneNote</strong> — 8 tools</summary>
+<summary><strong>📓 OneNote</strong> — 9 tools</summary>
 
 | Tool | Scopes | Writes |
 |---|---|:---:|
@@ -637,31 +671,34 @@ A resource type is offered only while its read tool (`mail_get_message`, `files_
 | `onenote_create_notebook` | Notes.ReadWrite | ✏️ |
 | `onenote_create_section` | Notes.ReadWrite | ✏️ |
 | `onenote_create_page` | Notes.ReadWrite | ✏️ |
+| `onenote_append_to_page` | Notes.ReadWrite | ✏️ |
 | `onenote_delete_page` | Notes.ReadWrite | ✏️ |
 </details>
 
 <details>
-<summary><strong>📊 Excel</strong> — 17 tools</summary>
+<summary><strong>📊 Excel</strong> — 19 tools</summary>
 
 | Tool | Scopes | Writes |
 |---|---|:---:|
 | `excel_create_session` | Files.ReadWrite.All | |
 | `excel_close_session` | Files.ReadWrite.All | |
-| `excel_list_worksheets` | Files.Read.All | |
-| `excel_get_range` | Files.Read.All | |
-| `excel_update_range` | Files.ReadWrite.All | ✏️ |
-| `excel_list_tables` | Files.Read.All | |
-| `excel_get_table_rows` | Files.Read.All | |
-| `excel_add_table_rows` | Files.ReadWrite.All | ✏️ |
 | `excel_run_workbook_calculation` | Files.ReadWrite.All | ✏️ |
-| `excel_create_workbook` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
-| `excel_create_from_template` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
+| `excel_list_worksheets` | Files.Read.All | |
 | `excel_add_worksheet` | Files.ReadWrite.All | ✏️ |
 | `excel_delete_worksheet` | Files.ReadWrite.All | ✏️ |
 | `excel_rename_worksheet` | Files.ReadWrite.All | ✏️ |
-| `excel_create_table` | Files.ReadWrite.All | ✏️ |
+| `excel_get_range` | Files.Read.All | |
+| `excel_update_range` | Files.ReadWrite.All | ✏️ |
 | `excel_set_formula` | Files.ReadWrite.All | ✏️ |
 | `excel_clear_range` | Files.ReadWrite.All | ✏️ |
+| `excel_list_tables` | Files.Read.All | |
+| `excel_get_table_rows` | Files.Read.All | |
+| `excel_add_table_rows` | Files.ReadWrite.All | ✏️ |
+| `excel_create_table` | Files.ReadWrite.All | ✏️ |
+| `excel_create_workbook` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
+| `excel_create_from_template` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
+| `excel_add_chart` | Files.ReadWrite.All | ✏️ |
+| `excel_format_range` | Files.ReadWrite.All | ✏️ |
 </details>
 
 <details>
@@ -669,16 +706,16 @@ A resource type is offered only while its read tool (`mail_get_message`, `files_
 
 | Tool | Scopes | Writes |
 |---|---|:---:|
-| `word_read_text` | Files.Read.All | |
-| `word_list_paragraphs` | Files.Read.All | |
-| `word_replace_text` | Files.ReadWrite.All | ✏️ |
-| `word_append_paragraph` | Files.ReadWrite.All | ✏️ |
+| `word_read_text` | Files.Read.All, Sites.Read.All | |
+| `word_list_paragraphs` | Files.Read.All, Sites.Read.All | |
+| `word_replace_text` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
+| `word_append_paragraph` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
 | `word_create_document` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
 | `word_create_from_template` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
-| `word_append_heading` | Files.ReadWrite.All | ✏️ |
-| `word_append_bullets` | Files.ReadWrite.All | ✏️ |
-| `word_insert_paragraph_at` | Files.ReadWrite.All | ✏️ |
-| `word_delete_paragraph` | Files.ReadWrite.All | ✏️ |
+| `word_append_heading` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
+| `word_append_bullets` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
+| `word_insert_paragraph_at` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
+| `word_delete_paragraph` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
 </details>
 
 <details>
@@ -686,14 +723,14 @@ A resource type is offered only while its read tool (`mail_get_message`, `files_
 
 | Tool | Scopes | Writes |
 |---|---|:---:|
-| `powerpoint_list_slides` | Files.Read.All | |
-| `powerpoint_get_slide_text` | Files.Read.All | |
-| `powerpoint_extract_all_text` | Files.Read.All | |
-| `powerpoint_replace_text` | Files.ReadWrite.All | ✏️ |
+| `powerpoint_list_slides` | Files.Read.All, Sites.Read.All | |
+| `powerpoint_get_slide_text` | Files.Read.All, Sites.Read.All | |
+| `powerpoint_extract_all_text` | Files.Read.All, Sites.Read.All | |
+| `powerpoint_replace_text` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
 | `powerpoint_create_deck` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
+| `powerpoint_add_slide` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
 | `powerpoint_create_from_template` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
-| `powerpoint_add_slide` | Files.ReadWrite.All | ✏️ |
-| `powerpoint_delete_slide` | Files.ReadWrite.All | ✏️ |
+| `powerpoint_delete_slide` | Files.ReadWrite.All, Sites.ReadWrite.All | ✏️ |
 </details>
 
 ---
@@ -711,6 +748,7 @@ All settings can be passed as CLI flags **or** environment variables.
 | `MCP_CLIENT_CERTIFICATE_PATH` | `--client-certificate` | – | `client-credentials`: PEM with the certificate and private key. Preferred over a secret |
 | `MCP_CLIENT_CERTIFICATE_PASSWORD` | – | – | For an encrypted private key |
 | `MCP_USER` | `--user` | – | Required for `client-credentials`: the user or shared mailbox the server works for |
+| `MCP_ENABLE_ADMIN_SCOPES` | – | `false` | Signed-in modes: also request the scopes only an admin can grant (rooms, colleagues' full profiles), and offer the tools that need them. Set only once an admin has consented, or sign-in fails |
 | `MCP_ENABLE_SHARED_MAILBOXES` | – | `false` | Signed-in modes: add a `mailbox` argument to mail and calendar tools, for shared mailboxes and calendars you are a delegate of. Adds the `.Shared` scopes, so sign in again once |
 | `MCP_REDIRECT_URI` | `--redirect-uri` | `http://localhost:3000` | `interactive` only |
 | `MCP_SCOPES` | `--scopes` | Full set | Comma-separated Graph scopes |

@@ -11,7 +11,7 @@
 
 schema = 1
 
-purpose = "Your own MCP server exposing 102 tools over Microsoft 365 (Mail, Calendar, Contacts, OneDrive/SharePoint, Teams, To Do/Planner, OneNote, plus in-place OOXML editing of Excel/Word/PowerPoint) to any MCP client, with writes disabled by default."
+purpose = "Your own MCP server exposing 139 tools over Microsoft 365 (Mail, Calendar, Contacts, OneDrive/SharePoint, Teams, To Do/Planner, OneNote, plus in-place OOXML editing of Excel/Word/PowerPoint) to any MCP client, with writes disabled by default."
 
 # idea | prototype | active | maintenance | paused | archived
 stage = "active"
@@ -21,7 +21,8 @@ updated = 2026-10-02
 
 # The real next moves, most important first - taken from this repo's docs.
 next_actions = [
-  "Publish 0.1.0 once (docs/releasing.md): npm, MCP Registry, GitHub Release. Before ~January 2027, when 2FA-bypass tokens stop publishing. Unmaintained after that.",
+  "Finish the second 'Before 0.1.0' round (docs/roadmap.md): live passes of the everyday-action tools, shared mailboxes, and app-only mode (needs an app registration).",
+  "Then, when the owner decides, publish 0.1.0 once (docs/releasing.md). Before ~January 2027, when 2FA-bypass tokens stop publishing. Unmaintained after that.",
 ]
 
 blockers = []

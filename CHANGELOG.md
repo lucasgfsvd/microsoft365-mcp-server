@@ -8,7 +8,7 @@ maintained: see *Maintenance status* in the README.
 
 ### What it does
 
-- **102 tools across 12 surfaces**: Mail, Calendar, Contacts and People,
+- **139 tools across 12 surfaces**: Mail, Calendar, Contacts and People,
   OneDrive and SharePoint files, Teams, To Do and Planner, OneNote, Excel,
   Word and PowerPoint, plus sign-in and cross-cutting Graph tools.
 - **Writes are off by default.** Enable them all, or per surface. Every tool
@@ -28,9 +28,21 @@ maintained: see *Maintenance status* in the README.
   tools Graph refuses without a signed-in user are hidden there. Signed-in
   users can open shared mailboxes and calendars they are delegates of with a
   `mailbox` argument (`MCP_ENABLE_SHARED_MAILBOXES`).
-- **Mail**: list by date (`receivedAfter` / `receivedBefore`), and draft a
-  reply inside its conversation without sending it
-  (`mail_create_reply_draft`), which `inbox-triage` now uses.
+- **Mail**: list by date (`receivedAfter` / `receivedBefore`); read
+  attachments (documents and PDFs as text, images as images); send with
+  attachments of any size up to 150 MB; reply, forward and draft inside the
+  conversation, text kept as written; file, mark and flag messages;
+  out-of-office. `inbox-triage` drafts its replies in the thread.
+- **Calendar**: accept, decline or tentatively accept invitations, proposing
+  a new time; cancel meetings with a note; recurring events; book rooms.
+- **People**: managers, direct reports, profiles and Teams presence.
+- **Files**: PDFs read as text and images shown as images; move and rename;
+  export to PDF; see, grant and revoke access; SharePoint list items; recent
+  files.
+- **Teams**: direct messages, @mentions, editing and deleting your messages.
+- **Tasks**: update To Do and Planner tasks, steps and checklists, buckets,
+  assignment by email.
+- **OneNote and Excel**: append to a page; charts and cell formatting.
 - **Tasks and OneNote**: delete To Do and Planner tasks; create OneNote
   notebooks and sections, so an account with no notebook can start one.
 - **Large files**: uploads over 4 MB use Graph upload sessions, and a file in

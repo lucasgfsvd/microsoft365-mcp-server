@@ -1,6 +1,6 @@
 # Roadmap
 
-**The "Before 0.1.0" items below are all done; `0.1.0` is next.** After that release the project is not actively maintained (see the
+**`0.1.0` is published when the owner decides, after the items below.** After that release the project is not actively maintained (see the
 README's *Maintenance status*), so anything wanted in the published package has
 to land first. The release itself is described in [releasing.md](./releasing.md)
 and is already prepared: npm scope claimed, workflow ready, MCP Registry entry
@@ -13,7 +13,28 @@ as done: every live pass so far has found something the unit tests could not.
 
 ---
 
-## Before 0.1.0
+## Before 0.1.0: company use and everyday actions
+
+Added after a review of what a user asks for in chat, and what a company deployment needs. Built and unit-tested; each needs its live pass before it counts as done.
+
+| | Feature | Why | Size |
+|---|---|---|---|
+| ☐ | **App-only mode for a named user** (`MCP_USER`, certificate credentials, delegated-only tools hidden) | Documented for unattended use, but every tool used `/me`, which Graph refuses without a signed-in user. Live test needs an app registration with admin consent (`scripts/live/apponly.mjs`) | M |
+| ☐ | **Shared mailboxes and delegated calendars** (`mailbox`, `MCP_ENABLE_SHARED_MAILBOXES`) | Shared inboxes and assistants managing a calendar | S |
+| ☑ | **Standard tool annotations** | Clients decide what to confirm from them | S |
+| ☑ | **Progress and cancellation** for large transfers | Large uploads and downloads ran silently and could not be stopped | S |
+| ☐ | **Files readable by the model**: PDFs as text, images as images, mail attachments | "Summarise the PDF Alice sent" could not work | M |
+| ☐ | **Mail**: send with attachments, forward, move, mark and flag, send a draft, out-of-office | The commonest mail requests after reading and replying | M |
+| ☐ | **Calendar**: answer invitations, cancel meetings, recurrence, rooms (admin-gated) | | M |
+| ☐ | **People**: manager, reports, profiles, presence | | S |
+| ☐ | **Files**: move and rename, PDF export, permissions, SharePoint lists, recent files | | M |
+| ☐ | **Teams**: direct messages, @mentions, editing your own messages | | S |
+| ☐ | **Tasks**: update To Do and Planner tasks, steps, checklists, buckets | | S |
+| ☐ | **OneNote** append to a page; **Excel** charts and formatting | | S |
+
+Not included: meeting transcripts (left out of this round), and "shared with me" (Microsoft retires the API after November 2026 with no replacement).
+
+## Before 0.1.0 (first round, done)
 
 | | Feature | Why | Size |
 |---|---|---|---|
