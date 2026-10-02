@@ -19,12 +19,28 @@ export function availableKinds(tools: ReadonlySet<string>): ResourceKind[] {
   return RESOURCE_KINDS.filter((k) => tools.has(k.requiresTool));
 }
 
-/** Recent items of every available kind, fetched in one $batch. A failing kind is left out, not fatal. */
+/**
+ * Recent items of every available kind: the GETs in one $batch, the rest
+ * alongside it. A failing kind is left out, not fatal.
+ */
 export async function listRecent(graph: GraphClient, kinds: ResourceKind[]): Promise<ResourceEntry[]> {
   if (!kinds.length) return [];
-  const results = await batchGet(graph, kinds.map((k) => k.recent));
-  return kinds.flatMap((k) => {
-    const r = results.find((x) => x.id === k.recent.id);
+  const batched = kinds.flatMap((k) => ("url" in k.recent ? [k.recent] : []));
+  const [results, fetched] = await Promise.all([
+    batchGet(graph, batched),
+    Promise.all(kinds.map((k) => ("fetch" in k.recent ? k.recent.fetch(graph).catch((err: unknown) => ({ failed: err })) : undefined))),
+  ]);
+  return kinds.flatMap((k, i) => {
+    if ("fetch" in k.recent) {
+      const body = fetched[i] as { failed?: unknown } | undefined;
+      if (body && typeof body === "object" && "failed" in body) {
+        logger.debug({ kind: k.key, err: String(body.failed) }, "resources: recent listing unavailable");
+        return [];
+      }
+      return k.toEntries(body);
+    }
+    const id = k.recent.id;
+    const r = results.find((x) => x.id === id);
     if (!r || r.status >= 300) {
       // An account with no notebook, for one, answers OneNote listings with an error.
       logger.debug({ kind: k.key, status: r?.status, error: r?.error }, "resources: recent listing unavailable");

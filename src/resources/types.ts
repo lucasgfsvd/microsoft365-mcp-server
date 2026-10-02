@@ -26,8 +26,11 @@ export interface ResourceKind {
   /** The read tool whose visibility gates this kind, so config cannot be bypassed. */
   requiresTool: string;
   template: { uriTemplate: string; name: string; title: string; description: string; mimeType?: string };
-  /** One Graph GET listing recent items; all kinds are fetched in one $batch. */
-  recent: BatchItem;
+  /**
+   * How to list recent items: a Graph GET, fetched with every other kind's in
+   * one $batch, or a call of its own where a GET will not do (a search).
+   */
+  recent: BatchItem | { fetch(graph: GraphClient): Promise<unknown> };
   toEntries(body: unknown): ResourceEntry[];
   /** `segments` are the decoded URI path parts after the key. */
   read(graph: GraphClient, segments: string[], uri: string): Promise<ResourceContent>;

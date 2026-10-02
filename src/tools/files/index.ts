@@ -8,6 +8,10 @@ import { uploadLocalFile } from "../../graph/localUpload.js";
 import { uploadOptions } from "./transfer.js";
 import { drivePrefix, itemByPath, ScopeInput } from "./scope.js";
 import { filesDownloadTools } from "./download.js";
+import { fileManageTools } from "./manage.js";
+import { filePermissionTools } from "./permissions.js";
+import { recentFileTools } from "./recent.js";
+import { siteListTools } from "./lists.js";
 
 export const filesTools: ToolDefinition[] = [
   {
@@ -195,4 +199,8 @@ export const filesTools: ToolDefinition[] = [
     },
   },
   ...filesDownloadTools,
+  ...fileManageTools,
+  ...filePermissionTools,
+  ...recentFileTools,
+  ...siteListTools,
 ];

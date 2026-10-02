@@ -19,12 +19,16 @@ type WriteKind = Required<Pick<ToolAnnotations, "destructiveHint" | "idempotentH
 
 /** How a write behaves, by the verb in its name (surface_verb_object). */
 const BY_VERB: Array<[RegExp, WriteKind]> = [
-  [/^(delete|update|set|clear|rename|replace|complete|cancel)$/, { destructiveHint: true, idempotentHint: true }],
+  [/^(delete|update|set|clear|rename|replace|complete|cancel|remove)$/, { destructiveHint: true, idempotentHint: true }],
+  // Writes a PDF next to the original, replacing an older export.
+  [/^export$/, { destructiveHint: true, idempotentHint: true }],
   // Answering an invitation replaces the previous answer.
   [/^respond$/, { destructiveHint: false, idempotentHint: true }],
   // Writes a file at a path, replacing one already there.
   [/^(upload|copy)$/, { destructiveHint: true, idempotentHint: true }],
   [/^(create|add|append|insert|post|reply|send|forward)$/, { destructiveHint: false, idempotentHint: false }],
+  // Giving access again to someone who has it changes nothing.
+  [/^invite$/, { destructiveHint: false, idempotentHint: true }],
   // Files a message elsewhere; doing it again leaves it where it is.
   [/^move$/, { destructiveHint: false, idempotentHint: true }],
   // A sharing link of a given type is returned again, not duplicated.
@@ -49,7 +53,7 @@ const EXCEPTIONS: Record<string, WriteKind> = {
 };
 
 /** Writes other people see or receive. */
-const OPEN_WORLD = /^(mail_(send|reply|forward)_|mail_set_automatic_replies$|teams_(post|reply)_|calendar_(create|update|delete|cancel|respond)_|planner_(create|complete|delete)_|files_share$)/;
+const OPEN_WORLD = /^(mail_(send|reply|forward)_|mail_set_automatic_replies$|teams_(post|reply)_|calendar_(create|update|delete|cancel|respond)_|planner_(create|complete|delete)_|files_(share|invite)$)/;
 
 export function writeKind(name: string): WriteKind | undefined {
   if (EXCEPTIONS[name]) return EXCEPTIONS[name];

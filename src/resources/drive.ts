@@ -1,6 +1,7 @@
 import { downloadInline, getItemMeta, INLINE_LIMIT } from "../graph/download.js";
 import { convertForConversation } from "../content/convert.js";
-import { enc, uriFor, values, type ResourceContent, type ResourceKind } from "./types.js";
+import { recentFiles, type RecentFile } from "../graph/recentFiles.js";
+import { enc, uriFor, type ResourceContent, type ResourceKind } from "./types.js";
 
 /**
  * File content for the conversation: Word, PowerPoint, Excel and PDF as their
@@ -19,16 +20,6 @@ export async function fileContent(uri: string, bytes: Buffer, mimeType: string |
   }
 }
 
-interface RecentItem {
-  id?: string;
-  name?: string;
-  file?: unknown;
-  lastModifiedDateTime?: string;
-  parentReference?: { driveId?: string };
-  // Items shared from someone else's drive are described here instead.
-  remoteItem?: { id?: string; name?: string; file?: unknown; parentReference?: { driveId?: string } };
-}
-
 export const driveResource: ResourceKind = {
   key: "drive",
   requiresTool: "files_download",
@@ -38,18 +29,18 @@ export const driveResource: ResourceKind = {
     title: "OneDrive / SharePoint file",
     description: `A file's content: Word, PowerPoint and PDF as text, Excel as CSV per sheet, other text files as text, up to ${INLINE_LIMIT / 1024 / 1024} MB.`,
   },
-  recent: { id: "drive", url: "/me/drive/recent?$top=20" },
+  // Microsoft retires /me/drive/recent after November 2026; search replaces it.
+  recent: { fetch: (graph) => recentFiles(graph, 20) },
   toEntries: (body) =>
-    (values(body) as RecentItem[]).flatMap((it) => {
-      const item = it.remoteItem ?? it;
-      const driveId = item.parentReference?.driveId ?? it.parentReference?.driveId;
-      if (!item.file || !driveId || !item.id) return [];
-      return [{
-        uri: uriFor("drive", driveId, item.id),
-        name: `file: ${item.name ?? it.name ?? item.id}`,
-        description: it.lastModifiedDateTime ? `Modified ${it.lastModifiedDateTime}` : undefined,
-      }];
-    }),
+    ((body ?? []) as RecentFile[]).flatMap((f) =>
+      f.driveId
+        ? [{
+            uri: uriFor("drive", f.driveId, f.id),
+            name: `file: ${f.name ?? f.id}`,
+            description: f.lastModifiedDateTime ? `Modified ${f.lastModifiedDateTime}${f.lastModifiedBy ? ` by ${f.lastModifiedBy}` : ""}` : undefined,
+          }]
+        : [],
+    ),
   async read(graph, [driveId, itemId], uri) {
     if (!itemId) throw new Error("Drive URIs look like m365://drive/{driveId}/{itemId}.");
     const itemUrl = `/drives/${enc(driveId!)}/items/${enc(itemId)}`;

@@ -7,6 +7,7 @@ import { htmlTitle, htmlToText } from "../src/resources/html.js";
 import { tidyText } from "../src/util/text.js";
 import { formatMessage } from "../src/resources/mail.js";
 import { driveResource, fileContent } from "../src/resources/drive.js";
+import { recentFiles } from "../src/graph/recentFiles.js";
 import { buildDeck } from "../src/ooxml/newDeck.js";
 
 describe("resource URIs", () => {
@@ -78,15 +79,29 @@ describe("file content", () => {
     expect(await fileContent("u", Buffer.from([0, 1]), "application/pdf", "x.pdf")).toEqual({ uri: "u", mimeType: "application/pdf", blob: "AAE=" });
   });
 
-  it("lists files shared from other drives under their own drive, and skips folders", () => {
-    const entries = driveResource.toEntries({
-      value: [
-        { id: "1", name: "mine.docx", file: {}, parentReference: { driveId: "d1" } },
-        { id: "2", name: "shared.xlsx", remoteItem: { id: "r2", name: "shared.xlsx", file: {}, parentReference: { driveId: "d2" } } },
-        { id: "3", name: "Folder", folder: {}, parentReference: { driveId: "d1" } },
-      ],
-    });
-    expect(entries.map((e) => e.uri)).toEqual(["m365://drive/d1/1", "m365://drive/d2/r2"]);
+  it("lists recent files under their own drive, whoever's drive it is", () => {
+    const entries = driveResource.toEntries([
+      { id: "1", driveId: "d1", name: "mine.docx", lastModifiedDateTime: "2026-10-01T10:00:00Z", lastModifiedBy: "Ana" },
+      { id: "2", driveId: "site-d2", name: "team.xlsx" },
+      { id: "3", name: "no drive id" },
+    ]);
+    expect(entries.map((e) => e.uri)).toEqual(["m365://drive/d1/1", "m365://drive/site-d2/2"]);
+    expect(entries[0]!.description).toBe("Modified 2026-10-01T10:00:00Z by Ana");
+  });
+
+  // Microsoft retires /me/drive/recent after November 2026.
+  it("finds recent files through search, newest documents first", async () => {
+    const posted: unknown[] = [];
+    const graph = {
+      api: () => ({
+        post: async (body: unknown) => {
+          posted.push(body);
+          return { value: [{ hitsContainers: [{ hits: [{ resource: { id: "i1", name: "a.docx", parentReference: { driveId: "d1" } } }] }] }] };
+        },
+      }),
+    } as unknown as GraphClient;
+    expect(await recentFiles(graph, 5)).toEqual([{ id: "i1", driveId: "d1", name: "a.docx", lastModifiedDateTime: undefined, lastModifiedBy: undefined, webUrl: undefined }]);
+    expect(posted[0]).toMatchObject({ requests: [{ entityTypes: ["driveItem"], sortProperties: [{ name: "lastModifiedDateTime", isDescending: true }], size: 5 }] });
   });
 });
 
@@ -97,16 +112,16 @@ describe("availability", () => {
     expect(availableKinds(new Set(RESOURCE_KINDS.map((k) => k.requiresTool))).length).toBe(3);
   });
 
-  it("lists every kind in one batch, leaving out a kind whose listing fails", async () => {
+  it("batches the GET listings, searches for files alongside, and leaves out a kind that fails", async () => {
     const posted: unknown[] = [];
     const graph = {
       api: (path: string) => ({
         post: async (body: { requests: Array<{ id: string }> }) => {
           posted.push({ path, n: body.requests.length });
+          if (path === "/search/query") throw new Error("search unavailable");
           return {
             responses: [
               { id: "mail", status: 200, body: { value: [{ id: "m1", subject: "Hi" }] } },
-              { id: "drive", status: 200, body: { value: [] } },
               { id: "onenote", status: 403, body: { error: { code: "Forbidden" } } },
             ],
           };
@@ -114,7 +129,7 @@ describe("availability", () => {
       }),
     } as unknown as GraphClient;
     const entries = await listRecent(graph, RESOURCE_KINDS);
-    expect(posted).toEqual([{ path: "/$batch", n: 3 }]);
+    expect(posted).toEqual(expect.arrayContaining([{ path: "/$batch", n: 2 }, { path: "/search/query", n: 1 }]));
     expect(entries.map((e) => e.uri)).toEqual(["m365://mail/m1"]);
   });
 });
