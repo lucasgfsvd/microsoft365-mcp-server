@@ -7,9 +7,9 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import type { ServerConfig } from "./types.js";
-import { buildCredential, deviceCodeEmitter, type DeviceCodePrompt } from "./auth/index.js";
+import { deviceCodeEmitter, type DeviceCodePrompt } from "./auth/index.js";
 import { AuthSession, isAuthenticationRequired } from "./auth/session.js";
-import { readAuthRecord } from "./auth/tokenCache.js";
+import { buildServerCredential } from "./auth/reloadingCredential.js";
 import { buildGraphClient } from "./graph/client.js";
 import { ToolRegistry } from "./tools/registry.js";
 import { allTools } from "./tools/index.js";
@@ -44,10 +44,7 @@ export async function startServer(config: ServerConfig): Promise<void> {
     "auth configuration",
   );
 
-  // Reusing the stored record lets a fresh process spend the cached token without
-  // prompting. Absent or unreadable, we simply start out signed-out.
-  const authenticationRecord = await readAuthRecord(config.tokenCachePath).catch(() => undefined);
-  const credential = await buildCredential(config, authenticationRecord);
+  const credential = await buildServerCredential(config);
   const graph = buildGraphClient(credential, config.scopes);
   const auth = new AuthSession(credential, config);
 
