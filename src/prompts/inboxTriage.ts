@@ -28,9 +28,11 @@ export const inboxTriage: PromptDefinition = {
       : ctx.tools.has("mail_list_messages")
         ? `Call mail_list_messages for folder "${folder}" and keep only messages received after ${since.toISOString()}.`
         : "No listing tool is enabled; say so and stop.";
-    const drafting = ctx.tools.has("mail_create_draft")
-      ? 'For each Reply item, draft a short reply with mail_create_draft (to the sender, subject prefixed "Re: "), matching the tone of the original.'
-      : "Writes are disabled, so write each suggested reply in your answer instead of drafting it.";
+    const drafting = ctx.tools.has("mail_create_reply_draft")
+      ? "For each Reply item, draft a short reply in its thread with mail_create_reply_draft (the message id, your text as comment), matching the tone of the original."
+      : ctx.tools.has("mail_create_draft")
+        ? 'For each Reply item, draft a short reply with mail_create_draft (to the sender, subject prefixed "Re: "), matching the tone of the original.'
+        : "Writes are disabled, so write each suggested reply in your answer instead of drafting it.";
 
     return [
       `Triage the "${folder}" mail folder: everything received since ${since.toISOString()} (the user's time zone is ${ctx.timeZone}).`,

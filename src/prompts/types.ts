@@ -32,8 +32,8 @@ export interface PromptDefinition {
 /** Shared guardrail text: every workflow here reads freely and writes nothing without asking. */
 export const NO_SENDING =
   "Do not send, reply to, delete or move anything. mail_reply_message and mail_send_message send " +
-  "immediately, so never call them here; if a reply is worth writing, draft it with mail_create_draft " +
-  "(when available) and say it is waiting in Drafts.";
+  "immediately, so never call them here; if a reply is worth writing, draft it with " +
+  "mail_create_reply_draft or mail_create_draft (when available) and say it is waiting in Drafts.";
 
 /**
  * Parse a lookback like "24h", "3d" or an ISO date into an instant. Unparseable

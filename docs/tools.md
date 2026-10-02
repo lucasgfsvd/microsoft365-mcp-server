@@ -43,7 +43,7 @@ Graph combines entity types only within the SharePoint/OneDrive family (`driveIt
 - **Large first syncs are cut at `maxItems`** (default 500) with `complete: false` and a `nextLink` to continue. Treat the sync as done only once a `deltaLink` arrives. Drive pages can overshoot the cap slightly, and drive may repeat an item within one sync; the last occurrence wins.
 - **Cursors must be Graph delta URLs.** The Graph client attaches your token to whatever URL it is given, so anything else is refused before a request is made.
 
-## 📧 Mail (Outlook) — 9 tools
+## 📧 Mail (Outlook) — 10 tools
 
 | Tool | Scopes | Mutating |
 |---|---|:---:|
@@ -55,7 +55,11 @@ Graph combines entity types only within the SharePoint/OneDrive family (`driveIt
 | `mail_send_message` | `Mail.Send` | ✏️ |
 | `mail_create_draft` | `Mail.ReadWrite` | ✏️ |
 | `mail_reply_message` | `Mail.Send` | ✏️ |
+| `mail_create_reply_draft` | `Mail.ReadWrite` | ✏️ |
 | `mail_delete_message` | `Mail.ReadWrite` | ✏️ |
+
+- `mail_list_messages` takes `receivedAfter` (inclusive) and `receivedBefore` (exclusive): an ISO date, read as midnight UTC, or a date-time with an offset.
+- `mail_reply_message` sends at once. `mail_create_reply_draft` writes the same reply into Drafts instead, inside the conversation, with Outlook's recipients, `RE:` subject and quoted original; the prompt templates use it.
 
 ## 📅 Calendar — 8 tools
 

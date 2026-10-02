@@ -519,7 +519,7 @@ A resource type is offered only while its read tool (`mail_get_message`, `files_
 </details>
 
 <details>
-<summary><strong>📧 Mail</strong> — 9 tools</summary>
+<summary><strong>📧 Mail</strong> — 10 tools</summary>
 
 | Tool | Scopes | Writes |
 |---|---|:---:|
@@ -531,6 +531,7 @@ A resource type is offered only while its read tool (`mail_get_message`, `files_
 | `mail_send_message` | Mail.Send | ✏️ |
 | `mail_create_draft` | Mail.ReadWrite | ✏️ |
 | `mail_reply_message` | Mail.Send | ✏️ |
+| `mail_create_reply_draft` | Mail.ReadWrite | ✏️ |
 | `mail_delete_message` | Mail.ReadWrite | ✏️ |
 </details>
 

@@ -59,9 +59,15 @@ describe("rendering", () => {
   });
 
   it("drafts replies only when drafting is enabled", () => {
-    expect(renderPrompt("inbox-triage", {}, ctx())).toContain("mail_create_draft");
+    expect(renderPrompt("inbox-triage", {}, ctx())).toContain("with mail_create_draft");
     const readOnly = new Set([...ALL].filter((t) => t !== "mail_create_draft"));
     expect(renderPrompt("inbox-triage", {}, ctx(readOnly))).toContain("Writes are disabled");
+  });
+
+  it("drafts replies in their thread when it can", () => {
+    const text = renderPrompt("inbox-triage", {}, ctx(new Set([...ALL, "mail_create_reply_draft"])));
+    expect(text).toContain("in its thread with mail_create_reply_draft");
+    expect(text).not.toContain("with mail_create_draft (");
   });
 
   it("falls back to the list tool when batching is disabled", () => {

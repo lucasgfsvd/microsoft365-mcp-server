@@ -13,6 +13,25 @@ const toRecipient = (r: z.infer<typeof Recipient>) => ({
   emailAddress: { address: r.address, name: r.name },
 });
 
+/** An instant to filter on: a full ISO date-time with offset, or a date (midnight UTC). */
+const Instant = z.union([z.iso.datetime({ offset: true }), z.iso.date()]);
+const toUtc = (s: string) => new Date(s.length === 10 ? `${s}T00:00:00Z` : s).toISOString();
+
+/**
+ * The $filter for a folder listing. Graph wants the $orderby property
+ * (receivedDateTime) to lead the filter, so the date clauses come first.
+ */
+export function listFilter(opts: { receivedAfter?: string; receivedBefore?: string; unreadOnly?: boolean }): string | undefined {
+  const parts: string[] = [];
+  if (opts.receivedAfter) parts.push(`receivedDateTime ge ${toUtc(opts.receivedAfter)}`);
+  if (opts.receivedBefore) parts.push(`receivedDateTime lt ${toUtc(opts.receivedBefore)}`);
+  if (opts.unreadOnly) parts.push("isRead eq false");
+  return parts.length ? parts.join(" and ") : undefined;
+}
+
+/** What a caller needs to find a new draft again; the quoted original stays out of the result. */
+const DRAFT_FIELDS = ["id", "subject", "toRecipients", "ccRecipients", "conversationId", "isDraft", "webLink"] as const;
+
 /**
  * Strip invisible padding from a message's plain-text body. An HTML body is
  * left alone: collapsing its whitespace could change how it renders (<pre>).
@@ -28,17 +47,22 @@ export const mailTools: ToolDefinition[] = [
   {
     name: "mail_list_messages",
     surface: "mail",
-    description: "List messages in a folder (default: Inbox), newest first.",
+    description:
+      "List messages in a folder (default: Inbox), newest first. Narrow by when they arrived with " +
+      "receivedAfter (inclusive) and receivedBefore (exclusive), e.g. this week's mail.",
     requiredScopes: ["Mail.Read"],
     inputSchema: PaginationInput.extend({
       folder: z.string().default("Inbox").describe("Well-known name (Inbox, SentItems, Drafts, DeletedItems) or folder id."),
       unreadOnly: z.boolean().optional(),
+      receivedAfter: Instant.optional().describe("Received at or after this, e.g. '2026-09-28' (midnight UTC) or '2026-09-28T08:00:00+02:00'."),
+      receivedBefore: Instant.optional().describe("Received before this; same forms as receivedAfter."),
+    }).refine((d) => !d.receivedAfter || !d.receivedBefore || toUtc(d.receivedAfter) < toUtc(d.receivedBefore), {
+      message: "receivedAfter must be earlier than receivedBefore",
     }),
     handler: async (input, ctx) => {
-      const filter = input.unreadOnly ? "isRead eq false" : undefined;
       return fetchPage(ctx.graph, `/me/mailFolders/${input.folder}/messages`, {
         ...input,
-        filter,
+        filter: listFilter(input),
         orderBy: "receivedDateTime desc",
         select: ["id", "subject", "from", "toRecipients", "receivedDateTime", "isRead", "bodyPreview", "hasAttachments"],
       });
@@ -156,6 +180,26 @@ export const mailTools: ToolDefinition[] = [
       const action = replyAll ? "replyAll" : "reply";
       await ctx.graph.api(`/me/messages/${id}/${action}`).post({ comment });
       return { ok: true };
+    },
+  },
+  {
+    name: "mail_create_reply_draft",
+    surface: "mail",
+    description:
+      "Draft a reply inside the message's conversation, without sending it. Outlook fills in the " +
+      'recipients, the "RE:" subject and the quoted original; your text goes above the quote. The ' +
+      "draft waits in Drafts for the user to review and send.",
+    mutating: true,
+    requiredScopes: ["Mail.ReadWrite"],
+    inputSchema: z.object({
+      id: z.string().describe("The message being replied to."),
+      comment: z.string().describe("The reply text, placed above the quoted original."),
+      replyAll: z.boolean().default(false),
+    }),
+    handler: async ({ id, comment, replyAll }, ctx) => {
+      const action = replyAll ? "createReplyAll" : "createReply";
+      const draft = (await ctx.graph.api(`/me/messages/${id}/${action}`).post({ comment })) as Record<string, unknown>;
+      return Object.fromEntries(DRAFT_FIELDS.filter((k) => k in draft).map((k) => [k, draft[k]]));
     },
   },
   {

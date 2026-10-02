@@ -55,6 +55,25 @@ try {
   }
   record("mail_send_message (arrived)", !!received, received ? "" : "not in inbox after 80 s");
   if (received) {
+    // Date filters: a window around the arrival holds it, one ending before it does not.
+    const at = Date.parse(received.receivedDateTime);
+    const iso = (ms) => new Date(ms).toISOString();
+    await step(srv, "mail_list_messages (receivedAfter/Before)", { receivedAfter: iso(at - 60_000), receivedBefore: iso(at + 60_000), top: 50 },
+      (v) => (arr(v).some((m) => m.id === received.id) && arr(v).every((m) => Math.abs(Date.parse(m.receivedDateTime) - at) <= 60_000)) || `window: ${arr(v).map((m) => m.receivedDateTime).join(", ")}`);
+    await step(srv, "mail_list_messages (window excludes)", { receivedBefore: iso(at - 1000), unreadOnly: true, top: 50 },
+      (v) => !arr(v).some((m) => m.id === received.id) || "message listed before it arrived");
+
+    // A reply draft lands in the same conversation, unsent, with the original quoted.
+    const original = await srv.call("mail_get_message", { id: received.id, bodyFormat: "text" });
+    const rd = await step(srv, "mail_create_reply_draft", { id: received.id, comment: "Draft line one.\nDraft line two." },
+      (v) => (v.isDraft === true && v.conversationId === original.value?.conversationId && /^RE:/i.test(v.subject) && !("body" in v)) || JSON.stringify(v).slice(0, 200));
+    if (rd?.id) {
+      onCleanup("delete reply draft", async () => { await srv.call("mail_delete_message", { id: rd.id }); });
+      const body = await srv.call("mail_get_message", { id: rd.id, bodyFormat: "text" });
+      const text = body.value?.body?.content ?? "";
+      record("mail_create_reply_draft (body)", text.includes("Draft line one.") && text.includes("sent to self by the live test"), text.slice(0, 200));
+    }
+
     await step(srv, "mail_reply_message", { id: received.id, comment: "reply from the live test", replyAll: false });
     let reply;
     for (let i = 0; i < 20 && !reply; i++) {
