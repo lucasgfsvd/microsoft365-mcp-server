@@ -69,9 +69,9 @@ maintained: see *Maintenance status* in the README.
 
 ### Tested
 
-All 102 tools exercised against a real Microsoft 365 business tenant
+The first 102 tools, and most of the newer ones, exercised against a real Microsoft 365 business tenant
 (`scripts/live/`), with edited Office files also opened by independent
-parsers; 243 unit tests. Teams channel posts and Planner tasks were tested in
+parsers; 336 unit tests. Teams channel posts and Planner tasks were tested in
 a private team with no other members. Sign-in persistence and pickup were
 tested with a real device-code sign-in, locally and in the Docker image.
 

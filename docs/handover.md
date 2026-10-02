@@ -6,9 +6,9 @@ State of play and what to pick up next. Written for whoever continues this work 
 
 ## Where things stand
 
-102 tools across 12 surfaces, three prompt templates, and three resource types. 243 unit tests. CI gates lint, typecheck, coverage thresholds, `npm audit` (blocking, high severity, production deps), a full-history gitleaks scan, and builds *and starts* the Docker image.
+139 tools across 12 surfaces, three prompt templates, and three resource types. 336 unit tests. CI gates lint, typecheck, coverage thresholds, `npm audit` (blocking, high severity, production deps), a full-history gitleaks scan, and builds *and starts* the Docker image.
 
-**Live coverage: all 102 tools pass against a real tenant** (`scripts/live/`), with Word, PowerPoint and Excel output also opened by independent parsers. No open defects are known.
+**Live coverage: the first 102 tools pass against a real tenant, and most of the 37 newer ones (the roadmap lists the few pending)** (`scripts/live/`), with Word, PowerPoint and Excel output also opened by independent parsers. No open defects are known.
 
 What the server can now do that it could not before, grouped by concern (git has the history):
 

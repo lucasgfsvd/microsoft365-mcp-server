@@ -68,7 +68,7 @@ Not included: meeting transcripts (left out of this round), and "shared with me"
 
 Kept as a record. Details are in the README, [tools.md](./tools.md) and the handover.
 
-- 102 tools across 12 surfaces, all exercised against a real tenant
+- 102 tools across 12 surfaces, all exercised against a real tenant (139 with the second round)
 - `graph_search`, `graph_batch_get`, `graph_delta`
 - Prompt templates: `daily-brief`, `inbox-triage`, `meeting-prep`
 - MCP resources: mail messages, OneDrive/SharePoint files, OneNote pages
