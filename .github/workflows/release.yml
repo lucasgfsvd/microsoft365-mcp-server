@@ -19,7 +19,7 @@ jobs:
     outputs:
       prerelease: ${{ steps.version.outputs.prerelease }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -56,7 +56,7 @@ jobs:
     needs: verify
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -80,7 +80,7 @@ jobs:
     env:
       PUBLISHER_VERSION: v1.8.1
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Install mcp-publisher (pinned, checksum-verified)
         run: |
           base="https://github.com/modelcontextprotocol/registry/releases/download/${PUBLISHER_VERSION}"
@@ -103,7 +103,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Release notes from CHANGELOG.md
         run: |
           v="${GITHUB_REF_NAME#v}"
