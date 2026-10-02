@@ -41,7 +41,7 @@ export function startServer(dist, env = {}, [command, args] = [process.execPath,
     const text = r.result?.content?.[0]?.text ?? "";
     if (r.result?.isError) return { ok: false, text };
     let value; try { value = JSON.parse(text); } catch { value = text; }
-    return { ok: true, value, text };
+    return { ok: true, value, text, content: r.result?.content ?? [] };
   };
 
   /** Call a tool; returns { ok, value, text }. Never throws. */

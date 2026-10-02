@@ -1,8 +1,9 @@
 // Live run: mail and calendar tools against another mailbox (a shared mailbox,
 // or a calendar the user is a delegate of), with MCP_ENABLE_SHARED_MAILBOXES.
-// Needs a person to enter one device code, consenting to the .Shared scopes.
+// Needs a person to enter one device code, consenting to the .Shared scopes,
+// unless MCP_TOKEN_CACHE_PATH names a cache already signed in with them (login.mjs).
 // Usage: node scripts/live/shared.mjs <dist> <scratch> <mailbox-address>
-// Signs in to a throwaway encrypted cache under <scratch>, removed at the end.
+// Otherwise signs in to a throwaway encrypted cache under <scratch>, removed at the end.
 // Creates one draft in that mailbox and deletes it; sends nothing.
 import { randomBytes } from "node:crypto";
 import { mkdirSync, rmSync } from "node:fs";
@@ -11,12 +12,12 @@ import { startServer, makeRun } from "./harness.mjs";
 
 const [dist, scratch, mailbox] = process.argv.slice(2);
 if (!mailbox) throw new Error("pass the address of a mailbox you can open");
+const own = !process.env.MCP_TOKEN_CACHE_PATH;
 const dir = path.resolve(scratch, `shared-${Date.now()}`);
-mkdirSync(dir, { recursive: true });
+if (own) mkdirSync(dir, { recursive: true });
 const srv = startServer(dist, {
   MCP_ENABLE_SHARED_MAILBOXES: "1",
-  MCP_TOKEN_CACHE_PATH: path.join(dir, "tokencache.json"),
-  MCP_TOKEN_CACHE_KEY: randomBytes(32).toString("base64"),
+  ...(own ? { MCP_TOKEN_CACHE_PATH: path.join(dir, "tokencache.json"), MCP_TOKEN_CACHE_KEY: randomBytes(32).toString("base64") } : {}),
 });
 const run = makeRun("shared");
 const { step, record, onCleanup } = run;
@@ -30,11 +31,13 @@ try {
   const schemaOf = (n) => tools.find((t) => t.name === n)?.inputSchema?.properties ?? {};
   record("mailbox offered on mail and calendar only", "mailbox" in schemaOf("mail_list_messages") && "mailbox" in schemaOf("calendar_list_events") && !("mailbox" in schemaOf("files_upload")));
 
-  const s = await srv.call("auth_sign_in");
-  if (!s.ok || !s.value?.userCode) throw new Error(`no device code: ${s.text.slice(0, 200)}`);
-  console.log(`\n>>> SIGN IN: open ${s.value.verificationUri} and enter ${s.value.userCode}\n`);
-  let done = false;
-  for (let i = 0; i < 168 && !done; i++) { await sleep(5000); done = (await srv.call("auth_status")).value?.signedIn === true; }
+  let done = (await srv.call("auth_status")).value?.signedIn === true;
+  if (!done) {
+    const s = await srv.call("auth_sign_in");
+    if (!s.ok || !s.value?.userCode) throw new Error(`no device code: ${s.text.slice(0, 200)}`);
+    console.log(`\n>>> SIGN IN: open ${s.value.verificationUri} and enter ${s.value.userCode}\n`);
+    for (let i = 0; i < 168 && !done; i++) { await sleep(5000); done = (await srv.call("auth_status")).value?.signedIn === true; }
+  }
   record("signed in with the .Shared scopes", done);
   if (!done) throw new Error("no sign-in");
 
@@ -60,7 +63,7 @@ try {
   run.save(scratch);
   srv.kill();
   await sleep(500);
-  rmSync(dir, { recursive: true, force: true });
+  if (own) rmSync(dir, { recursive: true, force: true });
   const failed = run.results.filter((r) => !r.pass);
   console.log(`\n${run.results.length - failed.length}/${run.results.length} passed`);
 }
