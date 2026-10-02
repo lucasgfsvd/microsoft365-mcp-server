@@ -10,6 +10,7 @@ import {
 import { logger } from "../util/logger.js";
 import type { ServerConfig } from "../types.js";
 import { defaultCachePath, persistentCacheName } from "./tokenCache.js";
+import { useEncryptedFileCache } from "./encryptedCache.js";
 
 let cachePlugin: Promise<boolean> | undefined;
 
@@ -78,16 +79,22 @@ export async function buildCredential(
   authenticationRecord?: AuthenticationRecord,
 ): Promise<TokenCredential> {
   const { authMode, tenantId, clientId, clientSecret, redirectUri } = config;
-  // Only ask for persistence when the plugin actually loaded: requesting it with
-  // no provider registered makes @azure/identity throw.
-  const persist = async () =>
-    (await ensureCachePlugin())
+  // Only ask for persistence when a provider is registered: requesting it with
+  // none makes @azure/identity throw. With MCP_TOKEN_CACHE_KEY the provider is
+  // the encrypted file, which needs no keyring; otherwise the OS store, if it loads.
+  const persist = async () => {
+    if (config.tokenCacheKey) {
+      useEncryptedFileCache(config);
+      return { enabled: true } as const;
+    }
+    return (await ensureCachePlugin())
       ? ({
           enabled: true,
           name: persistentCacheName(config.tokenCachePath),
           unsafeAllowUnencryptedStorage: true,
         } as const)
       : undefined;
+  };
 
   switch (authMode) {
     case "device-code": {

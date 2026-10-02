@@ -4,6 +4,7 @@ import { isToolAllowed } from "./util/writeGuard.js";
 import { SURFACES, type ServerConfig } from "./types.js";
 import { authRecordPath } from "./auth/tokenCache.js";
 import { clearStoredTokens } from "./auth/tokenStore.js";
+import { clearEncryptedTokens } from "./auth/encryptedCache.js";
 
 /**
  * Print the tool catalogue grouped by surface, marking which tools are
@@ -48,7 +49,7 @@ export function runListTools(config: ServerConfig): void {
  */
 export async function runLogout(
   config: ServerConfig,
-  clear: typeof clearStoredTokens = clearStoredTokens,
+  clear: typeof clearStoredTokens = config.tokenCacheKey ? clearEncryptedTokens : clearStoredTokens,
 ): Promise<void> {
   const out = (line: string) => process.stdout.write(line + "\n");
 

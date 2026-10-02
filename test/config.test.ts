@@ -13,6 +13,7 @@ const ENV_KEYS = [
   "MCP_SCOPES",
   "MCP_MAX_MESSAGE_MB",
   "MCP_UPLOAD_DIR",
+  "MCP_TOKEN_CACHE_KEY",
 ];
 
 describe("loadConfig", () => {
@@ -35,6 +36,14 @@ describe("loadConfig", () => {
     expect(c.authMode).toBe("device-code");
     expect(c.enableWrites).toBe(false);
     expect(c.tenantId).toBe("common");
+  });
+
+  it("takes the token cache key from the environment, and refuses a short one", () => {
+    expect(loadConfig(["node", "idx"]).tokenCacheKey).toBeUndefined();
+    process.env.MCP_TOKEN_CACHE_KEY = "too-short";
+    expect(() => loadConfig(["node", "idx"])).toThrow(/at least 16 characters/);
+    process.env.MCP_TOKEN_CACHE_KEY = "k".repeat(32);
+    expect(loadConfig(["node", "idx"]).tokenCacheKey).toBe("k".repeat(32));
   });
 
   it("leaves local uploads off unless MCP_UPLOAD_DIR names a folder, resolved to an absolute path", () => {

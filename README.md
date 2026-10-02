@@ -189,7 +189,13 @@ docker build -t microsoft365-mcp-server .
 }
 ```
 
-The image is distroless Node 24 and runs as nonroot. Client-credentials mode needs no token cache. Device-code sign-in works but does not survive a restart in the container: the image has no `libsecret`, so tokens are held in memory only.
+The image is distroless Node 24 and runs as nonroot. Client-credentials mode needs no token cache. For device-code sign-in, keep the cache on a volume and give it a key: the image has no OS keyring, so without `MCP_TOKEN_CACHE_KEY` tokens are held in memory and a sign-in lasts only until the container stops.
+
+```bash
+docker run -i --rm -v m365-mcp:/data -e MCP_TOKEN_CACHE_KEY microsoft365-mcp-server
+```
+
+The key encrypts `/data/tokencache.json` (AES-256-GCM); generate one with `openssl rand -base64 32` and keep it out of the image. Sign in once with `auth_sign_in`; later containers on the same volume and key start signed in.
 
 ---
 
@@ -702,7 +708,8 @@ All settings can be passed as CLI flags **or** environment variables.
 | `MCP_ENABLE_WRITES` | `--enable-writes` | `false` | Unlock all mutating tools |
 | `MCP_ENABLE_<SURFACE>_WRITE` | – | `false` | e.g. `MCP_ENABLE_MAIL_WRITE`, `MCP_ENABLE_FILES_WRITE` |
 | `MCP_DISABLED_TOOLS` | `--disabled-tools` | – | CSV of tool names to hide entirely |
-| `MCP_TOKEN_CACHE_PATH` | `--token-cache` | `~/.microsoft365-mcp/tokencache.json` | Its directory holds `authrecord.json`; a non-default path also gets its own token store |
+| `MCP_TOKEN_CACHE_PATH` | `--token-cache` | `~/.microsoft365-mcp/tokencache.json` | Its directory holds `authrecord.json`; a non-default path also gets its own token store. With `MCP_TOKEN_CACHE_KEY`, the tokens themselves live in this file |
+| `MCP_TOKEN_CACHE_KEY` | – | *(unset)* | Keep tokens in `MCP_TOKEN_CACHE_PATH`, encrypted with this key (16+ characters), instead of the OS store. For hosts with no keyring, such as the Docker image. Environment only, never a flag |
 | `MCP_LOG_LEVEL` | – | `info` | Pino log level (stderr) |
 | `MCP_DOWNLOAD_DIR` | – | *(unset)* | Folder `files_download` may stream files into with `saveToDisk: true`. Unset, saving to disk is refused. The server never overwrites a file there |
 | `MCP_UPLOAD_DIR` | – | *(unset)* | The one folder `files_upload` may read a `localPath` from, streamed to OneDrive at any size. Unset, uploading from disk is refused. Paths, and links, leading outside it are refused |
@@ -734,10 +741,11 @@ Most "this doesn't work" reports on business tenants aren't bugs in this server 
 
 ### Auth & token cache
 
-- **Where tokens live.** Two things are kept. `authrecord.json`, next to `MCP_TOKEN_CACHE_PATH`, names which account to use. The tokens themselves are in the identity library's store: a DPAPI-encrypted file under `%LOCALAPPDATA%\.IdentityService\` on Windows, the keychain on macOS, the keyring (or a file under `~/.IdentityService/`) on Linux. On Windows and with the Linux file fallback, a non-default `MCP_TOKEN_CACHE_PATH` gets a store of its own. The macOS keychain and Linux keyring hold one shared item for every app using the same identity library, so there the path separates only the auth record.
+- **Where tokens live.** Two things are kept. `authrecord.json`, next to `MCP_TOKEN_CACHE_PATH`, names which account to use. With `MCP_TOKEN_CACHE_KEY` set, the tokens are in `MCP_TOKEN_CACHE_PATH` itself, encrypted with that key (AES-256-GCM, key stretched with scrypt); a wrong key reads as signed out and leaves the file as it is. Otherwise they are in the identity library's store: a DPAPI-encrypted file under `%LOCALAPPDATA%\.IdentityService\` on Windows, the keychain on macOS, the keyring (or a file under `~/.IdentityService/`) on Linux. On Windows and with the Linux file fallback, a non-default `MCP_TOKEN_CACHE_PATH` gets a store of its own. The macOS keychain and Linux keyring hold one shared item for every app using the same identity library, so there the path separates only the auth record.
 - **Switching accounts or signing out:** run `--logout`, then `auth_sign_in`. It removes `authrecord.json` and this app's tokens from the store. Other apps' tokens in a shared store are left alone. There is no in-product account switcher, and revoking the app's access outright is done at https://myapps.microsoft.com.
 - **Refresh tokens expire.** After ~90 days of inactivity (or on password change / revocation) the next call will prompt for re-auth via device code. Not a bug.
-- **`keytar` is optional.** Where it is present but no keyring is running, the cache is written to an unencrypted file instead — acceptable for a personal machine, not for shared hosts. Where it cannot load at all (headless Linux without `libsecret`, the distroless container image), the server still starts but holds tokens in memory only: sign-in works, and does not survive a restart. The startup log says so with `persistent token cache unavailable`. Client-credentials mode never needs the cache.
+- **`keytar` is optional.** Where it is present but no keyring is running, the cache is written to an unencrypted file instead — acceptable for a personal machine, not for shared hosts. Where it cannot load at all (headless Linux without `libsecret`, the distroless container image), the server still starts but holds tokens in memory only: sign-in works, and does not survive a restart, unless `MCP_TOKEN_CACHE_KEY` is set. The startup log says so with `persistent token cache unavailable`. Client-credentials mode never needs the cache.
+- **Several servers, one sign-in.** Servers sharing a token store see each other's sign-in: one that was already running when another signed in picks it up on its next call, without a restart.
 - **Sign-in is lazy and explicit.** Starting the server performs no interactive authentication. Credentials are built with `disableAutomaticAuthentication`, so acquiring a token can only ever spend one already cached — it can never raise a prompt on its own. A device code is issued *only* when you call `auth_sign_in`.
 
   This matters because the server is launched every time your MCP client starts. An earlier version warmed the credential up at startup so the code would be ready before you invoked anything; in practice that minted a fresh device code on every single launch, nobody entered it, and it expired unused ~15 minutes later. One unwanted prompt per launch, and a server that never actually held a token.

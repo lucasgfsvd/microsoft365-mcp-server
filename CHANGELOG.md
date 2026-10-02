@@ -42,8 +42,12 @@ maintained: see *Maintenance status* in the README.
 - Sign-in is lazy and explicit (`auth_sign_in`); nothing prompts on startup.
   `--logout` removes this app's tokens from the token store and leaves other
   apps' alone.
-- Runs where no OS keyring is available, falling back to an in-memory token
-  cache.
+- Runs where no OS keyring is available. With `MCP_TOKEN_CACHE_KEY` set, the
+  token cache is a file encrypted with that key, so a device-code sign-in
+  survives restarts there too (the Docker image included); without it, tokens
+  are held in memory.
+- A server already running picks up a sign-in completed by another process on
+  its next call, without a restart.
 
 ### Tested
 
@@ -57,5 +61,3 @@ a private team with no other members.
 - `files_upload` with `contentBase64` takes files up to about 47 MB with the
   default `MCP_MAX_MESSAGE_MB` of 64; use `localPath` for anything larger.
 - No change notifications (webhooks); use `graph_delta`. See `docs/webhooks.md`.
-- In the Docker image, device-code sign-in does not survive a restart (no OS
-  keyring); client-credentials mode is unaffected.

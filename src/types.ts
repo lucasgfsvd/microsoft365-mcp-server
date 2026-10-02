@@ -13,6 +13,11 @@ export interface ServerConfig {
   clientSecret?: string;
   redirectUri?: string;
   tokenCachePath: string;
+  /**
+   * Secret for an encrypted token cache file at tokenCachePath, used instead of
+   * the OS store. From MCP_TOKEN_CACHE_KEY only: never a flag, never logged.
+   */
+  tokenCacheKey?: string;
   scopes: string[];
   enableWrites: boolean;
   perSurfaceWrites: Record<string, boolean>;

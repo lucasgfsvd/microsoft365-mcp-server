@@ -3,8 +3,9 @@
 import { spawn } from "node:child_process";
 import { writeFileSync } from "node:fs";
 
-export function startServer(dist, env = {}) {
-  const srv = spawn(process.execPath, [dist], {
+/** Start a server: `node <dist>`, or any other `[command, args]` (a `docker run`, say). */
+export function startServer(dist, env = {}, [command, args] = [process.execPath, [dist]]) {
+  const srv = spawn(command, args, {
     stdio: ["pipe", "pipe", "pipe"],
     env: { ...process.env, MCP_ENABLE_WRITES: "1", ...env },
   });

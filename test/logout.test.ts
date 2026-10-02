@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -6,6 +6,7 @@ import type { ServerConfig } from "../src/types.js";
 import { authRecordPath } from "../src/auth/tokenCache.js";
 import { clearStoredTokens, pruneClient, type ClearOutcome } from "../src/auth/tokenStore.js";
 import { runLogout } from "../src/cli.js";
+import { EncryptedFile } from "../src/auth/encryptedFile.js";
 
 const OURS = "our-client";
 const THEIRS = "other-app";
@@ -103,5 +104,17 @@ describe("runLogout", () => {
     await fs.writeFile(authRecordPath(cachePath), "{}");
     await runLogout(config(), cleared({ status: "unavailable", reason: "no libsecret" }).fn);
     await expect(fs.access(authRecordPath(cachePath))).rejects.toThrow();
+  });
+
+  it("clears the encrypted file, not the OS store, when MCP_TOKEN_CACHE_KEY is set", async () => {
+    const key = "a key of at least sixteen characters";
+    await new EncryptedFile(cachePath, key).write(cacheWith());
+    const out = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    try {
+      await runLogout({ ...config(), tokenCacheKey: key });
+    } finally {
+      out.mockRestore();
+    }
+    await expect(fs.access(cachePath)).rejects.toThrow();
   });
 });

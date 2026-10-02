@@ -57,6 +57,9 @@ const WRITE_SCOPES = [
  *  so you get clean audit logs and can scope your own permissions. */
 export const DEFAULT_PUBLIC_CLIENT_ID = "14d82eec-204b-4c2f-b7e8-296a70dab67e";
 
+/** Shortest MCP_TOKEN_CACHE_KEY accepted; scrypt stretches it, but cannot add entropy. */
+export const MIN_CACHE_KEY_LENGTH = 16;
+
 function envBool(name: string): boolean | undefined {
   const v = process.env[name];
   if (v === undefined) return undefined;
@@ -129,6 +132,14 @@ export function loadConfig(argv: string[]): ServerConfig {
     throw new Error(`MCP_MAX_MESSAGE_MB must be a positive whole number of MiB, got "${process.env.MCP_MAX_MESSAGE_MB}".`);
   }
 
+  // A flag would put the secret in the process list; the environment only.
+  const tokenCacheKey = process.env.MCP_TOKEN_CACHE_KEY || undefined;
+  if (tokenCacheKey !== undefined && tokenCacheKey.length < MIN_CACHE_KEY_LENGTH) {
+    throw new Error(
+      `MCP_TOKEN_CACHE_KEY must be at least ${MIN_CACHE_KEY_LENGTH} characters; generate one with: openssl rand -base64 32`,
+    );
+  }
+
   return {
     authMode,
     tenantId,
@@ -136,6 +147,7 @@ export function loadConfig(argv: string[]): ServerConfig {
     clientSecret,
     redirectUri,
     tokenCachePath: opts.tokenCache ?? process.env.MCP_TOKEN_CACHE_PATH ?? defaultCachePath(),
+    tokenCacheKey,
     scopes: effectiveScopes,
     enableWrites,
     perSurfaceWrites,

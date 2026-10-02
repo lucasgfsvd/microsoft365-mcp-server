@@ -10,7 +10,18 @@ export default defineConfig({
       // caught, with headroom for normal churn. Scope is the orchestration
       // layer plus the OOXML helpers; surface tool handlers go through the
       // integration tests instead.
-      include: ["src/config.ts", "src/util/**", "src/tools/registry.ts", "src/auth/tokenCache.ts", "src/ooxml/**"],
+      include: [
+        "src/config.ts",
+        "src/util/**",
+        "src/tools/registry.ts",
+        "src/auth/tokenCache.ts",
+        "src/auth/encryptedFile.ts",
+        "src/auth/encryptedCache.ts",
+        "src/auth/fileLock.ts",
+        "src/auth/reloadingCredential.ts",
+        "src/graph/localUpload.ts",
+        "src/ooxml/**",
+      ],
       thresholds: {
         lines: 85,
         functions: 85,

@@ -28,7 +28,7 @@ This server supports three auth flows. Pick the one that matches your situation.
    The same code goes to stderr and to the MCP logging channel, for CLI users and clients that render server logs.
 3. Visit the URL, enter the code, sign in, grant consent.
 4. Call **`auth_status`** to confirm — it should report `"signedIn": true`.
-5. A refreshable token is cached (OS keychain where available, otherwise a `chmod 600` file under `~/.microsoft365-mcp/`), along with an `authrecord.json` that records which account to reuse. Later starts authenticate silently.
+5. A refreshable token is cached (OS keychain where available, otherwise a `chmod 600` file under `~/.microsoft365-mcp/`; with `MCP_TOKEN_CACHE_KEY` set, a file at `MCP_TOKEN_CACHE_PATH` encrypted with that key), along with an `authrecord.json` that records which account to reuse. Later starts authenticate silently, and servers already running pick up the sign-in on their next call.
 
 > Any Graph tool invoked while signed out returns an error telling you to run `auth_sign_in`, rather than blocking. Neither auth tool is mutating, so both work with writes disabled.
 

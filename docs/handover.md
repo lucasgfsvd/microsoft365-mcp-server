@@ -15,7 +15,7 @@ What the server can now do that it could not before, grouped by concern (git has
 - **Sync.** `graph_delta` gives incremental changes, deletions included, for mail, calendar, drive, contacts and To Do; the caller keeps the `deltaLink`. `graph_search` and `graph_batch_get` cover cross-surface search and parallel reads.
 - **Large files.** Uploads over 4 MB use Graph upload sessions (all seven write paths, Office tools included); `files_upload` with `localPath` streams a file from `MCP_UPLOAD_DIR` a chunk at a time (verified live at 12 MB), confined to that folder by its real path. Downloads over 5 MB stream to `MCP_DOWNLOAD_DIR` in constant memory instead of entering the conversation. `MCP_MAX_MESSAGE_MB` (default 64) bounds a single MCP message.
 - **Safety.** A `POST` from a mutating tool is retried only on 429, so a send is never repeated. Pre-authenticated `downloadUrl` links are stripped from every result. `--logout` removes this app's tokens from the store, leaving other apps' alone. Sign-in is lazy and explicit.
-- **Portability.** The token-cache plugin loads lazily, so the server runs where `libsecret` is missing (headless Linux, the distroless image) with an in-memory cache. `MCP_TOKEN_CACHE_PATH` gets its own token store on Windows and with the Linux file fallback.
+- **Portability.** The token-cache plugin loads lazily, so the server runs where `libsecret` is missing (headless Linux, the distroless image); there `MCP_TOKEN_CACHE_KEY` gives it an encrypted file cache, and without it tokens are held in memory. `MCP_TOKEN_CACHE_PATH` gets its own token store on Windows and with the Linux file fallback.
 - **Workflows.** `daily-brief`, `inbox-triage` and `meeting-prep` prompts, with Graph queries computed server-side and verified live.
 - **Attachable context.** Mail, files and OneNote pages as MCP resources (`src/resources/`): recent items in one `$batch`, any item by `m365://` URI, returned as text (Word and PowerPoint extracted, Excel as CSV per sheet). Gated on the matching read tool, like the prompts.
 
@@ -42,7 +42,7 @@ After `auth_sign_in`, `auth_status` said `signedIn: true` while every Graph call
 
 At the time, every server warmed its credential at startup, so every process printed its own device code, and several processes were always running. Entering one process's code signs in *that* process. The process being queried kept no account in its state and failed with exactly this error. `auth_status` said otherwise because of the since-fixed stale-flag bug. A restart helped because the new process read the auth record the *other* process had written. And a lone server never failed because it had only one code.
 
-Both halves are already closed: codes are only issued by an explicit `auth_sign_in`, and `status()` checks the credential. The one remaining edge: a server that is running when *another* process signs in does not pick that up until it restarts. If that ever matters, the fix is to re-read `authrecord.json` when a token request finds no account, not to wrap the credential.
+All three halves are closed: codes are only issued by an explicit `auth_sign_in`, `status()` checks the credential, and a server running when *another* process signs in now picks that up. A credential takes its account from the record it is built with and cannot be given a new one, so `ReloadingCredential` (`src/auth/reloadingCredential.ts`) delegates to it and, when a token request finds no account, re-reads `authrecord.json` and rebuilds the credential if another process has written a new record. It reloads only on that error, and never twice for the same record.
 
 To reproduce it on purpose: start two servers on one fresh `MCP_TOKEN_CACHE_PATH`, call `auth_sign_in` on both, enter only the first code, then call Graph on the second.
 
@@ -58,9 +58,9 @@ All five resources were exercised against a live tenant: initial sync, resuming 
 
 ## The container image
 
-Verified running. The distroless runtime has no `libsecret`, so the cache plugin fails to load (`libsecret-1.so.0: cannot open shared object file`) and the server falls back to an in-memory token cache. It starts, serves tools and answers `auth_status`. CI now runs the image and requires it to answer `initialize`, so a regression to a static import fails the build.
+Verified running. The distroless runtime has no `libsecret`, so the OS-store plugin fails to load (`libsecret-1.so.0: cannot open shared object file`). It starts, serves tools and answers `auth_status`. CI runs the image and requires it to answer `initialize`, so a regression to a static import fails the build.
 
-**Consequence for device-code users:** in the container a sign-in does not survive a restart. Client-credentials mode, the natural fit for a container, needs no cache. Making device-code persist there would mean installing `libsecret` in the runtime image (not available on distroless) or adding a file-based cache for this case.
+**Device-code sign-in persists with `MCP_TOKEN_CACHE_KEY`.** The tokens then live in `MCP_TOKEN_CACHE_PATH` (`/data/tokencache.json` in the image, on a volume), encrypted with AES-256-GCM under a scrypt-stretched key (`src/auth/encryptedFile.ts`). The cache plugin (`src/auth/encryptedCache.ts`) talks to MSAL's cache-plugin interface directly, because `@azure/msal-node-extensions` cannot be imported there at all (its index loads keytar). A lock file serialises servers sharing the file. Without the key the container still holds tokens in memory only. Client-credentials mode needs no cache.
 
 ---
 
