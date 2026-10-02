@@ -119,7 +119,7 @@ Graph combines entity types only within the SharePoint/OneDrive family (`driveIt
 | `teams_reply_channel_message` | `ChannelMessage.Send` | ✏️ |
 | `teams_post_chat_message` | `ChatMessage.Send` | ✏️ |
 
-## ✅ Tasks (To Do + Planner) — 8 tools
+## ✅ Tasks (To Do + Planner) — 10 tools
 
 | Tool | Scopes | Mutating |
 |---|---|:---:|
@@ -127,10 +127,12 @@ Graph combines entity types only within the SharePoint/OneDrive family (`driveIt
 | `todo_list_tasks` | `Tasks.Read` | |
 | `todo_create_task` | `Tasks.ReadWrite` | ✏️ |
 | `todo_complete_task` | `Tasks.ReadWrite` | ✏️ |
+| `todo_delete_task` | `Tasks.ReadWrite` | ✏️ |
 | `planner_list_plans` | `Tasks.Read` | |
 | `planner_list_tasks` | `Tasks.Read` | |
 | `planner_create_task` | `Tasks.ReadWrite` | ✏️ |
 | `planner_complete_task` | `Tasks.ReadWrite` | ✏️ |
+| `planner_delete_task` | `Tasks.ReadWrite` | ✏️ |
 
 ## 📓 OneNote — 6 tools
 

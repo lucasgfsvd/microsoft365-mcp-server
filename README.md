@@ -598,7 +598,7 @@ A resource type is offered only while its read tool (`mail_get_message`, `files_
 </details>
 
 <details>
-<summary><strong>✅ Tasks (To Do + Planner)</strong> — 8 tools</summary>
+<summary><strong>✅ Tasks (To Do + Planner)</strong> — 10 tools</summary>
 
 | Tool | Scopes | Writes |
 |---|---|:---:|
@@ -606,10 +606,12 @@ A resource type is offered only while its read tool (`mail_get_message`, `files_
 | `todo_list_tasks` | Tasks.Read | |
 | `todo_create_task` | Tasks.ReadWrite | ✏️ |
 | `todo_complete_task` | Tasks.ReadWrite | ✏️ |
+| `todo_delete_task` | Tasks.ReadWrite | ✏️ |
 | `planner_list_plans` | Tasks.Read | |
 | `planner_list_tasks` | Tasks.Read | |
 | `planner_create_task` | Tasks.ReadWrite | ✏️ |
 | `planner_complete_task` | Tasks.ReadWrite | ✏️ |
+| `planner_delete_task` | Tasks.ReadWrite | ✏️ |
 </details>
 
 <details>

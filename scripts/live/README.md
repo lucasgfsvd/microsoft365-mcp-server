@@ -27,11 +27,12 @@ Needs a signed-in token cache; runs with writes enabled.
   sharing link on a file in it. Edited documents are downloaded and opened with
   python-docx, python-pptx and openpyxl (`pip install python-docx python-pptx openpyxl`).
 - `pim.mjs` sends one mail **to the signed-in user only** and replies to it, creates
-  a draft, an event with no attendees, a contact and a OneNote page, deleting each
-  afterwards. It completes a To Do task (there is no delete tool, so it stays,
-  completed) and posts one message to the user's own Teams notes chat (`48:notes`),
-  which only they can see. Everything carries an `[mcp-live-test …]` tag.
+  a draft and a reply draft, an event with no attendees, a contact, a OneNote page
+  and a To Do task, deleting each afterwards. It posts one message to the user's own
+  Teams notes chat (`48:notes`), which only they can see. Everything carries an
+  `[mcp-live-test …]` tag.
 - `onenote.mjs` creates and deletes one page in the given section.
 - `teams-planner.mjs` posts a message and a reply in the sandbox team's channel, and
-  creates and completes a Planner task. Neither can be deleted through the server, so
-  they stay in the sandbox. Never point it at a team other people are in.
+  creates, completes and deletes a Planner task. Channel messages cannot be deleted
+  through the server, so they stay in the sandbox. Never point it at a team other
+  people are in.

@@ -1,4 +1,4 @@
-// Live run: Teams channel posts and Planner tasks, inside a sandbox team and plan
+// Live run: Teams channel posts and Planner tasks (created, completed, deleted), inside a sandbox team and plan
 // that nobody else is in. Usage:
 //   node scripts/live/teams-planner.mjs <dist> <scratch> <teamId> <planId>
 import { startServer, makeRun } from "./harness.mjs";
@@ -68,6 +68,15 @@ try {
       if (!done) await sleep(2000);
     }
     record("planner_complete_task (is complete)", !!done, done ? "" : "task not at 100%");
+    // No etag: the tool reads the current one, which completing the task just changed.
+    await step(srv, "planner_delete_task", { taskId: task.id });
+    let gone;
+    for (let i = 0; i < 5 && !gone; i++) {
+      const r = await srv.call("planner_list_tasks", { planId });
+      gone = r.ok && !arr(r.value).some((t) => t.id === task.id);
+      if (!gone) await sleep(2000);
+    }
+    record("planner_delete_task (is gone)", !!gone, gone ? "" : "task still listed");
   }
 } catch (e) {
   console.log("ABORTED:", e.message);

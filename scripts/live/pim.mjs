@@ -126,7 +126,12 @@ try {
   if (list) {
     await step(srv, "todo_list_tasks", { listId: list.id, top: 5 }, (v) => Array.isArray(arr(v)) || "no list");
     const t = await step(srv, "todo_create_task", { listId: list.id, title: `${TAG} task`, importance: "low" }, (v) => !!v.id || "no id");
-    if (t?.id) await step(srv, "todo_complete_task", { listId: list.id, taskId: t.id }, (v) => (v.status ?? "completed") === "completed" || `status ${v.status}`);
+    if (t?.id) {
+      await step(srv, "todo_complete_task", { listId: list.id, taskId: t.id }, (v) => (v.status ?? "completed") === "completed" || `status ${v.status}`);
+      await step(srv, "todo_delete_task", { listId: list.id, taskId: t.id });
+      const after = await srv.call("todo_list_tasks", { listId: list.id, top: 100 });
+      record("todo_delete_task (is gone)", after.ok && !arr(after.value).some((x) => x.id === t.id), after.ok ? "task still listed" : after.text.slice(0, 200));
+    }
   }
   const plans = await step(srv, "planner_list_plans", {}, (v) => Array.isArray(arr(v)) || "no list");
   const plan = arr(plans)[0];

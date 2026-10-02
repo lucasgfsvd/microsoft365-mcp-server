@@ -57,6 +57,18 @@ export const tasksTools: ToolDefinition[] = [
         .api(`/me/todo/lists/${input.listId}/tasks/${input.taskId}`)
         .patch({ status: "completed" }),
   },
+  {
+    name: "todo_delete_task",
+    surface: "tasks",
+    description: "Delete a To Do task. It is removed outright; To Do has no recycle bin.",
+    mutating: true,
+    requiredScopes: ["Tasks.ReadWrite"],
+    inputSchema: z.object({ listId: z.string(), taskId: z.string() }),
+    handler: async (input, ctx) => {
+      await ctx.graph.api(`/me/todo/lists/${input.listId}/tasks/${input.taskId}`).delete();
+      return { ok: true };
+    },
+  },
 
   // ---- Planner ----
   {
@@ -121,5 +133,26 @@ export const tasksTools: ToolDefinition[] = [
         .api(`/planner/tasks/${input.taskId}`)
         .header("If-Match", input.etag)
         .patch({ percentComplete: 100 }),
+  },
+  {
+    name: "planner_delete_task",
+    surface: "tasks",
+    description:
+      "Delete a Planner task, for every member of the plan. Pass the etag you last saw to delete it " +
+      "only if nobody has changed it since; without one, the current version is deleted.",
+    mutating: true,
+    requiredScopes: ["Tasks.ReadWrite"],
+    inputSchema: z.object({
+      taskId: z.string(),
+      etag: z.string().optional().describe("The task's @odata.etag. Omit to delete whatever version is current."),
+    }),
+    handler: async (input, ctx) => {
+      const url = `/planner/tasks/${input.taskId}`;
+      // Planner refuses a DELETE without If-Match, so fetch the etag when none was given.
+      const etag = input.etag ?? ((await ctx.graph.api(url).select("id").get()) as { "@odata.etag"?: string })["@odata.etag"];
+      if (!etag) throw new Error(`Planner returned no etag for task ${input.taskId}.`);
+      await ctx.graph.api(url).header("If-Match", etag).delete();
+      return { ok: true };
+    },
   },
 ];
