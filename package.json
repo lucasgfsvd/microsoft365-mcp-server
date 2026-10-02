@@ -47,6 +47,7 @@
     "dev": "tsup --watch --onSuccess \"node dist/index.js\"",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "check:sizes": "node scripts/check-file-sizes.mjs",
     "format": "prettier --write .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
