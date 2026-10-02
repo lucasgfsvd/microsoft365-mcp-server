@@ -36,7 +36,7 @@ Without gitleaks installed the hook warns and lets the commit through, so it nev
 
 ## Adding a new tool
 
-1. Add it to the appropriate surface under `src/tools/<surface>/`. Most surfaces are a single `index.ts`; larger ones are split by sub-concern with `index.ts` as a barrel (see `src/tools/excel/`). If a surface file is approaching ~300 lines, split it along its natural seams rather than appending.
+1. Add it to the appropriate surface under `src/tools/<surface>/`. Most surfaces are a single `index.ts`; larger ones are split by sub-concern with `index.ts` as a barrel (see `src/tools/excel/`). If a surface file is approaching 300 lines, split it along its natural seams rather than appending: CI fails any file over 300 lines (`npm run check:sizes`).
 2. Give it a Zod input schema, a concise description, and correct `requiredScopes` / `mutating` flags.
 3. Mutating tools must use a verb prefix (`create_`, `update_`, `delete_`, `send_`, `post_`, `reply_`, `upload_`, `share_`, …) so tests pass.
 4. Update `docs/tools.md` (tables in the README) and `docs/permissions.md` if scopes changed.

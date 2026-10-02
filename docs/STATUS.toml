@@ -11,17 +11,17 @@
 
 schema = 1
 
-purpose = "Your own MCP server exposing 97 tools over Microsoft 365 (Mail, Calendar, Contacts, OneDrive/SharePoint, Teams, To Do/Planner, OneNote, plus in-place OOXML editing of Excel/Word/PowerPoint) to any MCP client, with writes disabled by default."
+purpose = "Your own MCP server exposing 102 tools over Microsoft 365 (Mail, Calendar, Contacts, OneDrive/SharePoint, Teams, To Do/Planner, OneNote, plus in-place OOXML editing of Excel/Word/PowerPoint) to any MCP client, with writes disabled by default."
 
 # idea | prototype | active | maintenance | paused | archived
 stage = "active"
 
 # The date this file was last made true.
-updated = 2026-10-01
+updated = 2026-10-02
 
 # The real next moves, most important first - taken from this repo's docs.
 next_actions = [
-  "Finish the roadmap's 'Before 0.1.0' features (docs/roadmap.md): local-file uploads, threaded reply drafts, mail date filters, task deletion, OneNote notebook creation, Excel resources, cross-process sign-in pickup, persistent container sign-in.",
+  "Finish the roadmap's 'Before 0.1.0' features (docs/roadmap.md): local-file uploads, cross-process sign-in pickup, persistent container sign-in.",
   "Then publish 0.1.0 once (docs/releasing.md): npm, MCP Registry, GitHub Release. Before ~January 2027, when 2FA-bypass tokens stop publishing. Unmaintained after that.",
 ]
 

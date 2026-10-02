@@ -44,7 +44,7 @@ Mail · Calendar · Contacts · OneDrive · SharePoint · Teams · To Do · Plan
 | 📝 **Word** | ✅ | ✅ | Create documents (from scratch or **from templates** with placeholder fill-in), append headings/bullets/paragraphs, insert at index, find-and-replace |
 | 🎞️ **PowerPoint** | ✅ | ✅ | Create decks (from scratch or **from templates** with placeholder fill-in + extra slides), append/delete slides, find-and-replace across slides |
 
-97 tools total. The full reference is in [docs/tools.md](./docs/tools.md).
+102 tools total. The full reference is in [docs/tools.md](./docs/tools.md).
 
 ---
 
@@ -52,7 +52,7 @@ Mail · Calendar · Contacts · OneDrive · SharePoint · Teams · To Do · Plan
 
 This is an **early alpha**. Please calibrate expectations before depending on it:
 
-- **Exercised against a real Microsoft 365 business tenant: all 97 tools.** Each call's result was checked, not just accepted, and Word, PowerPoint and Excel files edited in place were also opened with independent parsers (python-docx, python-pptx, openpyxl). The live scripts are in [`scripts/live/`](./scripts/live/). Teams channel posts and Planner tasks were tested in a private sandbox team with no other members.
+- **Exercised against a real Microsoft 365 business tenant: all 102 tools.** Each call's result was checked, not just accepted, and Word, PowerPoint and Excel files edited in place were also opened with independent parsers (python-docx, python-pptx, openpyxl). The live scripts are in [`scripts/live/`](./scripts/live/). Teams channel posts and Planner tasks were tested in a private sandbox team with no other members.
 - **Unit tested:** 182 tests, including the SDK's real retry middleware under nock. CI runs lint, typecheck, tests with coverage, a production `npm audit`, a secret scan, and builds *and starts* the Docker image.
 - **Not published yet.** `0.1.0` goes to npm as `@microsoft365-mcp/server` once the [roadmap](./docs/roadmap.md)'s remaining features are in; it will be the only planned release, built in CI with npm provenance. No Docker image is published; build it from the `Dockerfile`.
 
@@ -825,15 +825,10 @@ Picking this up cold? [docs/handover.md](./docs/handover.md) has the current sta
 The full list, with reasons and sizes, is in [docs/roadmap.md](./docs/roadmap.md). In short, **`0.1.0` is published once these are in**:
 
 - Upload from a local file (`localPath` in a configured folder), lifting the ~47 MB upload cap
-- Reply drafts that stay in the email thread
-- Date filters on `mail_list_messages`
-- Delete tools for To Do and Planner tasks
-- Creating OneNote notebooks and sections
-- Excel files as text when attached as resources
 - Picking up a sign-in made by another server process
 - Device-code sign-in that survives a container restart
 
-Webhooks are designed ([docs/webhooks.md](./docs/webhooks.md)) but wait on a decision. Already done: large-file uploads, streaming downloads, MCP resources, prompt templates, the per-tool retry policy, and live tests of every tool.
+Webhooks are designed ([docs/webhooks.md](./docs/webhooks.md)) but wait on a decision. Already done: reply drafts kept in the thread, mail date filters, task deletion, OneNote notebook and section creation, Excel files as CSV in resources, large-file uploads, streaming downloads, MCP resources, prompt templates, the per-tool retry policy, and live tests of every tool.
 
 ---
 

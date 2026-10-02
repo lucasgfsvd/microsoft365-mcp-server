@@ -6,9 +6,9 @@ State of play and what to pick up next. Written for whoever continues this work 
 
 ## Where things stand
 
-97 tools across 12 surfaces, three prompt templates, and three resource types. 182 unit tests. CI gates lint, typecheck, coverage thresholds, `npm audit` (blocking, high severity, production deps), a full-history gitleaks scan, and builds *and starts* the Docker image.
+102 tools across 12 surfaces, three prompt templates, and three resource types. 206 unit tests. CI gates lint, typecheck, coverage thresholds, `npm audit` (blocking, high severity, production deps), a full-history gitleaks scan, and builds *and starts* the Docker image.
 
-**Live coverage: all 97 tools pass against a real tenant** (`scripts/live/`), with Word, PowerPoint and Excel output also opened by independent parsers. No open defects are known.
+**Live coverage: all 102 tools pass against a real tenant** (`scripts/live/`), with Word, PowerPoint and Excel output also opened by independent parsers. No open defects are known.
 
 What the server can now do that it could not before, grouped by concern (git has the history):
 
@@ -17,9 +17,9 @@ What the server can now do that it could not before, grouped by concern (git has
 - **Safety.** A `POST` from a mutating tool is retried only on 429, so a send is never repeated. Pre-authenticated `downloadUrl` links are stripped from every result. `--logout` removes this app's tokens from the store, leaving other apps' alone. Sign-in is lazy and explicit.
 - **Portability.** The token-cache plugin loads lazily, so the server runs where `libsecret` is missing (headless Linux, the distroless image) with an in-memory cache. `MCP_TOKEN_CACHE_PATH` gets its own token store on Windows and with the Linux file fallback.
 - **Workflows.** `daily-brief`, `inbox-triage` and `meeting-prep` prompts, with Graph queries computed server-side and verified live.
-- **Attachable context.** Mail, files and OneNote pages as MCP resources (`src/resources/`): recent items in one `$batch`, any item by `m365://` URI, returned as text (Word and PowerPoint extracted). Gated on the matching read tool, like the prompts.
+- **Attachable context.** Mail, files and OneNote pages as MCP resources (`src/resources/`): recent items in one `$batch`, any item by `m365://` URI, returned as text (Word and PowerPoint extracted, Excel as CSV per sheet). Gated on the matching read tool, like the prompts.
 
-**Next up: the roadmap, then `0.1.0`.** [roadmap.md](./roadmap.md) lists the features to land before publishing (local-file uploads, threaded reply drafts, mail date filters, task deletion, OneNote notebook creation, Excel resources, cross-process sign-in pickup, persistent container sign-in). Publishing waits for them; the release itself is prepared ([releasing.md](./releasing.md)). After `0.1.0` the project is left unmaintained, by the owner's choice.
+**Next up: the roadmap, then `0.1.0`.** [roadmap.md](./roadmap.md) lists the features still to land before publishing (local-file uploads, cross-process sign-in pickup, persistent container sign-in). Publishing waits for them; the release itself is prepared ([releasing.md](./releasing.md)). After `0.1.0` the project is left unmaintained, by the owner's choice.
 
 ---
 
@@ -52,7 +52,7 @@ To reproduce it on purpose: start two servers on one fresh `MCP_TOKEN_CACHE_PATH
 
 All five resources were exercised against a live tenant: initial sync, resuming from a `nextLink`, and a follow-up from the `deltaLink` returning nothing new. Page sizing is resource-specific — Outlook resources honour `Prefer: odata.maxpagesize`, drive ignores it and needs `$top` instead.
 
-**Removals, live:** both forms are confirmed. A contact and a OneDrive file were each created, synced, deleted and synced again; each came back in `removed` with its id and reason `deleted`, and not in `changed`. On drive, the parent folder also shows up in `changed`, because a child changing modifies it — expected, not a leak. To Do has no delete tool, so its removals cannot be tested through the server, but it shares the contacts' `@removed` form.
+**Removals, live:** both forms are confirmed. A contact and a OneDrive file were each created, synced, deleted and synced again; each came back in `removed` with its id and reason `deleted`, and not in `changed`. On drive, the parent folder also shows up in `changed`, because a child changing modifies it — expected, not a leak. To Do removals have not been run through delta live (`todo_delete_task` now makes that possible); they share the contacts' `@removed` form.
 
 ---
 
@@ -79,6 +79,8 @@ From the roadmap, roughly in value order:
 Things that cost time to learn.
 
 **Graph answers some writes with 204 No Content** (a Planner PATCH, for one). The tool then resolves to `undefined`, which `serializeResult` now turns into `{"ok": true}`; before, it produced an invalid MCP message and the client reported a failure for an action that had succeeded. **And `/me/planner/plans` omits group plans**, which is to say nearly all of them: `listPlans` (`src/graph/planner.ts`) also asks each joined team. Both were invisible to the unit tests and found by the sandbox run.
+
+**Graph reads `createReply`'s `comment` as HTML**: line breaks collapse and markup passes through (seen live). `mail_create_reply_draft` therefore creates the reply empty and writes the text into the draft's body itself, escaped for that body's format. **Graph cannot delete a OneNote notebook**; each one is a folder under `/Notebooks` in the owner's OneDrive, which is how the live test removes the one it creates.
 
 **Marketing mail is mostly padding.** Newsletters fill their preview line with zero-width non-joiners, combining grapheme joiners and soft hyphens: 41% of one real message's text body, and 228 of its 255-character `bodyPreview`. `tidyText` (`src/util/text.ts`) strips them from mail resources and from `mail_get_message`'s plain-text body (an HTML body is left as sent, since collapsing its whitespace could change how it renders). `serializeResult` tidies every `bodyPreview` at any depth, so list, search, delta and raw batch results are covered without each tool opting in.
 
