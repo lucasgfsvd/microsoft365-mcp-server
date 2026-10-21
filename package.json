@@ -91,7 +91,7 @@
     "image-size": "^2.0.4",
     "brace-expansion": "^2.1.7",
     "fast-uri": "^3.1.6",
-    "hono": "^4.13.8",
+    "hono": "^4.13.13",
     "@hono/node-server": "^1.19.17",
     "body-parser": "^2.3.0",
     "qs": "^6.16.0",
