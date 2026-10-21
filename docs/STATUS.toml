@@ -21,7 +21,7 @@ updated = 2026-10-21
 
 # The real next moves, most important first - taken from this repo's docs.
 next_actions = [
-  "Clear main's production npm audit, which fails every new PR's CI and would stop the release's verify job: bump @modelcontextprotocol/sdk past 1.31.0 (five advisories, high; 1.32.1 is current) and proxy-addr to 2.0.8 (critical). Then rebase and merge or close the 19 open Dependabot PRs (#22-#41).",
+  "Work through the open Dependabot PRs: close #37 (sdk), #38 (proxy-addr) and #41 (hono), which the audit fix superseded, then rebase and merge or close the other 16 (#22-#36, #39, #40); the majors (typescript 7, commander 15, @types/node 26, the action bumps) each need their own CI run.",
   "Finish the second-round live passes that need only consent or setup (docs/roadmap.md table): sign in again with scripts/live/login.mjs consenting Presence.Read.All and Chat.ReadWrite (presence, editing Teams messages), run scripts/live/shared.mjs against a shared mailbox, and add a list to the sandbox SharePoint site for list-item writes.",
   "Live passes that need an app registration or a second person: register an app with admin consent and run scripts/live/apponly.mjs (and rooms, with MCP_ENABLE_ADMIN_SCOPES); have another account send an invitation to answer, and decide whether the Teams direct-message and named-person-share checks may reach someone.",
   "Then, when the owner decides, publish 0.1.0 once (docs/releasing.md: a 7-day granular NPM_TOKEN, since the repo has no secret set; final README; live tests; tag v0.1.0). Before ~January 2027, when 2FA-bypass tokens stop publishing. Unmaintained after that.",
