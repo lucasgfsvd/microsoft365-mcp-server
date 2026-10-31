@@ -93,7 +93,7 @@
     "fast-uri": "^3.1.6",
     "hono": "^4.13.11",
     "@hono/node-server": "^1.19.17",
-    "body-parser": "^2.3.0",
+    "body-parser": "^2.4.0",
     "qs": "^6.16.0",
     "express-rate-limit": "^8.7.0",
     "ip-address": "^10.7.2",
