@@ -96,7 +96,7 @@
     "body-parser": "^2.3.0",
     "qs": "^6.16.0",
     "express-rate-limit": "^8.7.0",
-    "ip-address": "^10.7.2",
+    "ip-address": "^10.7.5",
     "nanoid": "^5.1.16",
     "tmp": "^0.2.7"
   }
