@@ -68,7 +68,7 @@
     "pizzip": "^3.1.7",
     "pptxgenjs": "^4.0.1",
     "unpdf": "^1.8.1",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "optionalDependencies": {
     "keytar": "^7.9.0"
